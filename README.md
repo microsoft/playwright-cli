@@ -1,14 +1,33 @@
+# playwright-cli
 
-# Contributing
+## Install
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+```
+$ npm install --save-dev playwright-cli
+```
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+## Usage
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+To open website in webkit browser:
+
+```
+$ npx playwright wk google.com
+```
+
+Other options:
+
+```
+Usage: playwright [options] [command]
+  -V, --version                output the version number
+  -b, --browser <browserType>  browser to use, one of cr, chromium, ff, firefox, wk, webkit (default: "chromium")
+  --headless                   run in headless mode (default: false)
+  --device <deviceName>        emulate device, for example  "iPhone 11"
+  -h, --help                   display help for command
+
+Commands:
+  open [url]                   open page in browser specified via -b, --browser
+  cr [url]                     open page in Chromium browser
+  ff [url]                     open page in Firefox browser
+  wk [url]                     open page in WebKit browser
+  help [command]               display help for command
+```
