@@ -9,7 +9,7 @@
     "build": "tsc -p ."
   },
   "bin": {
-    "playwright": "./index.js"
+    "playwright-cli": "./index.js"
   },
   "author": {
     "name": "Microsoft Corporation"

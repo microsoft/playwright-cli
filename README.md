@@ -11,13 +11,13 @@ $ npm install --save-dev playwright-cli
 To open website in webkit browser:
 
 ```
-$ npx playwright wk google.com
+$ npx playwright-cli wk google.com
 ```
 
 Other options:
 
 ```
-Usage: playwright [options] [command]
+Usage: playwright-cli [options] [command]
   -V, --version                output the version number
   -b, --browser <browserType>  browser to use, one of cr, chromium, ff, firefox, wk, webkit (default: "chromium")
   --headless                   run in headless mode (default: false)
