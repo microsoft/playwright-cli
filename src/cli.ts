@@ -85,7 +85,8 @@ async function open(options: Options, url: string | undefined) {
   const browserType = lookupBrowserType(options.browser);
   const launchOptions: playwright.LaunchOptions = { headless: options.headless };
   const browser = await browserType.launch(launchOptions);
-  const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] || {} : {};
+  const defaultContextOptions = {viewport: null};
+  const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] || defaultContextOptions : defaultContextOptions;
   const page = await browser.newPage(contextOptions);
   if (url) {
     if (!url.startsWith('http'))
