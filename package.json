@@ -18,5 +18,7 @@
   "dependencies": {
     "playwright": "^1.2.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "^3.8.3"
+  }
 }
