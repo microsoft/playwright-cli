@@ -18,7 +18,7 @@
 
 import * as program from 'commander';
 import * as playwright from 'playwright';
-import {helper} from 'playwright/lib/helper';
+import { RecorderController } from './recorder/recorderController';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -81,24 +81,33 @@ type Options = {
   headless: boolean,
 };
 
-async function open(options: Options, url: string | undefined) {
+async function launchContext(options: Options) {
   const browserType = lookupBrowserType(options.browser);
   const launchOptions: playwright.LaunchOptions = { headless: options.headless };
   const browser = await browserType.launch(launchOptions);
-  const defaultContextOptions = {viewport: null};
+  const defaultContextOptions = { viewport: null };
   const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] || defaultContextOptions : defaultContextOptions;
-  const page = await browser.newPage(contextOptions);
+  return browser.newContext(contextOptions);
+}
+
+async function openPage(context: playwright.BrowserContext, url: string | undefined) {
+  const page = await context.newPage();
   if (url) {
     if (!url.startsWith('http'))
       url = 'http://' + url;
     await page.goto(url);
   }
-  return { browser, page };
+}
+
+async function open(options: Options, url: string | undefined) {
+  const context = await launchContext(options);
+  await openPage(context, url);
 }
 
 async function record(options: Options, url: string | undefined) {
-  helper.setRecordMode(true);
-  return await open(options, url);
+  const context = await launchContext(options);
+  new RecorderController(context, process.stdout);
+  await openPage(context, url);
 }
 
 function lookupBrowserType(name: string): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {
