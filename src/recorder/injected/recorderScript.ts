@@ -15,39 +15,80 @@
  */
 
 import type * as actions from '../recorderActions';
+import { html } from './html';
+import { RegisteredListener, addEventListener, removeEventListeners } from './util';
+import { Throttler } from './throttler';
+import { XPathEngine } from './xpathSelectorEngine';
 
 declare global {
   interface Window {
     performPlaywrightAction: (action: actions.Action) => Promise<void>;
     recordPlaywrightAction: (action: actions.Action) => Promise<void>;
-    queryPlaywrightSelector: (selector: string) => Promise<Element | null>;
+    queryPlaywrightSelector: (selector: string) => Promise<Element[]>;
     playwrightRecorderScript: RecorderScript;
   }
 }
 
 export default class RecorderScript {
   private _performingAction = false;
-  readonly refreshListeners: () => void;
+  private _glassPaneElement: HTMLElement;
+  private _highlightElements: HTMLElement[] = [];
+  private _tooltipElement: HTMLElement;
+  private _listeners: RegisteredListener[] = [];
+  private _hoveredSelector: string | null = null;
+  private _hoveredElement: HTMLElement | null = null;
+  private _throttler = new Throttler(50);
 
   constructor() {
     window.playwrightRecorderScript = this;
 
-    const onClick = this._onClick.bind(this);
-    const onInput = this._onInput.bind(this);
-    const onKeyDown = this._onKeyDown.bind(this);
-    this.refreshListeners = () => {
-      document.removeEventListener('click', onClick, true);
-      document.removeEventListener('input', onInput, true);
-      document.removeEventListener('keydown', onKeyDown, true);
-      document.addEventListener('click', onClick, true);
-      document.addEventListener('input', onInput, true);
-      document.addEventListener('keydown', onKeyDown, true);
-    };
-    this.refreshListeners();
+    this._tooltipElement = html`
+      <div style="
+        position: absolute;
+        top: 0;
+        height: 24px;
+        left: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        color: yellow;
+        font-size: 12px;
+        font-family:'SF Mono', Monaco, Menlo, Inconsolata, 'Courier New', monospace;
+        "></div>`;
+    this._glassPaneElement = html`
+      <div style="
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 10000;
+        pointer-events: none;">
+        ${this._tooltipElement}
+      </div>`;
+    this._refreshListeners();
+  }
+
+  private _refreshListeners() {
+    removeEventListeners(this._listeners);
+    this._listeners = [
+      addEventListener(document, 'click', event => this._onClick(event as MouseEvent), true),
+      addEventListener(document, 'input', event => this._onInput(event), true),
+      addEventListener(document, 'keydown', event => this._onKeyDown(event as KeyboardEvent), true),
+      addEventListener(document, 'mousemove', event => this._onMouseMove(event as MouseEvent), true),
+      addEventListener(document, 'scroll', event => this._updateHighlight(this._hoveredSelector), true),
+    ];
+    if (document.documentElement)
+      document.documentElement.appendChild(this._glassPaneElement);
+    else
+      setTimeout(() => this._refreshListeners(), 1000);
+
     // Document listeners are cleared upon document.open,
     // so we refresh them periodically in a best-effort manner.
     // Note: keep in sync with the same constant in the test.
-    setInterval(this.refreshListeners, 1000);
+    // setInterval(this.refreshListeners, 1000);
   }
 
   private _consumeForAction(event: Event): boolean {
@@ -72,12 +113,70 @@ export default class RecorderScript {
       return;
     this._performAction({
       name: 'click',
-      selector: await this._buildSelector(event.target as Element),
+      selector: this._hoveredSelector!,
       signals: [],
       button: buttonForEvent(event),
       modifiers: modifiersForEvent(event),
       clickCount: event.detail
     });
+  }
+
+  private async _onMouseMove(event: MouseEvent) {
+    if (this._hoveredElement === event.target)
+      return;
+    this._hoveredElement = event.target as HTMLElement | null;
+    this._throttler.schedule(() => this._updateSelectorForHoveredElement());
+  }
+
+  private async _updateSelectorForHoveredElement() {
+    if (!this._hoveredElement) {
+      this._updateHighlight(null);
+      return;
+    }
+    const selector = await this._buildSelector(this._hoveredElement);
+    if (this._hoveredSelector === selector)
+      return;
+    this._updateHighlight(selector);
+  }
+
+  private async _updateHighlight(selector: string | null) {
+    this._hoveredSelector = selector;
+    const elements = this._hoveredSelector ? await window.queryPlaywrightSelector(this._hoveredSelector) : [];
+    this._tooltipElement.textContent = this._hoveredSelector;
+
+    const pool = this._highlightElements;
+    this._highlightElements = [];
+    for (const element of elements) {
+      const rect = element.getBoundingClientRect();
+      const highlightElement = pool.length ? pool.shift()! : this._createHighlightElement();
+      highlightElement.style.left = rect.x + 'px';
+      highlightElement.style.top = rect.y + 'px';
+      highlightElement.style.width = rect.width + 'px';
+      highlightElement.style.height = rect.height + 'px';
+      highlightElement.style.display = 'block';
+      this._highlightElements.push(highlightElement);
+    }
+
+    for (const highlightElement of pool) {
+      highlightElement.style.display = 'none';
+      this._highlightElements.push(highlightElement);
+    }
+  }
+
+  private _createHighlightElement(): HTMLElement {
+    const highlightElement = html`
+      <div style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        border: 1px solid red;
+        background-color: rgba(0, 0, 255, 0.2);
+        display: none;">
+      </div>`;
+    this._glassPaneElement.appendChild(highlightElement);
+    return highlightElement;
   }
 
   private async _onInput(event: Event) {
@@ -88,7 +187,7 @@ export default class RecorderScript {
           return;
         this._performAction({
           name: inputElement.checked ? 'check' : 'uncheck',
-          selector: await this._buildSelector(event.target as Element),
+          selector: this._hoveredSelector!,
           signals: [],
         });
         return;
@@ -97,7 +196,7 @@ export default class RecorderScript {
       //  Non-navigating actions are simply recorded by Playwright.
       window.recordPlaywrightAction({
         name: 'fill',
-        selector: await this._buildSelector(event.target as Element),
+        selector: this._hoveredSelector!,
         signals: [],
         text: (event.target! as HTMLInputElement).value,
       });
@@ -109,7 +208,7 @@ export default class RecorderScript {
         return;
       this._performAction({
         name: 'select',
-        selector: await this._buildSelector(event.target as Element),
+        selector: this._hoveredSelector!,
         options: [...selectElement.selectedOptions].map(option => option.value),
         signals: []
       });
@@ -123,7 +222,7 @@ export default class RecorderScript {
       return;
     this._performAction({
       name: 'press',
-      selector: await this._buildSelector(event.target as Element),
+      selector: this._hoveredSelector!,
       signals: [],
       key: event.key,
       modifiers: modifiersForEvent(event),
@@ -137,69 +236,74 @@ export default class RecorderScript {
   }
 
   private async _buildSelector(targetElement: Element): Promise<string> {
-    const path: string[] = [];
+    const path: SelectorToken[] = [];
+    let numberOfMatchingElements = Number.MAX_SAFE_INTEGER;
     for (let element: Element | null = targetElement; element && element !== document.documentElement; element = element.parentElement) {
       const selector = this._buildSelectorCandidate(element);
-      if (selector)
-        path.unshift(selector.selector);
-
-      const fullSelector = path.join(' ');
-      if (selector && selector.final)
+      if (!selector)
+        continue;
+      const fullSelector = joinSelector([selector, ...path]);
+      const selectorTargets = await window.queryPlaywrightSelector(fullSelector);
+      if (selectorTargets.length === 1 && selectorTargets[0].contains(targetElement))
         return fullSelector;
-      if (targetElement === await window.queryPlaywrightSelector(fullSelector))
-        return fullSelector;
+      if (selectorTargets.length && numberOfMatchingElements > selectorTargets.length) {
+        numberOfMatchingElements = selectorTargets.length;
+        path.unshift(selector);
+      }
     }
-    return '<selector>';
+    return XPathEngine.create(document.documentElement, targetElement, 'default')!;
   }
 
-  private _buildSelectorCandidate(element: Element): { final: boolean, selector: string } | null {
+  private _buildSelectorCandidate(element: Element): SelectorToken | null {
+    const nodeName = element.nodeName.toLowerCase();
     for (const attribute of ['data-testid', 'data-test-id', 'data-test']) {
       if (element.hasAttribute(attribute))
-        return { final: true, selector: `${element.nodeName.toLocaleLowerCase()}[${attribute}=${element.getAttribute(attribute)}]` };
+        return { engine: 'css', selector: `${nodeName}[${attribute}=${quoteString(element.getAttribute(attribute)!)}]` };
     }
-    for (const attribute of ['aria-label']) {
+    for (const attribute of ['aria-label', 'role']) {
       if (element.hasAttribute(attribute))
-        return { final: false, selector: `${element.nodeName.toLocaleLowerCase()}[${attribute}=${element.getAttribute(attribute)}]` };
+        return { engine: 'css', selector: `${element.nodeName.toLocaleLowerCase()}[${attribute}=${quoteString(element.getAttribute(attribute)!)}]` };
     }
     if (element.nodeName === 'INPUT') {
-      if (element.hasAttribute('name'))
-        return { final: false, selector: `input[name=${element.getAttribute('name')}]` };
-      if (element.hasAttribute('type'))
-        return { final: false, selector: `input[type=${element.getAttribute('type')}]` };
+      if (element.getAttribute('name'))
+        return { engine: 'css', selector: `input[name=${quoteString(element.getAttribute('name')!)}]` };
+      if (element.getAttribute('type'))
+        return { engine: 'css', selector: `input[type=${quoteString(element.getAttribute('type')!)}]` };
     } else if (element.nodeName === 'IMG') {
-      if (element.hasAttribute('alt'))
-        return { final: false, selector: `img[alt="${element.getAttribute('alt')}"]` };
+      if (element.getAttribute('alt'))
+        return { engine: 'css', selector: `img[alt=${quoteString(element.getAttribute('alt')!)}]` };
     }
     const textSelector = textSelectorForElement(element);
     if (textSelector)
-      return { final: false, selector: textSelector };
+      return { engine: 'text', selector: textSelector };
 
-    // Depreoritize id, but still use it as a last resort.
+    // De-prioritize id, but still use it as a last resort.
     if (element.hasAttribute('id'))
-      return { final: true, selector: `${element.nodeName.toLocaleLowerCase()}[id=${element.getAttribute('id')}]` };
+      return { engine: 'css', selector: `${nodeName}[id=${quoteString(element.getAttribute('id')!)}]` };
 
     return null;
   }
 }
 
 function textSelectorForElement(node: Node): string | null {
-  let needsTrim = false;
-  let onlyText: string | null = null;
+  const maxLength = 30;
+  let needsRegex = false;
+  let trimmedText: string | null = null;
   for (const child of node.childNodes) {
     if (child.nodeType !== Node.TEXT_NODE)
       continue;
     if (child.textContent && child.textContent.trim()) {
-      if (onlyText)
+      if (trimmedText)
         return null;
-      onlyText = child.textContent.trim();
-      needsTrim = child.textContent !== child.textContent.trim();
+      trimmedText = child.textContent.trim().substr(0, maxLength);
+      needsRegex = child.textContent !== trimmedText;
     } else {
-      needsTrim = true;
+      needsRegex = true;
     }
   }
-  if (!onlyText)
+  if (!trimmedText)
     return null;
-  return needsTrim ? `text=/\\s*${escapeForRegex(onlyText)}\\s*/` : `text="${onlyText}"`;
+  return needsRegex ? `/.*${escapeForRegex(trimmedText)}.*/` : `"${trimmedText}"`;
 }
 
 function modifiersForEvent(event: MouseEvent | KeyboardEvent): number {
@@ -223,4 +327,28 @@ function consumeEvent(e: Event) {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
+}
+
+function quoteString(text: string): string {
+  return `"${text.replaceAll(/"/g, '\\"')}"`;
+}
+
+type SelectorToken = {
+  engine: string;
+  selector: string;
+};
+
+function joinSelector(path: SelectorToken[]): string {
+  const tokens = [];
+  let lastEngine = '';
+  for (const { engine, selector } of path) {
+    if (tokens.length && lastEngine !== engine)
+      tokens.push('>>');
+    lastEngine = engine;
+    if (engine === 'css')
+      tokens.push(selector);
+    else
+      tokens.push(`${engine}=${selector}`);
+  }
+  return tokens.join(' ');
 }

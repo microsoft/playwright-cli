@@ -42,8 +42,7 @@ export class RecorderController {
 
     // Other non-essential actions are simply being recorded.
     context.exposeBinding('queryPlaywrightSelector', async (source: BindingSource, selector: string) => {
-      const handle = await source.frame.$(selector).catch(e => null);
-      return handle;
+      return await source.frame.$$(selector).catch(e => []);
     });
 
     context.addInitScript(`new (${recorderScriptSource.source})()`);
