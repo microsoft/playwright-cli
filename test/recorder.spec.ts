@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { setContentAndWait, hoverOverElement } from './playwright.fixtures';
+import './playwright.fixtures';
 
-it('should click', async ({ page, output }) => {
-  await setContentAndWait(page, `<button onclick="console.log('click')">Submit</button>`);
+it('should click', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<button onclick="console.log('click')">Submit</button>`);
 
-  const selector = await hoverOverElement(page, 'button');
+  const selector = await pageWrapper.hoverOverElement('button');
   expect(selector).toBe('text="Submit"');
 
   const [message] = await Promise.all([
@@ -33,10 +34,11 @@ it('should click', async ({ page, output }) => {
   expect(message.text()).toBe('click');
 });
 
-it('should fill', async ({ page, output }) => {
-  await setContentAndWait(page, `<input id="input" name="name" oninput="console.log(input.value)"></input>`);
+it('should fill', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<input id="input" name="name" oninput="console.log(input.value)"></input>`);
 
-  const selector = await hoverOverElement(page, 'input');
+  const selector = await pageWrapper.hoverOverElement('input');
   expect(selector).toBe('input[name="name"]');
 
   const [message] = await Promise.all([
@@ -50,10 +52,11 @@ it('should fill', async ({ page, output }) => {
   expect(message.text()).toBe('John');
 });
 
-it('should press', async ({ page, output }) => {
-  await setContentAndWait(page, `<input name="name" onkeypress="console.log('press')"></input>`);
+it('should press', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<input name="name" onkeypress="console.log('press')"></input>`);
 
-  const selector = await hoverOverElement(page, 'input');
+  const selector = await pageWrapper.hoverOverElement('input');
   expect(selector).toBe('input[name="name"]');
 
   const [message] = await Promise.all([
@@ -67,10 +70,11 @@ it('should press', async ({ page, output }) => {
   expect(message.text()).toBe('press');
 });
 
-it('should check', async ({ page, output }) => {
-  await setContentAndWait(page, `<input id="checkbox" type="checkbox" name="accept" onchange="console.log(checkbox.checked)"></input>`);
+it('should check', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="console.log(checkbox.checked)"></input>`);
 
-  const selector = await hoverOverElement(page, 'input');
+  const selector = await pageWrapper.hoverOverElement('input');
   expect(selector).toBe('input[name="accept"]');
 
   const [message] = await Promise.all([
@@ -85,10 +89,11 @@ it('should check', async ({ page, output }) => {
   expect(message.text()).toBe("true");
 });
 
-it('should uncheck', async ({ page, output }) => {
-  await setContentAndWait(page, `<input id="checkbox" type="checkbox" checked name="accept" onchange="console.log(checkbox.checked)"></input>`);
+it('should uncheck', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<input id="checkbox" type="checkbox" checked name="accept" onchange="console.log(checkbox.checked)"></input>`);
 
-  const selector = await hoverOverElement(page, 'input');
+  const selector = await pageWrapper.hoverOverElement('input');
   expect(selector).toBe('input[name="accept"]');
 
   const [message] = await Promise.all([
@@ -102,10 +107,11 @@ it('should uncheck', async ({ page, output }) => {
   expect(message.text()).toBe("false");
 });
 
-it('should select', async ({ page, output }) => {
-  await setContentAndWait(page, '<select id="age" onchange="console.log(age.selectedOptions[0].value)"><option value="1"><option value="2"></select>');
+it('should select', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait('<select id="age" onchange="console.log(age.selectedOptions[0].value)"><option value="1"><option value="2"></select>');
 
-  const selector = await hoverOverElement(page, 'select');
+  const selector = await pageWrapper.hoverOverElement('select');
   expect(selector).toBe('select[id="age"]');
 
   const [message] = await Promise.all([
@@ -119,10 +125,11 @@ it('should select', async ({ page, output }) => {
   expect(message.text()).toBe("2");
 });
 
-it('should await popup', async ({ page, output }) => {
-  await setContentAndWait(page, '<a target=_blank rel=noopener href="about:blank">link</a>');
+it('should await popup', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait('<a target=_blank rel=noopener href="about:blank">link</a>');
 
-  const selector = await hoverOverElement(page, 'a');
+  const selector = await pageWrapper.hoverOverElement('a');
   expect(selector).toBe('text="link"');
 
   const [popup] = await Promise.all([
@@ -139,10 +146,11 @@ it('should await popup', async ({ page, output }) => {
   expect(popup.url()).toBe('about:blank');
 });
 
-it('should await navigation', async ({ page, output }) => {
-  await setContentAndWait(page, `<a onclick="setTimeout(() => window.location.href='about:blank#foo', 1000)">link</a>`);
+it('should await navigation', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<a onclick="setTimeout(() => window.location.href='about:blank#foo', 1000)">link</a>`);
 
-  const selector = await hoverOverElement(page, 'a');
+  const selector = await pageWrapper.hoverOverElement('a');
   expect(selector).toBe('text="link"');
 
   await Promise.all([

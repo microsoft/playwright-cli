@@ -20,49 +20,43 @@ import { RecorderController } from '../lib/recorder/recorderController';
 import { Page } from 'playwright';
 
 declare global {
-	interface WorkerState {
-		browserType: playwright.BrowserType<playwright.Browser>;
-		browserName: string;
-		browser: playwright.Browser;
-	}
-	interface TestState {
-		context: playwright.BrowserContext;
-		page: playwright.Page;
-		output: WritableBuffer;
-	}
+  interface WorkerState {
+    browserType: playwright.BrowserType<playwright.Browser>;
+    browserName: string;
+    browser: playwright.Browser;
+  }
+  interface TestState {
+    contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
+    pageWrapper: PageWrapper;
+  }
 }
 
 registerWorkerFixture('browserType', async ({ browserName }, test) => {
-	const browserType = playwright[browserName];
-	await test(browserType);
+  const browserType = playwright[browserName];
+  await test(browserType);
 });
 
 registerWorkerFixture('browserName', async ({ }, test) => {
-	await test('chromium');
+  await test('chromium');
 });
 
 registerWorkerFixture('browser', async ({ browserType }, test) => {
-	const browser = await browserType.launch();
-	await test(browser);
-	await browser.close();
+  const browser = await browserType.launch();
+  await test(browser);
+  await browser.close();
 });
 
-registerFixture('context', async ({ browser }, runTest, info) => {
-	const context = await browser.newContext();
-	await runTest(context);
-	await context.close();
-});
-
-registerFixture('page', async ({ context }, runTest) => {
-	const page = await context.newPage();
-	page.on('console', console.log);
-	await runTest(page);
-});
-
-registerFixture('output', async ({ context }, runTest) => {
+registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
+  const context = await browser.newContext();
   const output = new WritableBuffer();
   new RecorderController(context, output);
-	await runTest(output);
+  await runTest({ context, output });
+  await context.close();
+});
+
+registerFixture('pageWrapper', async ({ contextWrapper }, runTest) => {
+  const page = await contextWrapper.context.newPage();
+  await runTest(new PageWrapper(page, contextWrapper.output));
 });
 
 class WritableBuffer {
@@ -104,24 +98,34 @@ class WritableBuffer {
   }
 }
 
-export async function setContentAndWait(page: Page, content: string) {
-  let callback;
-  const result = new Promise(f => callback = f);
-  await page.goto('about:blank');
-  await page.exposeBinding('_recorderScriptReadyForTest', (source, arg) => callback(arg));
-  await Promise.all([
-    result,
-    page.setContent(content)
-  ]);
-}
+class PageWrapper {
+  page: playwright.Page;
+  output: WritableBuffer;
 
-export async function hoverOverElement(page: Page, selector: string): Promise<string> {
-  let callback: (selector: string) => void;
-  const result = new Promise<string>(f => callback = f);
-  await page.exposeBinding('_highlightUpdatedForTest', (source, arg) => callback(arg))
-  const [ generatedSelector ] = await Promise.all([
-    result,
-    page.dispatchEvent(selector, 'mousemove', { detail: 1 })
-  ]);
-  return generatedSelector;
+  constructor(page: Page, output: WritableBuffer) {
+    this.page = page;
+    this.output = output;
+  }
+
+  async setContentAndWait(content: string) {
+    let callback;
+    const result = new Promise(f => callback = f);
+    await this.page.goto('about:blank');
+    await this.page.exposeBinding('_recorderScriptReadyForTest', (source, arg) => callback(arg));
+    await Promise.all([
+      result,
+      this.page.setContent(content)
+    ]);
+  }
+
+  async hoverOverElement(selector: string): Promise<string> {
+    let callback: (selector: string) => void;
+    const result = new Promise<string>(f => callback = f);
+    await this.page.exposeBinding('_highlightUpdatedForTest', (source, arg) => callback(arg))
+    const [ generatedSelector ] = await Promise.all([
+      result,
+      this.page.dispatchEvent(selector, 'mousemove', { detail: 1 })
+    ]);
+    return generatedSelector;
+  }
 }
