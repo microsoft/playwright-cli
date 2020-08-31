@@ -29,6 +29,8 @@ declare global {
   }
 }
 
+const recorderSymbol = Symbol('recorderSymbol');
+
 export default class RecorderScript {
   private _performingAction = false;
   private _glassPaneElement: HTMLElement;
@@ -66,10 +68,15 @@ export default class RecorderScript {
         pointer-events: none;">
         ${this._tooltipElement}
       </div>`;
-    this._refreshListeners();
+    setInterval(() => {
+      this._refreshListenersIfNeeded();
+    }, 100);
   }
 
-  private _refreshListeners() {
+  private _refreshListenersIfNeeded() {
+    if ((document.documentElement as any)[recorderSymbol])
+      return;
+    (document.documentElement as any)[recorderSymbol] = true;
     removeEventListeners(this._listeners);
     this._listeners = [
       addEventListener(document, 'click', event => this._onClick(event as MouseEvent), true),
@@ -78,15 +85,9 @@ export default class RecorderScript {
       addEventListener(document, 'mousemove', event => this._onMouseMove(event as MouseEvent), true),
       addEventListener(document, 'scroll', event => this._updateHighlight(this._hoveredSelector), true),
     ];
-    if (document.documentElement)
-      document.documentElement.appendChild(this._glassPaneElement);
-    else
-      setTimeout(() => this._refreshListeners(), 1000);
-
-    // Document listeners are cleared upon document.open,
-    // so we refresh them periodically in a best-effort manner.
-    // Note: keep in sync with the same constant in the test.
-    // setInterval(this.refreshListeners, 1000);
+    document.documentElement.appendChild(this._glassPaneElement);
+    if ((window as any)._recorderScriptReadyForTest)
+      (window as any)._recorderScriptReadyForTest();
   }
 
   private _consumeForAction(event: Event): boolean {
@@ -98,7 +99,7 @@ export default class RecorderScript {
     return true;
   }
 
-  private async _onClick(event: MouseEvent) {
+  private _onClick(event: MouseEvent) {
     if ((event.target as Element).nodeName === 'SELECT')
       return;
     if ((event.target as Element).nodeName === 'INPUT') {
@@ -109,6 +110,7 @@ export default class RecorderScript {
 
     if (!this._consumeForAction(event))
       return;
+
     this._performAction({
       name: 'click',
       selector: this._hoveredSelector!,
@@ -174,6 +176,8 @@ export default class RecorderScript {
       highlightElement.style.display = 'none';
       this._highlightElements.push(highlightElement);
     }
+    if ((window as any)._highlightUpdatedForTest)
+      (window as any)._highlightUpdatedForTest(this._hoveredSelector);
   }
 
   private _createHighlightElement(): HTMLElement {

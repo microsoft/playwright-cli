@@ -142,7 +142,7 @@ export class TerminalOutput {
 
     // Popup signals.
     if (popupSignal)
-      formatter.add(`${pageAlias}.waitForEvent("popup"),`);
+      formatter.add(`${pageAlias}.waitForEvent('popup'),`);
 
     // Navigation signal.
     if (waitForNavigation)
@@ -178,6 +178,7 @@ export class TerminalOutput {
         return `${method}(${quote(action.selector)}${optionsString})`;
       }
       case 'check':
+        return `check(${quote(action.selector)})`;
       case 'commit':
           return ``;
       case 'uncheck':
