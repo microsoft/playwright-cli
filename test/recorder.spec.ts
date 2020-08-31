@@ -14,61 +14,7 @@
  * limitations under the License.
  */
 
-import { registerFixture } from '@playwright/test-runner';
-import { RecorderController } from '../lib/recorder/recorderController';
-import './playwright.fixtures.ts';
-import { Page } from 'playwright';
-
-declare global {
-	interface TestState {
-		output: WritableBuffer;
-	}
-}
-
-class WritableBuffer {
-  lines: string[];
-  private _callback: () => void;
-  _text: string;
-
-  constructor() {
-    this.lines = [];
-  }
-
-  write(chunk: string) {
-    if (chunk === '\u001B[F\u001B[2K') {
-      this.lines.pop();
-      return;
-    }
-    this.lines.push(...chunk.split('\n'));
-    if (this._callback && chunk.includes(this._text))
-      this._callback();
-  }
-
-  waitFor(text: string): Promise<void> {
-    if (this.lines.join('\n').includes(text))
-      return Promise.resolve();
-    this._text = text;
-    return new Promise(f => this._callback = f);
-  }
-
-  data() {
-    return this.lines.join('\n');
-  }
-
-  text() {
-    const pattern = [
-      '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-      '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
-    ].join('|');
-    return this.data().replace(new RegExp(pattern, 'g'), '');
-  }
-}
-
-registerFixture('output', async ({ context }, runTest) => {
-  const output = new WritableBuffer();
-  new RecorderController(context, output);
-	await runTest(output);
-});
+import { setContentAndWait, hoverOverElement } from './playwright.fixtures';
 
 it('should click', async ({ page, output }) => {
   await setContentAndWait(page, `<button onclick="console.log('click')">Submit</button>`);
@@ -212,25 +158,3 @@ it('should await navigation', async ({ page, output }) => {
   ]);`);
   expect(page.url()).toContain('about:blank#foo');
 });
-
-async function setContentAndWait(page: Page, content: string) {
-  let callback;
-  const result = new Promise(f => callback = f);
-  await page.goto('about:blank');
-  await page.exposeBinding('_recorderScriptReadyForTest', (source, arg) => callback(arg));
-  await Promise.all([
-    result,
-    page.setContent(content)
-  ]);
-}
-
-async function hoverOverElement(page: Page, selector: string): Promise<string> {
-  let callback: (selector: string) => void;
-  const result = new Promise<string>(f => callback = f);
-  await page.exposeBinding('_highlightUpdatedForTest', (source, arg) => callback(arg))
-  const [ generatedSelector ] = await Promise.all([
-    result,
-    page.dispatchEvent(selector, 'mousemove', { detail: 1 })
-  ]);
-  return generatedSelector;
-}

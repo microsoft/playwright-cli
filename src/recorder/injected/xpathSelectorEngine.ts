@@ -136,10 +136,9 @@ export const XPathEngine = {
 
       // Do not include text into this token, only tag / attributes.
       // Topmost node will get all the text.
-      const nonTextConditions = [...tagConditions, ...attrConditions];
-      const nonTextConditionsString = nonTextConditions.length ? `[${nonTextConditions.join(' and ')}]` : '';
+      const conditionsString = conditions.length ? `[${conditions.join(' and ')}]` : '';
       const ordinalString = ordinal >= 0 ? `[${ordinal + 1}]` : '';
-      tokens.unshift(`${tag}${ordinalString}${nonTextConditionsString}`);
+      tokens.unshift(`${tag}${ordinalString}${conditionsString}`);
     }
     return uniqueXPathSelector();
   },
