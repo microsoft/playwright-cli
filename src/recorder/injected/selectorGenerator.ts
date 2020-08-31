@@ -25,7 +25,9 @@ export async function buildSelector(targetElement: Element): Promise<string> {
       continue;
     const fullSelector = joinSelector([selector, ...path]);
     const selectorTargets = await window.queryPlaywrightSelector(fullSelector);
-    if (selectorTargets.length === 1 && selectorTargets[0].contains(targetElement))
+    if (!selectorTargets.length)
+      break;
+    if (selectorTargets[0].contains(targetElement))
       return fullSelector;
     if (selectorTargets.length && numberOfMatchingElements > selectorTargets.length) {
       numberOfMatchingElements = selectorTargets.length;
@@ -106,7 +108,7 @@ function joinSelector(path: SelectorToken[]): string {
   const tokens = [];
   let lastEngine = '';
   for (const { engine, selector } of path) {
-    if (tokens.length && lastEngine !== engine)
+    if (tokens.length  && (lastEngine !== 'css' || engine !== 'css'))
       tokens.push('>>');
     lastEngine = engine;
     if (engine === 'css')
