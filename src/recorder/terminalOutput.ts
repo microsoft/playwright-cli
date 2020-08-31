@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+import * as querystring from 'querystring';
 import * as playwright from 'playwright';
 import { Writable } from 'stream';
-import { formatColors, Formatter } from './formatter';
+import { quote, Formatter } from './formatter';
 import { Action, actionTitle, NavigationSignal, PopupSignal, Signal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
-
-const { cst, cmt, fnc, kwd, prp, str } = formatColors;
+import { highlight } from 'highlight.js';
 
 export class TerminalOutput {
   private _lastAction: Action | undefined;
@@ -32,18 +32,37 @@ export class TerminalOutput {
     const formatter = new Formatter();
 
     formatter.add(`
-      ${kwd('const')} ${cst('assert')} = ${fnc('require')}(${str('assert')});
-      ${kwd('const')} { ${cst('chromium')}, ${cst('firefox')}, ${cst('webkit')} } = ${fnc('require')}(${str('playwright')});
+      const assert = require('assert');
+      const { chromium, firefox, webkit } = require('playwright');
 
-      (${kwd('async')}() => {
-        ${kwd('const')} ${cst('browser')} = ${kwd('await')} ${cst(`chromium`)}.${fnc('launch')}();
-        ${kwd('const')} ${cst('page')} = ${kwd('await')} ${cst('browser')}.${fnc('newPage')}();
-    `);
-    this._out.write(formatter.format() + '\n`})();`\n');
+      (async() => {
+        const browser = await chromium.launch();
+        const page = await browser.newPage();
+      })();\n`);
+    this._out.write(this._highlight(formatter.format()));
+  }
+
+  _highlight(text: string)  {
+    let highlightedCode = highlight('typescript', text).value;
+    highlightedCode = querystring.unescape(highlightedCode);
+    highlightedCode = highlightedCode.replace(/<span class="hljs-keyword">/g, '\x1b[38;5;205m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-built_in">/g, '\x1b[38;5;220m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-string">/g, '\x1b[38;5;130m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
+    highlightedCode = highlightedCode.replace(/<\/span>/g, '\x1b[0m');
+    highlightedCode = highlightedCode.replace(/&#x27;/g, "'");
+    highlightedCode = highlightedCode.replace(/&quot;/g, '"');    
+    highlightedCode = highlightedCode.replace(/&gt;/g, '>');
+    highlightedCode = highlightedCode.replace(/&lt;/g, '<');
+    return highlightedCode;
   }
 
   addAction(pageAlias: string, frame: playwright.Frame, action: Action) {
     // We augment last action based on the type.
+    if (action.name === 'commit' && this._lastAction) {
+      this._lastAction.committed = true;
+      return;
+    }
     let eraseLastAction = false;
     if (this._lastAction && action.name === 'fill' && this._lastAction.name === 'fill') {
       if (action.selector === this._lastAction.selector)
@@ -52,6 +71,10 @@ export class TerminalOutput {
     if (this._lastAction && action.name === 'click' && this._lastAction.name === 'click') {
       if (action.selector === this._lastAction.selector && action.clickCount > this._lastAction.clickCount)
         eraseLastAction = true;
+    }
+    if (this._lastAction && action.name === 'navigate' && this._lastAction.name === 'navigate') {
+      if (action.url === this._lastAction.url)
+        return;
     }
     for (const name of ['check', 'uncheck']) {
       if (this._lastAction && action.name === name && this._lastAction.name === 'click') {
@@ -90,10 +113,10 @@ export class TerminalOutput {
   private _generateAction(pageAlias: string, frame: playwright.Frame, action: Action): string {
     const formatter = new Formatter(2);
     formatter.newLine();
-    formatter.add(cmt(actionTitle(action)));
+    formatter.add('// ' + actionTitle(action));
 
-    const subject = !frame.parentFrame() ? cst(pageAlias) :
-      `${cst(pageAlias)}.${fnc('frame')}(${formatObject({ url: frame.url() })})`;
+    const subject = !frame.parentFrame() ? pageAlias :
+      `${pageAlias}.frame(${formatObject({ url: frame.url() })})`;
 
     let navigationSignal: NavigationSignal | undefined;
     let popupSignal: PopupSignal | undefined;
@@ -113,19 +136,19 @@ export class TerminalOutput {
       // const [popup1] = await Promise.all([]).
       let leftHandSide = '';
       if (popupSignal)
-        leftHandSide = `${kwd('const')} [${cst(popupSignal.popupAlias)}] = `;
-      formatter.add(`${leftHandSide}${kwd('await')} ${cst('Promise')}.${fnc('all')}([`);
+        leftHandSide = `const [${popupSignal.popupAlias}] = `;
+      formatter.add(`${leftHandSide}await Promise.all([`);
     }
 
     // Popup signals.
     if (popupSignal)
-      formatter.add(`${cst(pageAlias)}.${fnc('waitForEvent')}(${str('popup')}),`);
+      formatter.add(`${pageAlias}.waitForEvent("popup"),`);
 
     // Navigation signal.
     if (waitForNavigation)
-      formatter.add(`${cst(pageAlias)}.${fnc('waitForNavigation')}({ ${prp('url')}: ${str(navigationSignal!.url)} }),`);
+      formatter.add(`${pageAlias}.waitForNavigation(/*{ url: ${quote(navigationSignal!.url)} }*/),`);
 
-    const prefix = waitForNavigation ? '' : kwd('await') + ' ';
+    const prefix = popupSignal || waitForNavigation ? '' : 'await ';
     const actionCall = this._generateActionCall(action);
     const suffix = waitForNavigation ? '' : ';';
     formatter.add(`${prefix}${subject}.${actionCall}${suffix}`);
@@ -133,8 +156,8 @@ export class TerminalOutput {
     if (emitPromiseAll)
       formatter.add(`]);`);
     else if (assertNavigation)
-      formatter.add(`  ${cst('assert')}.${fnc('equal')}(${cst(pageAlias)}.${fnc('url')}(), ${str(navigationSignal!.url)});`);
-    return formatter.format();
+      formatter.add(`  // assert.equal(${pageAlias}.url(), ${quote(navigationSignal!.url)});`);
+    return this._highlight(formatter.format());
   }
 
   private _generateActionCall(action: Action): string {
@@ -152,23 +175,24 @@ export class TerminalOutput {
         if (action.clickCount > 2)
           options.clickCount = action.clickCount;
         const optionsString = formatOptions(options);
-        return `${fnc(method)}(${str(action.selector)}${optionsString})`;
+        return `${method}(${quote(action.selector)}${optionsString})`;
       }
       case 'check':
-        return `${fnc('check')}(${str(action.selector)})`;
+      case 'commit':
+          return ``;
       case 'uncheck':
-        return `${fnc('uncheck')}(${str(action.selector)})`;
+        return `uncheck(${quote(action.selector)})`;
       case 'fill':
-        return `${fnc('fill')}(${str(action.selector)}, ${str(action.text)})`;
+        return `fill(${quote(action.selector)}, ${quote(action.text)})`;
       case 'press': {
         const modifiers = toModifiers(action.modifiers);
         const shortcut = [...modifiers, action.key].join('+');
-        return `${fnc('press')}(${str(action.selector)}, ${str(shortcut)})`;
+        return `press(${quote(action.selector)}, ${quote(shortcut)})`;
       }
       case 'navigate':
-        return `${fnc('goto')}(${str(action.url)})`;
+        return `goto(${quote(action.url)})`;
       case 'select':
-        return `${fnc('selectOption')}(${str(action.selector)}, ${formatObject(action.options.length > 1 ? action.options : action.options[0])})`;
+        return `selectOption(${quote(action.selector)}, ${formatObject(action.options.length > 1 ? action.options : action.options[0])})`;
     }
   }
 }
@@ -182,7 +206,7 @@ function formatOptions(value: any): string {
 
 function formatObject(value: any): string {
   if (typeof value === 'string')
-    return str(value);
+    return quote(value);
   if (Array.isArray(value))
     return `[${value.map(o => formatObject(o)).join(', ')}]`;
   if (typeof value === 'object') {
@@ -191,9 +215,8 @@ function formatObject(value: any): string {
       return '{}';
     const tokens: string[] = [];
     for (const key of keys)
-      tokens.push(`${prp(key)}: ${formatObject(value[key])}`);
+      tokens.push(`${key}: ${formatObject(value[key])}`);
     return `{${tokens.join(', ')}}`;
   }
   return String(value);
 }
-

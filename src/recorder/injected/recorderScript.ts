@@ -18,7 +18,6 @@ import type * as actions from '../recorderActions';
 import { html } from './html';
 import { RegisteredListener, addEventListener, removeEventListeners } from './util';
 import { Throttler } from './throttler';
-import { XPathEngine } from './xpathSelectorEngine';
 import { buildSelector } from './selectorGenerator';
 
 declare global {
@@ -47,13 +46,11 @@ export default class RecorderScript {
       <div style="
         position: absolute;
         top: 0;
-        height: 24px;
         left: 0;
-        right: 0;
         background-color: rgba(0, 0, 0, 0.7);
         display: flex;
         align-items: center;
-        padding: 0 10px;
+        padding: 4px 10px;
         color: yellow;
         font-size: 12px;
         font-family:'SF Mono', Monaco, Menlo, Inconsolata, 'Courier New', monospace;
@@ -65,7 +62,7 @@ export default class RecorderScript {
         right: 0;
         bottom: 0;
         left: 0;
-        z-index: 10000;
+        z-index: 1000000;
         pointer-events: none;">
         ${this._tooltipElement}
       </div>`;
@@ -126,34 +123,49 @@ export default class RecorderScript {
     if (this._hoveredElement === event.target)
       return;
     this._hoveredElement = event.target as HTMLElement | null;
-    this._throttler.schedule(() => this._updateSelectorForHoveredElement());
+    // Mouse moved -> mark last action as committed via committing a commit action.
+    this._throttler.schedule(() => this._commitActionAndUpdateSelectorForHoveredElement());
   }
 
-  private async _updateSelectorForHoveredElement() {
+  private async _commitActionAndUpdateSelectorForHoveredElement() {
     if (!this._hoveredElement) {
       this._updateHighlight(null);
       return;
     }
+    const hoveredElement = this._hoveredElement;
     const selector = await buildSelector(this._hoveredElement);
-    if (this._hoveredSelector === selector)
+    if (this._hoveredSelector === selector || this._hoveredElement !== hoveredElement)
       return;
+    this._performAction({
+      name: 'commit',
+      committed: true,
+      signals: [],   
+    });
     this._updateHighlight(selector);
   }
 
   private async _updateHighlight(selector: string | null) {
     this._hoveredSelector = selector;
     const elements = this._hoveredSelector ? await window.queryPlaywrightSelector(this._hoveredSelector) : [];
-    this._tooltipElement.textContent = this._hoveredSelector;
+    // Do not thrash the layout.
+    const primaryBox  = selector && this._hoveredElement ? this._hoveredElement.getBoundingClientRect() : undefined;
+    const boxes = elements.map(e => e.getBoundingClientRect());
 
+    // Now destroy the layout.
+    if (primaryBox) {
+      this._tooltipElement.style.top = primaryBox.bottom + 'px';
+      this._tooltipElement.style.left = primaryBox.left + 'px';
+    }
+
+    this._tooltipElement.textContent = this._hoveredSelector;
     const pool = this._highlightElements;
     this._highlightElements = [];
-    for (const element of elements) {
-      const rect = element.getBoundingClientRect();
+    for (const box of boxes) {
       const highlightElement = pool.length ? pool.shift()! : this._createHighlightElement();
-      highlightElement.style.left = rect.x + 'px';
-      highlightElement.style.top = rect.y + 'px';
-      highlightElement.style.width = rect.width + 'px';
-      highlightElement.style.height = rect.height + 'px';
+      highlightElement.style.left = box.x + 'px';
+      highlightElement.style.top = box.y + 'px';
+      highlightElement.style.width = box.width + 'px';
+      highlightElement.style.height = box.height + 'px';
       highlightElement.style.display = 'block';
       this._highlightElements.push(highlightElement);
     }
@@ -248,10 +260,6 @@ function buttonForEvent(event: MouseEvent): 'left' | 'middle' | 'right' {
     case 3: return 'right';
   }
   return 'left';
-}
-
-function escapeForRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function consumeEvent(e: Event) {

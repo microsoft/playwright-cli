@@ -112,6 +112,7 @@ export class RecorderController {
       this._output.addAction(
         pageAlias!, frame, {
           name: 'navigate',
+          committed: true,
           url: frame.url(),
           signals: [],
         });

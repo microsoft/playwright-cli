@@ -58,21 +58,12 @@ export class Formatter {
 
 type StringFormatter = (s: string) => string;
 
-export const formatColors: { cst: StringFormatter; kwd: StringFormatter; fnc: StringFormatter; prp: StringFormatter, str: StringFormatter; cmt: StringFormatter } = {
-  cst: text => `\u001b[38;5;72m${text}\x1b[0m`,
-  kwd: text => `\u001b[38;5;39m${text}\x1b[0m`,
-  fnc: text => `\u001b[38;5;223m${text}\x1b[0m`,
-  prp: text => `\u001b[38;5;159m${text}\x1b[0m`,
-  str: text => `\u001b[38;5;130m${quote(text)}\x1b[0m`,
-  cmt: text => `\u001b[38;5;23m// ${text}\x1b[0m`
-};
-
-function quote(text: string, char: string = '\'') {
+export function quote(text: string, char: string = '\'') {
   if (char === '\'')
-    return char + text.replace(/[']/g, '\\\'').replace(/\\/g, '\\\\') + char;
+    return char + text.replace(/[']/g, '\\\'') + char;
   if (char === '"')
-    return char + text.replace(/["]/g, '\\"').replace(/\\/g, '\\\\') + char;
+    return char + text.replace(/["]/g, '\\"') + char;
   if (char === '`')
-    return char + text.replace(/[`]/g, '\\`').replace(/\\/g, '\\\\') + char;
+    return char + text.replace(/[`]/g, '\\`') + char;
   throw new Error('Invalid escape char');
 }

@@ -38,6 +38,10 @@ export type CheckAction = ActionBase & {
   selector: string,
 };
 
+export type CommitAction = ActionBase &  {
+  name: 'commit',
+};
+
 export type UncheckAction = ActionBase & {
   name: 'uncheck',
   selector: string,
@@ -67,7 +71,7 @@ export type SelectAction = ActionBase & {
   options: string[],
 };
 
-export type Action = ClickAction | CheckAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction;
+export type Action = ClickAction | CheckAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction | CommitAction;
 
 // Signals.
 
@@ -86,6 +90,8 @@ export type Signal = NavigationSignal | PopupSignal;
 
 export function actionTitle(action: Action): string {
   switch (action.name) {
+    case 'commit':
+      return ``;
     case 'check':
       return `Check ${action.selector}`;
     case 'uncheck':
