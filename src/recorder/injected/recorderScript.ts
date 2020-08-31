@@ -19,6 +19,7 @@ import { html } from './html';
 import { RegisteredListener, addEventListener, removeEventListeners } from './util';
 import { Throttler } from './throttler';
 import { XPathEngine } from './xpathSelectorEngine';
+import { buildSelector } from './selectorGenerator';
 
 declare global {
   interface Window {
@@ -133,7 +134,7 @@ export default class RecorderScript {
       this._updateHighlight(null);
       return;
     }
-    const selector = await this._buildSelector(this._hoveredElement);
+    const selector = await buildSelector(this._hoveredElement);
     if (this._hoveredSelector === selector)
       return;
     this._updateHighlight(selector);
@@ -234,76 +235,6 @@ export default class RecorderScript {
     await window.performPlaywrightAction(action);
     this._performingAction = false;
   }
-
-  private async _buildSelector(targetElement: Element): Promise<string> {
-    const path: SelectorToken[] = [];
-    let numberOfMatchingElements = Number.MAX_SAFE_INTEGER;
-    for (let element: Element | null = targetElement; element && element !== document.documentElement; element = element.parentElement) {
-      const selector = this._buildSelectorCandidate(element);
-      if (!selector)
-        continue;
-      const fullSelector = joinSelector([selector, ...path]);
-      const selectorTargets = await window.queryPlaywrightSelector(fullSelector);
-      if (selectorTargets.length === 1 && selectorTargets[0].contains(targetElement))
-        return fullSelector;
-      if (selectorTargets.length && numberOfMatchingElements > selectorTargets.length) {
-        numberOfMatchingElements = selectorTargets.length;
-        path.unshift(selector);
-      }
-    }
-    return XPathEngine.create(document.documentElement, targetElement, 'default')!;
-  }
-
-  private _buildSelectorCandidate(element: Element): SelectorToken | null {
-    const nodeName = element.nodeName.toLowerCase();
-    for (const attribute of ['data-testid', 'data-test-id', 'data-test']) {
-      if (element.hasAttribute(attribute))
-        return { engine: 'css', selector: `${nodeName}[${attribute}=${quoteString(element.getAttribute(attribute)!)}]` };
-    }
-    for (const attribute of ['aria-label', 'role']) {
-      if (element.hasAttribute(attribute))
-        return { engine: 'css', selector: `${element.nodeName.toLocaleLowerCase()}[${attribute}=${quoteString(element.getAttribute(attribute)!)}]` };
-    }
-    if (element.nodeName === 'INPUT') {
-      if (element.getAttribute('name'))
-        return { engine: 'css', selector: `input[name=${quoteString(element.getAttribute('name')!)}]` };
-      if (element.getAttribute('type'))
-        return { engine: 'css', selector: `input[type=${quoteString(element.getAttribute('type')!)}]` };
-    } else if (element.nodeName === 'IMG') {
-      if (element.getAttribute('alt'))
-        return { engine: 'css', selector: `img[alt=${quoteString(element.getAttribute('alt')!)}]` };
-    }
-    const textSelector = textSelectorForElement(element);
-    if (textSelector)
-      return { engine: 'text', selector: textSelector };
-
-    // De-prioritize id, but still use it as a last resort.
-    if (element.hasAttribute('id'))
-      return { engine: 'css', selector: `${nodeName}[id=${quoteString(element.getAttribute('id')!)}]` };
-
-    return null;
-  }
-}
-
-function textSelectorForElement(node: Node): string | null {
-  const maxLength = 30;
-  let needsRegex = false;
-  let trimmedText: string | null = null;
-  for (const child of node.childNodes) {
-    if (child.nodeType !== Node.TEXT_NODE)
-      continue;
-    if (child.textContent && child.textContent.trim()) {
-      if (trimmedText)
-        return null;
-      trimmedText = child.textContent.trim().substr(0, maxLength);
-      needsRegex = child.textContent !== trimmedText;
-    } else {
-      needsRegex = true;
-    }
-  }
-  if (!trimmedText)
-    return null;
-  return needsRegex ? `/.*${escapeForRegex(trimmedText)}.*/` : `"${trimmedText}"`;
 }
 
 function modifiersForEvent(event: MouseEvent | KeyboardEvent): number {
@@ -327,28 +258,4 @@ function consumeEvent(e: Event) {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-}
-
-function quoteString(text: string): string {
-  return `"${text.replaceAll(/"/g, '\\"')}"`;
-}
-
-type SelectorToken = {
-  engine: string;
-  selector: string;
-};
-
-function joinSelector(path: SelectorToken[]): string {
-  const tokens = [];
-  let lastEngine = '';
-  for (const { engine, selector } of path) {
-    if (tokens.length && lastEngine !== engine)
-      tokens.push('>>');
-    lastEngine = engine;
-    if (engine === 'css')
-      tokens.push(selector);
-    else
-      tokens.push(`${engine}=${selector}`);
-  }
-  return tokens.join(' ');
 }
