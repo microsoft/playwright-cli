@@ -68,8 +68,8 @@ for (const {alias, name, type} of browsers) {
 }
 
 program
-    .command('gen [url]')
-    .description('open page in browser specified via -b, --browser and start recording')
+    .command('codegen [url]')
+    .description('open given page and generate code for user actions')
     .action(function(url, command) {
       record(command.parent, url);
     }).on('--help', function() {
@@ -189,7 +189,8 @@ async function open(options: Options, url: string | undefined) {
 
 async function record(options: Options, url: string | undefined) {
   const context = await launchContext(options);
-  new RecorderController(context, process.stdout);
+  const browserType = lookupBrowserType(options.browser);
+  new RecorderController(browserType.name(), context, process.stdout);
   await openPage(context, url);
 }
 

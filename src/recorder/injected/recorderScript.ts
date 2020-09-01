@@ -45,7 +45,7 @@ export default class RecorderScript {
     window.playwrightRecorderScript = this;
 
     this._tooltipElement = html`
-      <div style="
+      <x-pw-tooltip style="
         position: absolute;
         top: 0;
         left: 0;
@@ -56,9 +56,9 @@ export default class RecorderScript {
         color: yellow;
         font-size: 12px;
         font-family:'SF Mono', Monaco, Menlo, Inconsolata, 'Courier New', monospace;
-        "></div>`;
+        "></x-pw-tooltip>`;
     this._glassPaneElement = html`
-      <div style="
+      <x-pw-glass style="
         position: fixed;
         top: 0;
         right: 0;
@@ -67,7 +67,7 @@ export default class RecorderScript {
         z-index: 1000000;
         pointer-events: none;">
         ${this._tooltipElement}
-      </div>`;
+      </x-pw-glass>`;
     setInterval(() => {
       this._refreshListenersIfNeeded();
     }, 100);
@@ -182,7 +182,7 @@ export default class RecorderScript {
 
   private _createHighlightElement(): HTMLElement {
     const highlightElement = html`
-      <div style="
+      <x-pw-highlight style="
         position: absolute;
         top: 0;
         left: 0;
@@ -191,7 +191,7 @@ export default class RecorderScript {
         border: 1px solid red;
         background-color: rgba(0, 0, 255, 0.2);
         display: none;">
-      </div>`;
+      </x-pw-highlight>`;
     this._glassPaneElement.appendChild(highlightElement);
     return highlightElement;
   }

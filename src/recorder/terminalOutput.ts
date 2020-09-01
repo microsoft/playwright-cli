@@ -27,19 +27,18 @@ export class TerminalOutput {
   private _lastActionText: string | undefined;
   private _out: Writable;
 
-  constructor(out: Writable) {
+  constructor(browserName: string, out: Writable) {
     this._out = out;
     const formatter = new Formatter();
 
     formatter.add(`
-      const assert = require('assert');
-      const { chromium, firefox, webkit } = require('playwright');
+      const { ${browserName} } = require('playwright');
 
       (async() => {
-        const browser = await chromium.launch();
+        const browser = await ${browserName}.launch({ headless: false });
         const page = await browser.newPage();
-      })();\n`);
-    this._out.write(this._highlight(formatter.format()));
+      })();`);
+    this._out.write(this._highlight(formatter.format()) + '\n');
   }
 
   _highlight(text: string)  {
@@ -59,8 +58,9 @@ export class TerminalOutput {
 
   addAction(pageAlias: string, frame: playwright.Frame, action: Action) {
     // We augment last action based on the type.
-    if (action.name === 'commit' && this._lastAction) {
-      this._lastAction.committed = true;
+    if (action.name === 'commit') {
+      if (this._lastAction)
+        this._lastAction.committed = true;
       return;
     }
     let eraseLastAction = false;
