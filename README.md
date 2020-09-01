@@ -8,7 +8,7 @@ $ npm install --save-dev playwright-cli
 
 ## Usage
 
-```sh
+```bash
 Usage: playwright-cli [options] [command]
 
 Options:
