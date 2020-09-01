@@ -19,6 +19,7 @@
 import * as program from 'commander';
 import * as playwright from 'playwright';
 import { RecorderController } from './recorder/recorderController';
+import { BrowserContext } from 'playwright';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -95,12 +96,11 @@ type Options = {
   userAgent: string | undefined
 };
 
-async function launchContext(options: Options) {
+async function launchContext(options: Options): Promise<{ browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: BrowserContext }> {
   const browserType = lookupBrowserType(options.browser);
   validateOptions(options);
   const launchOptions: playwright.LaunchOptions = {
     headless: options.headless,
-    args: []
   };
   const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] : {};
 
@@ -170,7 +170,7 @@ async function launchContext(options: Options) {
         browser.close();
     })
   });
-  return context;
+  return { browserName: browserType.name(), context, contextOptions, launchOptions };
 }
 
 async function openPage(context: playwright.BrowserContext, url: string | undefined) {
@@ -183,14 +183,13 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
 }
 
 async function open(options: Options, url: string | undefined) {
-  const context = await launchContext(options);
+  const { context } = await launchContext(options);
   await openPage(context, url);
 }
 
 async function record(options: Options, url: string | undefined) {
-  const context = await launchContext(options);
-  const browserType = lookupBrowserType(options.browser);
-  new RecorderController(browserType.name(), context, process.stdout);
+  const { context, browserName, launchOptions, contextOptions } = await launchContext(options);
+  new RecorderController(browserName, launchOptions, contextOptions, context, process.stdout);
   await openPage(context, url);
 }
 

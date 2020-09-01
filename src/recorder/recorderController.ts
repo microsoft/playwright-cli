@@ -28,8 +28,8 @@ export class RecorderController {
   private _lastPopupOrdinal = 0;
   private _timers = new Set<NodeJS.Timeout>();
 
-  constructor(browserName: string, context: playwright.BrowserContext, output: Writable) {
-    this._output = new TerminalOutput(browserName, output);
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: Writable) {
+    this._output = new TerminalOutput(browserName, launchOptions, contextOptions, output);
 
     // Input actions that potentially lead to navigation are intercepted on the page and are
     // performed by the Playwright.

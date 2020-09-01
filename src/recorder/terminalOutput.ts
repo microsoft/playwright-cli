@@ -27,16 +27,18 @@ export class TerminalOutput {
   private _lastActionText: string | undefined;
   private _out: Writable;
 
-  constructor(browserName: string, out: Writable) {
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, out: Writable) {
     this._out = out;
     const formatter = new Formatter();
+    launchOptions = { headless: false, ...launchOptions };
 
     formatter.add(`
       const { ${browserName} } = require('playwright');
 
       (async() => {
-        const browser = await ${browserName}.launch({ headless: false });
-        const page = await browser.newPage();
+        const browser = await ${browserName}.launch(${formatObject(launchOptions)});
+        const context = await browser.newContext(${formatObject(contextOptions)});
+        const page = await context.newPage();
       })();`);
     this._out.write(this._highlight(formatter.format()) + '\n');
   }
@@ -46,6 +48,8 @@ export class TerminalOutput {
     highlightedCode = querystring.unescape(highlightedCode);
     highlightedCode = highlightedCode.replace(/<span class="hljs-keyword">/g, '\x1b[38;5;205m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-built_in">/g, '\x1b[38;5;220m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-literal">/g, '\x1b[38;5;159m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-number">/g, '\x1b[38;5;78m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-string">/g, '\x1b[38;5;130m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
     highlightedCode = highlightedCode.replace(/<\/span>/g, '\x1b[0m');
@@ -205,7 +209,7 @@ function formatOptions(value: any): string {
   return ', ' + formatObject(value);
 }
 
-function formatObject(value: any): string {
+function formatObject(value: any, indent = '  '): string {
   if (typeof value === 'string')
     return quote(value);
   if (Array.isArray(value))
@@ -217,7 +221,7 @@ function formatObject(value: any): string {
     const tokens: string[] = [];
     for (const key of keys)
       tokens.push(`${key}: ${formatObject(value[key])}`);
-    return `{${tokens.join(', ')}}`;
+    return `{\n${indent}${tokens.join(`,\n${indent}`)}\n}`;
   }
   return String(value);
 }
