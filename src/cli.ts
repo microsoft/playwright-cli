@@ -23,8 +23,22 @@ import { RecorderController } from './recorder/recorderController';
 program
     .version('Version ' + require('../package.json').version)
     .option('-b, --browser <browserType>', 'browser to use, one of cr, chromium, ff, firefox, wk, webkit', 'chromium')
+    .option('--color-scheme <scheme>', 'emulate preferred color scheme, "light" or "dark"')
+    .option('--device <deviceName>', 'emulate device, for example  "iPhone 11"')
+    .option('--geolocation <coordinates>', 'specify geolocation coordinates, for example "37.819722,-122.478611"')
     .option('--headless', 'run in headless mode', false)
-    .option('--device <deviceName>', 'emulate device, for example  "iPhone 11"');
+    .option('--lang <language>', 'specify language / locale, for example "en-GB"')
+    .option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"')
+    .option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"')
+    .option('--user-agent <ua string>', 'specify user agent string')
+    .option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280, 720"');
+
+
+const browsers = [
+  { alias: 'cr', name: 'Chromium', type: 'chromium' },
+  { alias: 'ff', name: 'Firefox', type: 'firefox' },
+  { alias: 'wk', name: 'WebKit', type: 'webkit' },
+];
 
 program
     .command('open [url]')
@@ -39,8 +53,22 @@ program
       console.log('  $ -b webkit open https://example.com');
     });
 
+for (const {alias, name, type} of browsers) {
+  program
+      .command(`${alias} [url]`)
+      .description(`open page in ${name}`)
+      .action(function(url, command) {
+        open({ ...command.parent, browser: type }, url);
+      }).on('--help', function() {
+        console.log('');
+        console.log('Examples:');
+        console.log('');
+        console.log(`  $ ${alias} https://example.com`);
+      });
+}
+
 program
-    .command('record [url]')
+    .command('gen [url]')
     .description('open page in browser specified via -b, --browser and start recording')
     .action(function(url, command) {
       record(command.parent, url);
@@ -52,42 +80,97 @@ program
       console.log('  $ -b webkit record https://example.com');
     });
 
-const browsers = [
-  { initial: 'cr', name: 'Chromium', type: 'chromium' },
-  { initial: 'ff', name: 'Firefox', type: 'firefox' },
-  { initial: 'wk', name: 'WebKit', type: 'webkit' },
-];
-
-for (const {initial, name, type} of browsers) {
-  program
-      .command(`${initial} [url]`)
-      .description(`open page in ${name} browser`)
-      .action(function(url, command) {
-        open({ ...command.parent, browser: type }, url);
-      }).on('--help', function() {
-        console.log('');
-        console.log('Examples:');
-        console.log('');
-        console.log(`  $ ${initial} https://example.com`);
-      });
-}
-
 program.parse(process.argv);
 
 type Options = {
   browser: string,
+  colorScheme: string | undefined,
   device: string | undefined,
-  verbose: boolean,
+  geolocation: string,
   headless: boolean,
+  lang: string,
+  proxyServer: string,
+  timezone: string | undefined,
+  viewportSize: string | undefined,
+  userAgent: string | undefined
 };
 
 async function launchContext(options: Options) {
   const browserType = lookupBrowserType(options.browser);
-  const launchOptions: playwright.LaunchOptions = { headless: options.headless };
+  validateOptions(options);
+  const launchOptions: playwright.LaunchOptions = {
+    headless: options.headless,
+    args: []
+  };
+  const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] : {};
+
+  // Proxy
+
+  if (options.proxyServer) {
+    launchOptions.proxy = {
+      server: options.proxyServer
+    };
+  }
+
   const browser = await browserType.launch(launchOptions);
-  const defaultContextOptions = { viewport: null };
-  const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] || defaultContextOptions : defaultContextOptions;
-  return browser.newContext(contextOptions);
+
+  // Viewport size
+  if (options.viewportSize) {
+    try {
+      const [ width, height ] = options.viewportSize.split(',').map(n => parseInt(n, 10));
+      contextOptions.viewport = { width, height };
+    } catch (e) {
+      console.log('Invalid window size format: use "width, height", for example --window-size=800,600');
+      process.exit(0);
+    }
+  }
+
+  // Geolocation
+
+  if (options.geolocation) {
+    try {
+      const [latitude, longitude] = options.geolocation.split(',').map(n => parseFloat(n.trim()));
+      contextOptions.geolocation = {
+        latitude,
+        longitude
+      };
+    } catch (e) {
+      console.log('Invalid geolocation format: user lat, long, for example --geolocation="37.819722,-122.478611"');
+      process.exit(0);
+    }
+    contextOptions.permissions = ['geolocation'];
+  }
+
+  // User agent
+
+  if (options.userAgent)
+    contextOptions.userAgent = options.userAgent;
+
+  // Lang
+
+  if (options.lang)
+    contextOptions.locale = options.lang;
+
+  // Color scheme
+
+  if (options.colorScheme)
+    contextOptions.colorScheme = options.colorScheme as 'dark' | 'light';
+
+  // Timezone
+
+  if (options.timezone)
+    contextOptions.timezoneId = options.timezone;
+
+  // Close app when the last window closes.
+
+  const context = await browser.newContext(contextOptions);
+  context.on('page', page => {
+    page.on('close', () => {
+      if (!context.pages().length)
+        browser.close();
+    })
+  });
+  return context;
 }
 
 async function openPage(context: playwright.BrowserContext, url: string | undefined) {
@@ -120,4 +203,17 @@ function lookupBrowserType(name: string): playwright.BrowserType<playwright.WebK
     case 'ff': return playwright.firefox!;
   }
   program.help();
+}
+
+function validateOptions(options: Options) {
+  if (options.device && !(options.device in playwright.devices)) {
+    console.log(`Device descriptor not found: '${options.device}', available devices are:`);
+    for (let name in playwright.devices)
+      console.log(`  "${name}"`);
+    process.exit(0);
+  }
+  if (options.colorScheme && !["light", "dark"].includes(options.colorScheme)) {
+    console.log('Invalid color scheme, should be one of "light", "dark"');
+    process.exit(0);
+  }
 }
