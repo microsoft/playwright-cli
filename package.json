@@ -15,7 +15,7 @@
   "author": {
     "name": "Microsoft Corporation"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "commander": "^6.1.0",
     "highlight.js": "^10.1.2",
