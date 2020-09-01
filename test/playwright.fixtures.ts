@@ -37,7 +37,7 @@ registerWorkerFixture('browserType', async ({ browserName }, test) => {
 });
 
 registerWorkerFixture('browserName', async ({ }, test) => {
-  await test('chromium');
+  await test(process.env.BROWSER || 'chromium');
 });
 
 registerWorkerFixture('browser', async ({ browserType }, test) => {
@@ -49,7 +49,7 @@ registerWorkerFixture('browser', async ({ browserType }, test) => {
 registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
   const output = new WritableBuffer();
-  new RecorderController(context, output);
+  new RecorderController('chromium', {}, {}, context, output);
   await runTest({ context, output });
   await context.close();
 });
@@ -57,6 +57,7 @@ registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
 registerFixture('pageWrapper', async ({ contextWrapper }, runTest) => {
   const page = await contextWrapper.context.newPage();
   await runTest(new PageWrapper(page, contextWrapper.output));
+  await page.close();
 });
 
 class WritableBuffer {
