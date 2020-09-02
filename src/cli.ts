@@ -254,6 +254,10 @@ async function screenshot(options: Options, captureOptions: CaptureOptions, url:
 }
 
 async function pdf(options: Options, captureOptions: CaptureOptions, url: string, path: string) {
+  if (options.browser !== 'chromium') {
+    console.error('PDF creation is only working with Chromium');
+    process.exit(1);
+  }
   const { browser, context } = await launchContext({ ...options, browser: 'chromium' }, true);
   console.log('Navigating to ' + url);
   const page = await openPage(context, url);
