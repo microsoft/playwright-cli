@@ -203,8 +203,10 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
         browser.close();
     })
   });
-  if (options.timeout)
+  if (options.timeout) {
     context.setDefaultTimeout(parseInt(options.timeout, 10));
+    context.setDefaultNavigationTimeout(parseInt(options.timeout, 10));
+  }
   return { browser, browserName: browserType.name(), context, contextOptions, launchOptions };
 }
 
