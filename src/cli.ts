@@ -18,6 +18,7 @@
 
 import * as program from 'commander';
 import * as playwright from 'playwright';
+import * as os from 'os';
 import { RecorderController } from './recorder/recorderController';
 import { BrowserContext, Page, Browser } from 'playwright';
 
@@ -115,7 +116,6 @@ type Options = {
   colorScheme: string | undefined,
   device: string | undefined,
   geolocation: string,
-  headless: boolean,
   lang: string,
   proxyServer: string,
   timeout: string | undefined,
@@ -135,7 +135,12 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
   const launchOptions: playwright.LaunchOptions = {
     headless,
   };
-  const contextOptions: playwright.BrowserContextOptions = options.device ? playwright.devices[options.device] : {};
+  const contextOptions: playwright.BrowserContextOptions =
+      options.device ? playwright.devices[options.device] :
+      // In headful mode, use host device scale factor for things to look nice.
+      // In headless, keep things the way it works in Playwright by default.
+      // Assume high-dpi on MacOS. TODO: this is not perfect.
+      { deviceScaleFactor: headless ? undefined : (os.platform() === 'darwin' ? 2 : 1) };
 
   // Proxy
 
@@ -199,8 +204,10 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
   const context = await browser.newContext(contextOptions);
   context.on('page', page => {
     page.on('close', () => {
-      if (!context.pages().length)
-        browser.close();
+      if (browser.contexts().find(c => c.pages().length))
+        return;
+      // Avoid the error when the last page is closed because the browser has been closed.
+      browser.close().catch(e => null);
     })
   });
   context.setDefaultTimeout(parseInt(options.timeout, 10));
