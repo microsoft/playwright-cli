@@ -86,6 +86,7 @@ program
     .description('capture a page screenshot')
     .option('--wait-for-selector <selector>', 'wait for selector before taking a screenshot')
     .option('--wait-for-timeout <timeout>', 'wait for timeout in milliseconds before taking a screenshot')
+    .option('--full-page', 'Whether to take a full page screenshot (entire scrollable area)')
     .action(function(url, filename, command) {
       screenshot(command.parent, command, url, filename);
     }).on('--help', function() {
@@ -112,21 +113,22 @@ program
 program.parse(process.argv);
 
 type Options = {
-  browser: string,
-  colorScheme: string | undefined,
-  device: string | undefined,
-  geolocation: string,
-  lang: string,
-  proxyServer: string,
-  timeout: string | undefined,
-  timezone: string,
-  viewportSize: string | undefined,
-  userAgent: string | undefined,
+  browser: string;
+  colorScheme: string | undefined;
+  device: string | undefined;
+  geolocation: string;
+  lang: string;
+  proxyServer: string;
+  timeout: string | undefined;
+  timezone: string;
+  viewportSize: string | undefined;
+  userAgent: string | undefined;
 };
 
 type CaptureOptions = {
-  waitForSelector: string | undefined,
-  waitForTimeout: string | undefined
+  waitForSelector: string | undefined;
+  waitForTimeout: string | undefined;
+  fullPage: boolean;
 };
 
 async function launchContext(options: Options, headless: boolean): Promise<{ browser: Browser, browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: BrowserContext }> {
@@ -249,7 +251,7 @@ async function screenshot(options: Options, captureOptions: CaptureOptions, url:
   const page = await openPage(context, url);
   await waitForPage(page, captureOptions);
   console.log('Capturing screenshot into ' + path);
-  await page.screenshot({ path })
+  await page.screenshot({ path, fullPage: !!captureOptions.fullPage });
   await browser.close();
 }
 
