@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { it, expect } from './playwright.fixtures';
+import { it, expect, describe } from './playwright.fixtures';
 
 it('should generate for text', async ({ pageWrapper }) => {
   await pageWrapper.setContentAndWait(`<div>Text</div>`);
@@ -119,3 +119,18 @@ it('should use nested ordinals', async ({ pageWrapper }) => {
   const selector = await pageWrapper.hoverOverElement('c[mark="1"]');
   expect(selector).toBe('//b[2]/c');
 });
+
+describe("should prioritise input element attributes correctly", () => {
+  it('name', async ({ pageWrapper }) => {
+    await pageWrapper.setContentAndWait(`<input name="foobar" type="text"/>`);
+    expect(await pageWrapper.hoverOverElement('input')).toBe('input[name="foobar"]');
+  });
+  it('placeholder', async ({ pageWrapper }) => {
+    await pageWrapper.setContentAndWait(`<input placeholder="foobar" type="text"/>`);
+    expect(await pageWrapper.hoverOverElement('input')).toBe('input[placeholder="foobar"]');
+  });
+  it('type', async ({ pageWrapper }) => {
+    await pageWrapper.setContentAndWait(`<input type="text"/>`);
+    expect(await pageWrapper.hoverOverElement('input')).toBe('input[type="text"]');
+  });
+})
