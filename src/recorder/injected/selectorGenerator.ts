@@ -19,6 +19,7 @@ import { XPathEngine } from './xpathSelectorEngine';
 export async function buildSelector(targetElement: Element): Promise<string> {
   const path: SelectorToken[] = [];
   let numberOfMatchingElements = Number.MAX_SAFE_INTEGER;
+  const targetBox = targetElement.getBoundingClientRect();
   for (let element: Element | null = targetElement; element && element !== document.documentElement; element = element.parentElement) {
     const selector = buildSelectorCandidate(element);
     if (!selector)
@@ -26,6 +27,9 @@ export async function buildSelector(targetElement: Element): Promise<string> {
     const fullSelector = joinSelector([selector, ...path]);
     const selectorTargets = await window.queryPlaywrightSelector(fullSelector);
     if (!selectorTargets.length)
+      break;
+    const resolvedBox = selectorTargets[0].getBoundingClientRect();
+    if (resolvedBox.width > targetBox.width * 2 && resolvedBox.height > targetBox.height * 2)
       break;
     if (selectorTargets[0].contains(targetElement))
       return fullSelector;

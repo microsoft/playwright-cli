@@ -119,3 +119,15 @@ it('should use nested ordinals', async ({ pageWrapper }) => {
   const selector = await pageWrapper.hoverOverElement('c[mark="1"]');
   expect(selector).toBe('//b[2]/c');
 });
+
+it('should use the parent with data-testid', async ({ pageWrapper }) => {
+  await pageWrapper.setContentAndWait(`<div>Text</div><div data-testid=a><img style="width: 200px; height: 200px;"/></div>`);
+  const selector = await pageWrapper.hoverOverElement('img');
+  expect(selector).toBe('div[data-testid="a"]');
+});
+
+it('should not use a very large parent', async ({ pageWrapper }) => {
+  await pageWrapper.setContentAndWait(`<div style="height: 600px" data-testid=a><img style="width: 200px; height: 200px;"/></div>`);
+  const selector = await pageWrapper.hoverOverElement('img');
+  expect(selector).toBe('//img');
+});
