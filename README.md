@@ -4,7 +4,7 @@
 
 ## [Usage](#usage) | [Examples](#examples)
 
-Playwright CLI is a CLI wrapper around the [Playwright](https://github.com/playwright) library.
+Playwright CLI is a CLI wrapper around the [Playwright](https://github.com/Microsoft/playwright) library.
 
 Playwright CLI is built to enable shell access to popular Playwright commands such as capturing screenshots, saving as PDF. But it is also useful if you want to see what your web page would look like in WebKit (Safari) while being on Window or Linux.
 
