@@ -50,10 +50,10 @@ function buildSelectorCandidate(element: Element): SelectorToken | null {
   if (element.nodeName === 'INPUT') {
     if (element.getAttribute('name'))
       return { engine: 'css', selector: `input[name=${quoteString(element.getAttribute('name')!)}]` };
+    if (element.getAttribute('placeholder'))
+      return { engine: 'css', selector: `input[placeholder=${quoteString(element.getAttribute('placeholder')!)}]` };
     if (element.getAttribute('type'))
       return { engine: 'css', selector: `input[type=${quoteString(element.getAttribute('type')!)}]` };
-    if (element.getAttribute('placeholder'))
-       return { engine: 'css', selector: `input[placeholder=${quoteString(element.getAttribute('placeholder')!)}]` };
   } else if (element.nodeName === 'IMG') {
     if (element.getAttribute('alt'))
       return { engine: 'css', selector: `img[alt=${quoteString(element.getAttribute('alt')!)}]` };
