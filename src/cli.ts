@@ -214,6 +214,10 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
     context.setDefaultTimeout(parseInt(options.timeout, 10));
     context.setDefaultNavigationTimeout(parseInt(options.timeout, 10));
   }
+
+  // Omit options that we add automatically for presentation purpose.
+  delete launchOptions.headless;
+  delete contextOptions.deviceScaleFactor;
   return { browser, browserName: browserType.name(), context, contextOptions, launchOptions };
 }
 

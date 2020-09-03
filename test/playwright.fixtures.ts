@@ -102,10 +102,14 @@ class WritableBuffer {
 class PageWrapper {
   page: playwright.Page;
   output: WritableBuffer;
+  _highlightCallback: (arg: string) => void;
+  _highlightInstalled: boolean;
 
   constructor(page: Page, output: WritableBuffer) {
     this.page = page;
     this.output = output;
+    this._highlightInstalled = false;
+    this._highlightCallback = () => {};
   }
 
   async setContentAndWait(content: string) {
@@ -120,11 +124,12 @@ class PageWrapper {
   }
 
   async hoverOverElement(selector: string): Promise<string> {
-    let callback: (selector: string) => void;
-    const result = new Promise<string>(f => callback = f);
-    await this.page.exposeBinding('_highlightUpdatedForTest', (source, arg) => callback(arg))
+    if (!this._highlightInstalled) {
+      this._highlightInstalled = true;
+      await this.page.exposeBinding('_highlightUpdatedForTest', (source, arg) => this._highlightCallback(arg));
+    }
     const [ generatedSelector ] = await Promise.all([
-      result,
+      new Promise<string>(f => this._highlightCallback = f),
       this.page.dispatchEvent(selector, 'mousemove', { detail: 1 })
     ]);
     return generatedSelector;
