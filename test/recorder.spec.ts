@@ -172,7 +172,7 @@ it('should await popup', async ({ pageWrapper }) => {
   ]);
   expect(output.text()).toContain(`
   // Click text="link"
-  const [popup1] = await Promise.all([
+  const [page1] = await Promise.all([
     page.waitForEvent('popup'),
     page.click('text="link"')
   ]);`);
@@ -198,4 +198,26 @@ it('should await navigation', async ({ pageWrapper }) => {
     page.click('text="link"')
   ]);`);
   expect(page.url()).toContain('about:blank#foo');
+});
+
+it('should contain open page', async ({ pageWrapper }) => {
+  const { output } = pageWrapper;
+  await pageWrapper.setContentAndWait(``);
+  expect(output.text()).toContain(`const page = await context.newPage();`);
+});
+
+it('should contain second page', async ({ contextWrapper, pageWrapper }) => {
+  const { output } = pageWrapper;
+  await pageWrapper.setContentAndWait(``);
+  await contextWrapper.context.newPage();
+  await output.waitFor('page1');
+  expect(output.text()).toContain('const page1 = await context.newPage();');
+});
+
+it('should contain close page', async ({ contextWrapper, pageWrapper }) => {
+  const { output } = pageWrapper;
+  await pageWrapper.setContentAndWait(``);
+  await contextWrapper.context.newPage();
+  await pageWrapper.page.close();
+  await output.waitFor('page.close();');
 });
