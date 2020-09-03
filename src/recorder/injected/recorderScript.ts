@@ -34,6 +34,7 @@ const recorderSymbol = Symbol('recorderSymbol');
 export default class RecorderScript {
   private _performingAction = false;
   private _glassPaneElement: HTMLElement;
+  private _glassPaneShadow: ShadowRoot;
   private _highlightElements: HTMLElement[] = [];
   private _tooltipElement: HTMLElement;
   private _listeners: RegisteredListener[] = [];
@@ -66,8 +67,10 @@ export default class RecorderScript {
         left: 0;
         z-index: 1000000;
         pointer-events: none;">
-        ${this._tooltipElement}
       </x-pw-glass>`;
+    // Use a closed shadow root to prevent selectors matching our internal previews.
+    this._glassPaneShadow = this._glassPaneElement.attachShadow({ mode: 'closed' });
+    this._glassPaneShadow.appendChild(this._tooltipElement);
     setInterval(() => {
       this._refreshListenersIfNeeded();
     }, 100);
@@ -99,6 +102,18 @@ export default class RecorderScript {
     return true;
   }
 
+  private _ensureSelectorForEvent(target: HTMLElement | null): string | null {
+    // When user does not move mouse after navigation and just clicks,
+    // we might not have a hovered element/selector yet.
+    //
+    // TODO: we could build a selector based on the event target.
+    // However, building a selector is an async process so we can get
+    // a race against subsequent actions. For now, require user to move the mouse.
+    if (!this._hoveredSelector)
+      return null;
+    return this._hoveredSelector;
+  }
+
   private _onClick(event: MouseEvent) {
     if ((event.target as Element).nodeName === 'SELECT')
       return;
@@ -111,9 +126,13 @@ export default class RecorderScript {
     if (!this._consumeForAction(event))
       return;
 
+    const selector = this._ensureSelectorForEvent(event.target as HTMLElement | null);
+    if (!selector)
+      return;
+
     this._performAction({
       name: 'click',
-      selector: this._hoveredSelector!,
+      selector,
       signals: [],
       button: buttonForEvent(event),
       modifiers: modifiersForEvent(event),
@@ -141,7 +160,7 @@ export default class RecorderScript {
     this._performAction({
       name: 'commit',
       committed: true,
-      signals: [],   
+      signals: [],
     });
     this._updateHighlight(selector);
   }
@@ -192,7 +211,7 @@ export default class RecorderScript {
         background-color: rgba(0, 0, 255, 0.2);
         display: none;">
       </x-pw-highlight>`;
-    this._glassPaneElement.appendChild(highlightElement);
+    this._glassPaneShadow.appendChild(highlightElement);
     return highlightElement;
   }
 
@@ -202,20 +221,26 @@ export default class RecorderScript {
       if ((inputElement.type || '').toLowerCase() === 'checkbox') {
         if (!this._consumeForAction(event))
           return;
+        const selector = this._ensureSelectorForEvent(inputElement);
+        if (!selector)
+          return;
         this._performAction({
           name: inputElement.checked ? 'check' : 'uncheck',
-          selector: this._hoveredSelector!,
+          selector,
           signals: [],
         });
         return;
       }
 
-      //  Non-navigating actions are simply recorded by Playwright.
+      // Non-navigating actions are simply recorded by Playwright.
+      const selector = this._ensureSelectorForEvent(inputElement);
+      if (!selector)
+        return;
       window.recordPlaywrightAction({
         name: 'fill',
-        selector: this._hoveredSelector!,
+        selector,
         signals: [],
-        text: (event.target! as HTMLInputElement).value,
+        text: inputElement.value,
       });
     }
 
@@ -223,9 +248,12 @@ export default class RecorderScript {
       const selectElement = event.target as HTMLSelectElement;
       if (!this._consumeForAction(event))
         return;
+      const selector = this._ensureSelectorForEvent(selectElement);
+      if (!selector)
+        return;
       this._performAction({
         name: 'select',
-        selector: this._hoveredSelector!,
+        selector,
         options: [...selectElement.selectedOptions].map(option => option.value),
         signals: []
       });
@@ -237,9 +265,12 @@ export default class RecorderScript {
       return;
     if (!this._consumeForAction(event))
       return;
+    const selector = this._ensureSelectorForEvent(event.target as HTMLElement | null);
+    if (!selector)
+      return;
     this._performAction({
       name: 'press',
-      selector: this._hoveredSelector!,
+      selector,
       signals: [],
       key: event.key,
       modifiers: modifiersForEvent(event),

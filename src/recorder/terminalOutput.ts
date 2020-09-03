@@ -36,8 +36,8 @@ export class TerminalOutput {
       const { ${browserName} } = require('playwright');
 
       (async() => {
-        const browser = await ${browserName}.launch(${formatObject(launchOptions)});
-        const context = await browser.newContext(${formatObject(contextOptions)});
+        const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
+        const context = await browser.newContext(${formatObjectOrVoid(contextOptions)});
         const page = await context.newPage();
       })();`);
     this._out.write(this._highlight(formatter.format()) + '\n');
@@ -54,7 +54,7 @@ export class TerminalOutput {
     highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
     highlightedCode = highlightedCode.replace(/<\/span>/g, '\x1b[0m');
     highlightedCode = highlightedCode.replace(/&#x27;/g, "'");
-    highlightedCode = highlightedCode.replace(/&quot;/g, '"');    
+    highlightedCode = highlightedCode.replace(/&quot;/g, '"');
     highlightedCode = highlightedCode.replace(/&gt;/g, '>');
     highlightedCode = highlightedCode.replace(/&lt;/g, '<');
     return highlightedCode;
@@ -224,4 +224,9 @@ function formatObject(value: any, indent = '  '): string {
     return `{\n${indent}${tokens.join(`,\n${indent}`)}\n}`;
   }
   return String(value);
+}
+
+function formatObjectOrVoid(value: any, indent = '  '): string {
+  const result = formatObject(value, indent);
+  return result === '{}' ? '' : result;
 }

@@ -34,6 +34,39 @@ it('should click', async ({ pageWrapper }) => {
   expect(message.text()).toBe('click');
 });
 
+it('should not target selector preview by text regexp', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<span>dummy</span>`);
+
+  // Force highlight.
+  await pageWrapper.hoverOverElement('span');
+
+  // Append text after highlight.
+  await page.evaluate(() => {
+    const div = document.createElement('div');
+    div.setAttribute('onclick', "console.log('click')");
+    div.textContent = ' Some long text here ';
+    document.documentElement.appendChild(div);
+  });
+
+  const selector = await pageWrapper.hoverOverElement('div');
+  expect(selector).toBe('text=/.*Some long text here.*/');
+
+  // Sanity check that selector does not match our highlight.
+  const divContents = await page.$eval(selector, div => div.outerHTML);
+  expect(divContents).toBe(`<div onclick="console.log('click')"> Some long text here </div>`);
+
+  const [message] = await Promise.all([
+    page.waitForEvent('console'),
+    output.waitFor('click'),
+    page.dispatchEvent('div', 'click', { detail: 1 })
+  ]);
+  expect(output.text()).toContain(`
+  // Click text=/.*Some long text here.*/
+  await page.click('text=/.*Some long text here.*/');`);
+  expect(message.text()).toBe('click');
+});
+
 it('should fill', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
   await pageWrapper.setContentAndWait(`<input id="input" name="name" oninput="console.log(input.value)"></input>`);
