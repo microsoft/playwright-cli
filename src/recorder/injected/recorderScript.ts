@@ -108,7 +108,7 @@ export default class RecorderScript {
         return;
     }
 
-    if (!this._consumeForAction(event))
+    if (!this._consumeForAction(event) || !this._hoveredSelector)
       return;
 
     this._performAction({
