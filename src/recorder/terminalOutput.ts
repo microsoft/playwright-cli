@@ -38,7 +38,6 @@ export class TerminalOutput {
       (async() => {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
         const context = await browser.newContext(${formatObjectOrVoid(contextOptions)});
-        const page = await context.newPage();
       })();`);
     this._out.write(this._highlight(formatter.format()) + '\n');
   }
@@ -119,6 +118,11 @@ export class TerminalOutput {
     formatter.newLine();
     formatter.add('// ' + actionTitle(action));
 
+    if (action.name === 'openPage') {
+      formatter.add(`const ${pageAlias} = await context.newPage();`);
+      return this._highlight(formatter.format());
+    }
+
     const subject = !frame.parentFrame() ? pageAlias :
       `${pageAlias}.frame(${formatObject({ url: frame.url() })})`;
 
@@ -166,6 +170,10 @@ export class TerminalOutput {
 
   private _generateActionCall(action: Action): string {
     switch (action.name)  {
+      case 'openPage':
+        throw Error('Not reached');
+      case 'closePage':
+        return 'close()';
       case 'click': {
         let method = 'click';
         if (action.clickCount === 2)

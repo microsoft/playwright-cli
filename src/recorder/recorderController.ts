@@ -58,13 +58,35 @@ export class RecorderController {
     });
   }
 
-  private _onPage(page: playwright.Page) {
+  private async _onPage(page: playwright.Page) {
     // First page is called page, others are called popup1, popup2, etc.
-    const pageName = this._pageAliases.size ? 'popup' + ++this._lastPopupOrdinal : 'page';
-    this._pageAliases.set(page, pageName);
-    page.on('close', () => this._pageAliases.delete(page));
+    page.on('close', () => {
+      this._pageAliases.delete(page);
+      this._output.addAction(
+        pageAlias, page.mainFrame(), {
+          name: 'closePage',
+          committed: true,
+          signals: [],
+        });
+    });
     page.on('framenavigated', frame => this._onFrameNavigated(frame, page));
     page.on('popup', popup => this._onPopup(page, popup));
+    const suffix = this._pageAliases.size ? String(++this._lastPopupOrdinal) : '';
+    const pageAlias = 'page' + suffix;
+    this._pageAliases.set(page, pageAlias);
+
+    const isPopup = !!await page.opener();
+    // Could happen due to the await above.
+    if (page.isClosed())
+      return;
+    if (!isPopup) {
+      this._output.addAction(
+        pageAlias, page.mainFrame(), {
+          name: 'openPage',
+          committed: true,
+          signals: [],
+        });
+    }
   }
 
   private async _performAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {

@@ -15,12 +15,19 @@
  */
 
 export type ActionName =
-  'goto' |
+  'check' |
+  'click' |
+  'closePage' |
+  'commit' |
   'fill' |
+  'navigate' |
+  'openPage' |
   'press' |
-  'select';
+  'select' |
+  'uncheck';
 
 export type ActionBase = {
+  name: ActionName,
   signals: Signal[],
   committed?: boolean,
 }
@@ -58,6 +65,14 @@ export type NavigateAction = ActionBase & {
   url: string,
 };
 
+export type OpenPageAction = ActionBase & {
+  name: 'openPage',
+};
+
+export type ClosesPageAction = ActionBase & {
+  name: 'closePage',
+};
+
 export type PressAction = ActionBase & {
   name: 'press',
   selector: string,
@@ -71,7 +86,7 @@ export type SelectAction = ActionBase & {
   options: string[],
 };
 
-export type Action = ClickAction | CheckAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction | CommitAction;
+export type Action = ClickAction | CheckAction | ClosesPageAction | OpenPageAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction | CommitAction;
 
 // Signals.
 
@@ -90,8 +105,12 @@ export type Signal = NavigationSignal | PopupSignal;
 
 export function actionTitle(action: Action): string {
   switch (action.name) {
+    case 'openPage':
+      return `Open new page`;
+    case 'closePage':
+        return `Close page`;
     case 'commit':
-      return ``;
+        return ``;
     case 'check':
       return `Check ${action.selector}`;
     case 'uncheck':
