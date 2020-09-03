@@ -22,7 +22,7 @@
     "playwright": "1.3.0-next.1598921133538"
   },
   "devDependencies": {
-    "@playwright/test-runner": "^0.2.2",
+    "@playwright/test-runner": "^0.2.10",
     "ts-loader": "^8.0.3",
     "typescript": "^4.0.2",
     "webpack": "^4.44.1",

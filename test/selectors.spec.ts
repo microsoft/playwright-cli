@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import './playwright.fixtures';
+import { it, expect } from './playwright.fixtures';
 
 it('should generate for text', async ({ pageWrapper }) => {
   await pageWrapper.setContentAndWait(`<div>Text</div>`);

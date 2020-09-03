@@ -18,6 +18,7 @@ import * as playwright from 'playwright';
 import { registerFixture, registerWorkerFixture } from '@playwright/test-runner';
 import { RecorderController } from '../lib/recorder/recorderController';
 import { Page } from 'playwright';
+export { it, fit, xit, describe, fdescribe, xdescribe, expect } from '@playwright/test-runner';
 
 declare global {
   interface WorkerState {
