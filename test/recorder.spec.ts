@@ -174,7 +174,7 @@ it('should await popup', async ({ pageWrapper }) => {
   // Click text="link"
   const [popup1] = await Promise.all([
     page.waitForEvent('popup'),
-    page.click('text="link"');
+    page.click('text="link"')
   ]);`);
   expect(popup.url()).toBe('about:blank');
 });
