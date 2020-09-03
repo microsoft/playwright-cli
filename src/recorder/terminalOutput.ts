@@ -154,7 +154,7 @@ export class TerminalOutput {
 
     const prefix = popupSignal || waitForNavigation ? '' : 'await ';
     const actionCall = this._generateActionCall(action);
-    const suffix = waitForNavigation ? '' : ';';
+    const suffix = (waitForNavigation || emitPromiseAll) ? '' : ';';
     formatter.add(`${prefix}${subject}.${actionCall}${suffix}`);
 
     if (emitPromiseAll)
