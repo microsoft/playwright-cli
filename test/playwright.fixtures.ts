@@ -124,15 +124,23 @@ class PageWrapper {
     ]);
   }
 
-  async hoverOverElement(selector: string): Promise<string> {
+  async waitForHighlight(action: () => Promise<void>): Promise<string> {
     if (!this._highlightInstalled) {
       this._highlightInstalled = true;
       await this.page.exposeBinding('_highlightUpdatedForTest', (source, arg) => this._highlightCallback(arg));
     }
     const [ generatedSelector ] = await Promise.all([
       new Promise<string>(f => this._highlightCallback = f),
-      this.page.dispatchEvent(selector, 'mousemove', { detail: 1 })
+      action()
     ]);
     return generatedSelector;
+  }
+
+  async hoverOverElement(selector: string): Promise<string> {
+    return this.waitForHighlight(() => this.page.dispatchEvent(selector, 'mousemove', { detail: 1 }));
+  }
+
+  async focusElement(selector: string): Promise<string> {
+    return this.waitForHighlight(() => this.page.focus(selector));
   }
 }

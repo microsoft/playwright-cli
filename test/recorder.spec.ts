@@ -70,8 +70,7 @@ it('should not target selector preview by text regexp', async ({ pageWrapper }) 
 it('should fill', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
   await pageWrapper.setContentAndWait(`<input id="input" name="name" oninput="console.log(input.value)"></input>`);
-
-  const selector = await pageWrapper.hoverOverElement('input');
+  const selector = await pageWrapper.focusElement('input');
   expect(selector).toBe('input[name="name"]');
 
   const [message] = await Promise.all([
@@ -89,7 +88,7 @@ it('should press', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
   await pageWrapper.setContentAndWait(`<input name="name" onkeypress="console.log('press')"></input>`);
 
-  const selector = await pageWrapper.hoverOverElement('input');
+  const selector = await pageWrapper.focusElement('input');
   expect(selector).toBe('input[name="name"]');
 
   const [message] = await Promise.all([
@@ -113,7 +112,26 @@ it('should check', async ({ pageWrapper }) => {
   const [message] = await Promise.all([
     page.waitForEvent('console'),
     output.waitFor('check'),
-    page.dispatchEvent('input', 'click', { detail: 1 })
+    page.click('input')
+  ]);
+  await output.waitFor('check');
+  expect(output.text()).toContain(`
+  // Check input[name="accept"]
+  await page.check('input[name="accept"]');`);
+  expect(message.text()).toBe("true");
+});
+
+it('should check with keyboard', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="console.log(checkbox.checked)"></input>`);
+
+  const selector = await pageWrapper.focusElement('input');
+  expect(selector).toBe('input[name="accept"]');
+
+  const [message] = await Promise.all([
+    page.waitForEvent('console'),
+    output.waitFor('check'),
+    page.keyboard.press('Space')
   ]);
   await output.waitFor('check');
   expect(output.text()).toContain(`
@@ -132,7 +150,7 @@ it('should uncheck', async ({ pageWrapper }) => {
   const [message] = await Promise.all([
     page.waitForEvent('console'),
     output.waitFor('uncheck'),
-    page.dispatchEvent('input', 'click', { detail: 1 })
+    page.click('input')
   ]);
   expect(output.text()).toContain(`
   // Uncheck input[name="accept"]
