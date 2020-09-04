@@ -88,7 +88,7 @@ npx playwright-cli \
 # Emulate iPhone 11.
 npx playwright-cli \
   --device="iPhone 11" \
-  wk wikipedia.org
+  open wikipedia.org
 ```
 
 ### Screenshot

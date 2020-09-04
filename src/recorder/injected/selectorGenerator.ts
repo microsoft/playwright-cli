@@ -27,7 +27,7 @@ export async function buildSelector(targetElement: Element): Promise<string> {
     const selectorTargets = await window.queryPlaywrightSelector(fullSelector);
     if (!selectorTargets.length)
       break;
-    if (selectorTargets[0].contains(targetElement))
+    if (selectorTargets[0] === targetElement)
       return fullSelector;
     if (selectorTargets.length && numberOfMatchingElements > selectorTargets.length) {
       numberOfMatchingElements = selectorTargets.length;

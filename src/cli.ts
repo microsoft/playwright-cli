@@ -132,8 +132,8 @@ type CaptureOptions = {
 };
 
 async function launchContext(options: Options, headless: boolean): Promise<{ browser: Browser, browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: BrowserContext }> {
-  const browserType = lookupBrowserType(options.browser);
   validateOptions(options);
+  const browserType = lookupBrowserType(options);
   const launchOptions: playwright.LaunchOptions = {
     headless,
   };
@@ -143,6 +143,12 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
       // In headless, keep things the way it works in Playwright by default.
       // Assume high-dpi on MacOS. TODO: this is not perfect.
       { deviceScaleFactor: headless ? undefined : (os.platform() === 'darwin' ? 2 : 1) };
+
+  // Work around the WebKit GTK scrolling issue.
+  if (browserType.name() === 'webkit' && process.platform === 'linux') {
+    delete contextOptions.hasTouch;
+    delete contextOptions.isMobile;
+  }
 
   // Proxy
 
@@ -279,7 +285,12 @@ async function codegen(options: Options, url: string | undefined) {
   await openPage(context, url);
 }
 
-function lookupBrowserType(name: string): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {
+function lookupBrowserType(options: Options): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {
+  let name = options.browser;
+  if (options.device) {
+    const device = playwright.devices[options.device];
+    name = device.defaultBrowserType;
+  }
   switch (name) {
     case 'chromium': return playwright.chromium!;
     case 'webkit': return playwright.webkit!;
