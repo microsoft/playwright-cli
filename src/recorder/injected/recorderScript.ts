@@ -47,17 +47,29 @@ export default class RecorderScript {
 
     this._tooltipElement = html`
       <x-pw-tooltip style="
+        align-items: center;
+        backdrop-filter: blur(5px);
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3.6px 3.7px,
+                    rgba(0, 0, 0, 0.15) 0px 12.1px 12.3px,
+                    rgba(0, 0, 0, 0.1) 0px -2px 4px,
+                    rgba(0, 0, 0, 0.15) 0px -12.1px 24px,
+                    rgba(0, 0, 0, 0.25) 0px 54px 55px;
+        color: rgb(204, 204, 204);
+        display: flex;
+        font-family: 'Dank Mono', 'Operator Mono', Inconsolata, 'Fira Mono',
+                     'SF Mono', Monaco, 'Droid Sans Mono', 'Source Code Pro', monospace;
+        font-size: 12.8px;
+        font-weight: normal;
+        left: 0;
+        line-height: 1.5;
+        max-width: 600px;
+        padding: 3.2px 5.12px 3.2px;
         position: absolute;
         top: 0;
-        left: 0;
-        background-color: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        padding: 4px 10px;
-        color: yellow;
-        font-size: 12px;
-        font-family:'SF Mono', Monaco, Menlo, Inconsolata, 'Courier New', monospace;
         "></x-pw-tooltip>`;
+
     this._glassPaneElement = html`
       <x-pw-glass style="
         position: fixed;
@@ -86,6 +98,7 @@ export default class RecorderScript {
       addEventListener(document, 'input', event => this._onInput(event), true),
       addEventListener(document, 'keydown', event => this._onKeyDown(event as KeyboardEvent), true),
       addEventListener(document, 'mousemove', event => this._onMouseMove(event as MouseEvent), true),
+      addEventListener(document, 'mouseleave', event => this._onMouseLeave(event as MouseEvent), true),
       addEventListener(document, 'scroll', event => this._updateHighlight(this._hoveredSelector), true),
     ];
     document.documentElement.appendChild(this._glassPaneElement);
@@ -148,6 +161,13 @@ export default class RecorderScript {
     this._throttler.schedule(() => this._commitActionAndUpdateSelectorForHoveredElement());
   }
 
+  private async _onMouseLeave(event: MouseEvent) {
+    if ((event.target as Node).nodeType === Node.DOCUMENT_NODE)  {
+      this._hoveredElement = null;
+      this._throttler.schedule(() => this._commitActionAndUpdateSelectorForHoveredElement(), true);
+    }
+  }
+
   private async _commitActionAndUpdateSelectorForHoveredElement() {
     if (!this._hoveredElement) {
       this._updateHighlight(null);
@@ -167,22 +187,46 @@ export default class RecorderScript {
 
   private async _updateHighlight(selector: string | null) {
     this._hoveredSelector = selector;
+    // Async hop, code below is sync.
     const elements = this._hoveredSelector ? await window.queryPlaywrightSelector(this._hoveredSelector) : [];
-    // Do not thrash the layout.
+
+    // Code below should trigger one layout and leave with the
+    // destroyed layout.
+
+    // Destroy the layout
+    this._tooltipElement.textContent = this._hoveredSelector;
+    this._tooltipElement.style.top = '0';
+    this._tooltipElement.style.left = '0';
+    this._tooltipElement.style.display = 'flex';
+
+    // Trigger layout.
     const primaryBox  = selector && this._hoveredElement ? this._hoveredElement.getBoundingClientRect() : undefined;
     const boxes = elements.map(e => e.getBoundingClientRect());
+    const tooltipWidth = this._tooltipElement.offsetWidth;
+    const tooltipHeight = this._tooltipElement.offsetHeight;
+    const totalWidth = this._glassPaneElement.offsetWidth;
+    const totalHeight = this._glassPaneElement.offsetHeight;
 
-    // Now destroy the layout.
+    // Destroy the layout again.
     if (primaryBox) {
-      this._tooltipElement.style.top = primaryBox.bottom + 'px';
-      this._tooltipElement.style.left = primaryBox.left + 'px';
+      let anchorLeft = primaryBox.left;
+      if (anchorLeft + tooltipWidth > totalWidth - 5)
+        anchorLeft = totalWidth - tooltipWidth - 5;
+      let anchorTop = primaryBox.bottom + 5;
+      if (anchorTop + tooltipHeight > totalHeight - 5)
+        anchorTop = primaryBox.top - tooltipHeight - 5;
+
+      this._tooltipElement.style.top = anchorTop + 'px';
+      this._tooltipElement.style.left = anchorLeft + 'px';
+    } else {
+      this._tooltipElement.style.display = 'none';
     }
 
-    this._tooltipElement.textContent = this._hoveredSelector;
     const pool = this._highlightElements;
     this._highlightElements = [];
     for (const box of boxes) {
       const highlightElement = pool.length ? pool.shift()! : this._createHighlightElement();
+      highlightElement.style.borderColor = this._highlightElements.length ? 'hotpink' : '#8929ff';
       highlightElement.style.left = box.x + 'px';
       highlightElement.style.top = box.y + 'px';
       highlightElement.style.width = box.width + 'px';
@@ -207,8 +251,8 @@ export default class RecorderScript {
         left: 0;
         width: 0;
         height: 0;
-        border: 1px solid red;
-        background-color: rgba(0, 0, 255, 0.2);
+        border: 1px solid;
+        box-sizing: border-box;
         display: none;">
       </x-pw-highlight>`;
     this._glassPaneShadow.appendChild(highlightElement);
