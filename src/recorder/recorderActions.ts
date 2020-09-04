@@ -18,7 +18,6 @@ export type ActionName =
   'check' |
   'click' |
   'closePage' |
-  'commit' |
   'fill' |
   'navigate' |
   'openPage' |
@@ -43,10 +42,6 @@ export type ClickAction = ActionBase & {
 export type CheckAction = ActionBase & {
   name: 'check',
   selector: string,
-};
-
-export type CommitAction = ActionBase &  {
-  name: 'commit',
 };
 
 export type UncheckAction = ActionBase & {
@@ -86,7 +81,7 @@ export type SelectAction = ActionBase & {
   options: string[],
 };
 
-export type Action = ClickAction | CheckAction | ClosesPageAction | OpenPageAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction | CommitAction;
+export type Action = ClickAction | CheckAction | ClosesPageAction | OpenPageAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction;
 
 // Signals.
 
@@ -108,9 +103,7 @@ export function actionTitle(action: Action): string {
     case 'openPage':
       return `Open new page`;
     case 'closePage':
-        return `Close page`;
-    case 'commit':
-        return ``;
+      return `Close page`;
     case 'check':
       return `Check ${action.selector}`;
     case 'uncheck':

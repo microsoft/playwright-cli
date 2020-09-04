@@ -61,11 +61,6 @@ export class TerminalOutput {
 
   addAction(pageAlias: string, frame: playwright.Frame, action: Action) {
     // We augment last action based on the type.
-    if (action.name === 'commit') {
-      if (this._lastAction)
-        this._lastAction.committed = true;
-      return;
-    }
     let eraseLastAction = false;
     if (this._lastAction && action.name === 'fill' && this._lastAction.name === 'fill') {
       if (action.selector === this._lastAction.selector)
@@ -191,8 +186,6 @@ export class TerminalOutput {
       }
       case 'check':
         return `check(${quote(action.selector)})`;
-      case 'commit':
-          return ``;
       case 'uncheck':
         return `uncheck(${quote(action.selector)})`;
       case 'fill':

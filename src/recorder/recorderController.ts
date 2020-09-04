@@ -40,6 +40,10 @@ export class RecorderController {
     context.exposeBinding('recordPlaywrightAction',
         (source: BindingSource, action: actions.Action) => this._recordAction(source.frame, source.page, action)).catch(e => {});
 
+    // Commits last action so that no furhter signals are added to it.
+    context.exposeBinding('commitLastAction',
+        (source: BindingSource, action: actions.Action) => this._commitLastAction()).catch(e => {});
+
     // Other non-essential actions are simply being recorded.
     context.exposeBinding('queryPlaywrightSelector', async (source: BindingSource, selector: string) => {
       return await source.frame.$$(selector).catch(e => []);
@@ -87,6 +91,12 @@ export class RecorderController {
           signals: [],
         });
     }
+  }
+
+  private _commitLastAction() {
+    const action = this._output.lastAction();
+    if (action)
+      action.committed = true;
   }
 
   private async _performAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {
