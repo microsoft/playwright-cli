@@ -120,6 +120,17 @@ it('should use nested ordinals', async ({ pageWrapper }) => {
   expect(selector).toBe('//b[2]/c');
 });
 
+
+it('should not use input[value]', async ({ pageWrapper }) => {
+  await pageWrapper.setContentAndWait(`
+    <input value="one">
+    <input value="two" mark="1">
+    <input value="three">
+  `);
+  const selector = await pageWrapper.hoverOverElement('input[mark="1"]');
+  expect(selector).toBe('//input[2]');
+});
+
 describe("should prioritise input element attributes correctly", () => {
   it('name', async ({ pageWrapper }) => {
     await pageWrapper.setContentAndWait(`<input name="foobar" type="text"/>`);

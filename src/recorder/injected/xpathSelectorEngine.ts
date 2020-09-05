@@ -86,7 +86,7 @@ export const XPathEngine = {
     const importantAttributes = new Map<string, string[]>([
       [ 'form', [ 'action' ] ],
       [ 'img', [ 'alt' ] ],
-      [ 'input', [ 'placeholder', 'type', 'name', 'value' ] ],
+      [ 'input', [ 'placeholder', 'type', 'name' ] ],
     ]);
 
     let usedTextConditions = false;
