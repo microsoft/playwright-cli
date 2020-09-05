@@ -14,7 +14,7 @@ Playwright CLI is built to enable shell access to popular Playwright commands su
 Install CLI as follows:
 
 ```
-$ npm install --D playwright-cli
+$ npm install -D playwright-cli
 ```
 
 Print Playwright CLI help
