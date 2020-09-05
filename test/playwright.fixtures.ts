@@ -16,23 +16,26 @@
 
 import * as http from 'http'
 import * as playwright from 'playwright';
-import { parameters, registerFixture, registerWorkerFixture } from '@playwright/test-runner';
+import { parameters, fixtures as baseFixtures} from '@playwright/test-runner';
 import { RecorderController } from '../lib/recorder/recorderController';
 import { Page } from 'playwright';
-export { it, fit, xit, describe, fdescribe, xdescribe, expect } from '@playwright/test-runner';
 
-declare global {
-  interface WorkerState {
-    browserType: playwright.BrowserType<playwright.Browser>;
-    browserName: string;
-    browser: playwright.Browser;
-  }
-  interface TestState {
-    contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
-    pageWrapper: PageWrapper;
-    httpServer: httpServer;
-  }
-}
+type WorkerFixtures = {
+  browserType: playwright.BrowserType<playwright.Browser>;
+  browserName: string;
+  browser: playwright.Browser;
+  httpServer: httpServer;
+};
+
+type TestFixtures = {
+  contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
+  pageWrapper: PageWrapper;
+};
+
+export const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
+export const it = fixtures.it;
+export const describe = fixtures.describe;
+export const expect = fixtures.expect;
 
 interface httpServer {
   setHandler: (handler: http.RequestListener) => void
@@ -47,16 +50,16 @@ export function isMac() {
   return process.platform === 'darwin';
 }
 
-registerWorkerFixture('browserType', async ({ browserName }, test) => {
+fixtures.registerWorkerFixture('browserType', async ({ browserName }, test) => {
   const browserType = playwright[browserName];
   await test(browserType);
 });
 
-registerWorkerFixture('browserName', async ({ }, test) => {
+fixtures.registerWorkerFixture('browserName', async ({ }, test) => {
   await test(process.env.BROWSER || 'chromium');
 });
 
-registerWorkerFixture('browser', async ({ browserType }, test) => {
+fixtures.registerWorkerFixture('browser', async ({ browserType }, test) => {
   const browser = await browserType.launch({
     headless: !process.env.HEADFUL
   });
@@ -64,21 +67,7 @@ registerWorkerFixture('browser', async ({ browserType }, test) => {
   await browser.close();
 });
 
-registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
-  const context = await browser.newContext();
-  const output = new WritableBuffer();
-  new RecorderController('chromium', {}, {}, context, output);
-  await runTest({ context, output });
-  await context.close();
-});
-
-registerFixture('pageWrapper', async ({ contextWrapper }, runTest) => {
-  const page = await contextWrapper.context.newPage();
-  await runTest(new PageWrapper(page, contextWrapper.output));
-  await page.close();
-});
-
-registerFixture('httpServer', async ({parallelIndex}, runTest) => {
+fixtures.registerWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
   let handler = (req: http.IncomingMessage, res: http.ServerResponse) => res.end()
   const port = 8907 + parallelIndex * 2;
   const server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse)=> handler(req, res)).listen(port);
@@ -88,6 +77,20 @@ registerFixture('httpServer', async ({parallelIndex}, runTest) => {
   })
   server.close()
 })
+
+fixtures.registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
+  const context = await browser.newContext();
+  const output = new WritableBuffer();
+  new RecorderController('chromium', {}, {}, context, output);
+  await runTest({ context, output });
+  await context.close();
+});
+
+fixtures.registerFixture('pageWrapper', async ({ contextWrapper }, runTest) => {
+  const page = await contextWrapper.context.newPage();
+  await runTest(new PageWrapper(page, contextWrapper.output));
+  await page.close();
+});
 
 class WritableBuffer {
   lines: string[];
