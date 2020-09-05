@@ -130,7 +130,7 @@ export function actionTitle(action: Action): string {
       if (action.files.length === 0)
         return `Clear selected files`;
       else
-        return `Upload ${action.files.length === 1 ? action.files[0] : action.files.join(", ")} - make sure to copy the file into an assets directory`;
+        return `Upload ${action.files.length === 1 ? action.files[0] : action.files.join(", ")}`;
     case 'navigate':
       return `Go to ${action.url}`;
     case 'press':

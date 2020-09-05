@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { it, describe, expect } from './playwright.fixtures';
+import { it, expect } from './playwright.fixtures';
 
 it('should click', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
@@ -268,58 +268,56 @@ it('should contain close page', async ({ contextWrapper, pageWrapper }) => {
   await output.waitFor('page.close();');
 });
 
-describe("upload files", () => {
-  it('should be able to upload a single file', async ({ pageWrapper }) => {
-    const { page, output } = pageWrapper;
-    await pageWrapper.setContentAndWait(`
-    <form action="/input/fileupload.html">
-      <input type="file">
-    </form>
-  `);
+it('should upload a single file', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <form>
+    <input type="file">
+  </form>
+`);
 
-    await page.focus('input[type=file]')
-    await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
-    await page.click('input[type=file]')
+  await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
+  await page.click('input[type=file]')
 
-    await output.waitFor("setInputFiles")
-    expect(output.text()).toContain(`
-  // Upload file-to-upload.txt - make sure to copy the file into an assets directory
+  await output.waitFor("setInputFiles")
+  expect(output.text()).toContain(`
+  // Upload file-to-upload.txt
   await page.setInputFiles('input[type="file"]', 'file-to-upload.txt');`);
-  });
+});
 
-  it('should be able to upload multiple files', async ({ pageWrapper }) => {
-    const { page, output } = pageWrapper;
-    await pageWrapper.setContentAndWait(`
-    <form action="/input/fileupload.html">
-      <input type="file" multiple>
-    </form>
-  `);
+it('should upload multiple files', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <form>
+    <input type="file" multiple>
+  </form>
+`);
 
-    await page.focus('input[type=file]')
-    await page.setInputFiles('input[type=file]', ['test/assets/file-to-upload.txt', 'test/assets/file-to-upload-2.txt'])
-    await page.click('input[type=file]')
+  await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', ['test/assets/file-to-upload.txt', 'test/assets/file-to-upload-2.txt'])
+  await page.click('input[type=file]')
 
-    await output.waitFor("setInputFiles")
-    expect(output.text()).toContain(`
-  // Upload file-to-upload.txt, file-to-upload-2.txt - make sure to copy the file into an assets directory
+  await output.waitFor("setInputFiles")
+  expect(output.text()).toContain(`
+  // Upload file-to-upload.txt, file-to-upload-2.txt
   await page.setInputFiles('input[type="file"]', ['file-to-upload.txt', 'file-to-upload-2.txt']);`);
-  });
+});
 
-  it('should be able to clear the uploaded files', async ({ pageWrapper }) => {
-    const { page, output } = pageWrapper;
-    await pageWrapper.setContentAndWait(`
-    <form action="/input/fileupload.html">
-      <input type="file">
-    </form>
-  `);
+it('should clear files', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <form>
+    <input type="file">
+  </form>
+`);
 
-    await page.focus('input[type=file]')
-    await page.setInputFiles('input[type=file]', [])
-    await page.click('input[type=file]')
+  await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', [])
+  await page.click('input[type=file]')
 
-    await output.waitFor("setInputFiles")
-    expect(output.text()).toContain(`
+  await output.waitFor("setInputFiles")
+  expect(output.text()).toContain(`
   // Clear selected files
   await page.setInputFiles('input[type="file"]', []);`);
-  });
-})
+});
