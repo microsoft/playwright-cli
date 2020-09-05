@@ -142,7 +142,7 @@ export default class RecorderScript {
   }
 
   private _consumedDueWrongTarget(event: Event): boolean {
-    if (!this._activeModel || this._activeModel.elements[0] === event.target)
+    if (this._activeModel && this._activeModel.elements[0] === event.target)
       return false;
     consumeEvent(event);
     return true;
