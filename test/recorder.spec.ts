@@ -102,6 +102,34 @@ it('should press', async ({ pageWrapper }) => {
   expect(message.text()).toBe('press');
 });
 
+it('should update selected element after pressing Tab', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+    <input name="one"></input>
+    <input name="two"></input>
+  `);
+
+  await page.click('input[name="one"]')
+  await page.fill('input[name="one"]', 'foobar123')
+  await page.dispatchEvent('input[name="one"]', 'keydown', {
+    key: 'Tab'
+  })
+  await page.fill('input[name="two"]', 'barfoo321')
+
+  expect(output.text()).toContain(`
+  // Fill input[name="one"]
+  await page.fill('input[name="one"]', 'foobar123');`);
+
+  expect(output.text()).toContain(`
+  // Press Tab
+  await page.press('input[name="one"]', 'Tab');`);
+
+  await output.waitFor("barfoo321")
+  expect(output.text()).toContain(`
+  // Fill input[name="two"]
+  await page.fill('input[name="two"]', 'barfoo321');`);
+});
+
 it('should check', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
   await pageWrapper.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="console.log(checkbox.checked)"></input>`);
