@@ -76,6 +76,7 @@ export class RecorderController {
     page.on('framenavigated', frame => this._onFrameNavigated(frame, page));
     page.on('download', download => this._onDownload(page, download));
     page.on('popup', popup => this._onPopup(page, popup));
+    page.on('dialog', dialog => this._onDialog(page, dialog));
     const suffix = this._pageAliases.size ? String(++this._lastPopupOrdinal) : '';
     const pageAlias = 'page' + suffix;
     this._pageAliases.set(page, pageAlias);
@@ -165,6 +166,11 @@ export class RecorderController {
   private _onDownload(page: playwright.Page, download: playwright.Download) {
     const pageAlias = this._pageAliases.get(page)!;
     this._output.signal(pageAlias, page.mainFrame(), { name: 'download' });
+  }
+
+  private _onDialog(page: playwright.Page, download: playwright.Dialog) {
+    const pageAlias = this._pageAliases.get(page)!;
+    this._output.signal(pageAlias, page.mainFrame(), { name: 'dialog' });
   }
 }
 
