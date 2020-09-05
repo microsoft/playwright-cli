@@ -16,7 +16,7 @@
 
 import { XPathEngine } from './xpathSelectorEngine';
 
-export async function buildSelector(targetElement: Element): Promise<string> {
+export async function buildSelector(targetElement: Element): Promise<{ selector: string, elements: Element[] }> {
   const path: SelectorToken[] = [];
   let numberOfMatchingElements = Number.MAX_SAFE_INTEGER;
   for (let element: Element | null = targetElement; element && element !== document.documentElement; element = element.parentElement) {
@@ -28,13 +28,17 @@ export async function buildSelector(targetElement: Element): Promise<string> {
     if (!selectorTargets.length)
       break;
     if (selectorTargets[0] === targetElement)
-      return fullSelector;
+      return { selector: fullSelector, elements: selectorTargets };
     if (selectorTargets.length && numberOfMatchingElements > selectorTargets.length) {
       numberOfMatchingElements = selectorTargets.length;
       path.unshift(selector);
     }
   }
-  return XPathEngine.create(document.documentElement, targetElement, 'default')!;
+  const xpathSelector = XPathEngine.create(document.documentElement, targetElement, 'default')!;
+  return {
+    selector: xpathSelector,
+    elements: await window.queryPlaywrightSelector(xpathSelector)
+  };
 }
 
 function buildSelectorCandidate(element: Element): SelectorToken | null {
