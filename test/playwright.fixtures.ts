@@ -42,7 +42,9 @@ registerWorkerFixture('browserName', async ({ }, test) => {
 });
 
 registerWorkerFixture('browser', async ({ browserType }, test) => {
-  const browser = await browserType.launch();
+  const browser = await browserType.launch({
+    headless: !process.env.HEADFUL
+  });
   await test(browser);
   await browser.close();
 });

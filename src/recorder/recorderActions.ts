@@ -23,7 +23,8 @@ export type ActionName =
   'openPage' |
   'press' |
   'select' |
-  'uncheck';
+  'uncheck' |
+  'setInputFiles';
 
 export type ActionBase = {
   name: ActionName,
@@ -81,7 +82,13 @@ export type SelectAction = ActionBase & {
   options: string[],
 };
 
-export type Action = ClickAction | CheckAction | ClosesPageAction | OpenPageAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction;
+export type SetInputFilesAction = ActionBase & {
+  name: 'setInputFiles',
+  selector: string,
+  files: string[],
+};
+
+export type Action = ClickAction | CheckAction | ClosesPageAction | OpenPageAction | UncheckAction | FillAction | NavigateAction | PressAction | SelectAction | SetInputFilesAction;
 
 // Signals.
 
@@ -119,6 +126,11 @@ export function actionTitle(action: Action): string {
     }
     case 'fill':
       return `Fill ${action.selector}`;
+    case 'setInputFiles':
+      if (action.files.length === 0)
+        return `Clear selected files`;
+      else
+        return `Upload ${action.files.length === 1 ? action.files[0] : action.files.join(", ")} - make sure to copy the file into an assets directory`;
     case 'navigate':
       return `Go to ${action.url}`;
     case 'press':

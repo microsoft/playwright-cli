@@ -56,8 +56,6 @@ export class Formatter {
   }
 }
 
-type StringFormatter = (s: string) => string;
-
 export function quote(text: string, char: string = '\'') {
   if (char === '\'')
     return char + text.replace(/[']/g, '\\\'') + char;

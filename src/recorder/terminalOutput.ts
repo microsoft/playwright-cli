@@ -190,6 +190,8 @@ export class TerminalOutput {
         return `uncheck(${quote(action.selector)})`;
       case 'fill':
         return `fill(${quote(action.selector)}, ${quote(action.text)})`;
+      case 'setInputFiles':
+        return `setInputFiles(${quote(action.selector)}, ${formatObject(action.files.length === 1 ? action.files[0] : action.files)})`;
       case 'press': {
         const modifiers = toModifiers(action.modifiers);
         const shortcut = [...modifiers, action.key].join('+');
