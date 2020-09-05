@@ -24,6 +24,7 @@ declare global {
   interface Window {
     performPlaywrightAction: (action: actions.Action) => Promise<void>;
     recordPlaywrightAction: (action: actions.Action) => Promise<void>;
+    commitLastAction: () => Promise<void>;
     queryPlaywrightSelector: (selector: string) => Promise<Element[]>;
     playwrightRecorderScript: RecorderScript;
   }
@@ -93,7 +94,7 @@ export default class RecorderScript {
           max-width: 600px;
           padding: 3.2px 5.12px 3.2px;
           position: absolute;
-          top: 0;  
+          top: 0;
         }
     </style>
     `);
@@ -209,11 +210,7 @@ export default class RecorderScript {
     const { selector, elements } = await buildSelector(hoveredElement);
     if ((this._hoveredModel && this._hoveredModel.selector === selector) || this._hoveredElement !== hoveredElement)
       return;
-    this._performAction({
-      name: 'commit',
-      committed: true,
-      signals: [],
-    });
+    window.commitLastAction();
     this._hoveredModel = selector ? { selector, elements } : null;
     this._updateHighlight();
     if ((window as any)._highlightUpdatedForTest)
