@@ -294,7 +294,8 @@ export default class RecorderScript {
   private _onInput(event: Event) {
     if ((event.target as Element).nodeName === 'INPUT') {
       const inputElement = event.target as HTMLInputElement;
-      if ((inputElement.type || '').toLowerCase() === 'checkbox') {
+      const elementType = (inputElement.type || '').toLowerCase()
+      if (elementType === 'checkbox') {
         if (this._actionInProgress(event))
           return;
         if (this._consumedDueWrongTarget(event))
@@ -305,6 +306,16 @@ export default class RecorderScript {
           signals: [],
         });
         return;
+      }
+
+      if (elementType === "file") {
+        window.recordPlaywrightAction({
+          name: 'setInputFiles',
+          selector: this._activeModel!.selector,
+          signals: [],
+          files: [...(inputElement.files || [])].map(file => file.name),
+        });
+        return
       }
 
       // Non-navigating actions are simply recorded by Playwright.

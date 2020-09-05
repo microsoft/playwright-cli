@@ -232,7 +232,7 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
 async function openPage(context: playwright.BrowserContext, url: string | undefined): Promise<Page> {
   const page = await context.newPage();
   if (url) {
-    if (!url.startsWith('http'))
+    if (!url.startsWith('http') && !url.startsWith("file://"))
       url = 'http://' + url;
     await page.goto(url);
   }

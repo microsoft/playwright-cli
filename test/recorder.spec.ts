@@ -271,3 +271,57 @@ it('should contain close page', async ({ contextWrapper, pageWrapper }) => {
   await pageWrapper.page.close();
   await output.waitFor('page.close();');
 });
+
+it('should upload a single file', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <form>
+    <input type="file">
+  </form>
+`);
+
+  await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
+  await page.click('input[type=file]')
+
+  await output.waitFor("setInputFiles")
+  expect(output.text()).toContain(`
+  // Upload file-to-upload.txt
+  await page.setInputFiles('input[type="file"]', 'file-to-upload.txt');`);
+});
+
+it('should upload multiple files', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <form>
+    <input type="file" multiple>
+  </form>
+`);
+
+  await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', ['test/assets/file-to-upload.txt', 'test/assets/file-to-upload-2.txt'])
+  await page.click('input[type=file]')
+
+  await output.waitFor("setInputFiles")
+  expect(output.text()).toContain(`
+  // Upload file-to-upload.txt, file-to-upload-2.txt
+  await page.setInputFiles('input[type="file"]', ['file-to-upload.txt', 'file-to-upload-2.txt']);`);
+});
+
+it('should clear files', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <form>
+    <input type="file">
+  </form>
+`);
+
+  await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', [])
+  await page.click('input[type=file]')
+
+  await output.waitFor("setInputFiles")
+  expect(output.text()).toContain(`
+  // Clear selected files
+  await page.setInputFiles('input[type="file"]', []);`);
+});
