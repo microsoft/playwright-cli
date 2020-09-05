@@ -74,6 +74,7 @@ export class RecorderController {
         });
     });
     page.on('framenavigated', frame => this._onFrameNavigated(frame, page));
+    page.on('download', download => this._onDownload(page, download));
     page.on('popup', popup => this._onPopup(page, popup));
     const suffix = this._pageAliases.size ? String(++this._lastPopupOrdinal) : '';
     const pageAlias = 'page' + suffix;
@@ -160,6 +161,10 @@ export class RecorderController {
       // If we hit a navigation while action is executed, we assert it. Otherwise, we await it.
       this._output.signal(pageAlias, page.mainFrame(), { name: 'popup', popupAlias });
     }
+  }
+  private _onDownload(page: playwright.Page, download: playwright.Download) {
+    const pageAlias = this._pageAliases.get(page)!;
+    this._output.signal(pageAlias, page.mainFrame(), { name: 'download' });
   }
 }
 

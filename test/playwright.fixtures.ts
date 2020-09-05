@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import * as http from 'http'
 import * as playwright from 'playwright';
 import { parameters, registerFixture, registerWorkerFixture } from '@playwright/test-runner';
 import { RecorderController } from '../lib/recorder/recorderController';
@@ -29,7 +30,13 @@ declare global {
   interface TestState {
     contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
     pageWrapper: PageWrapper;
+    httpServer: httpServer;
   }
+}
+
+interface httpServer {
+  setHandler: (handler: http.RequestListener) => void
+  PREFIX: string
 }
 
 export function isChromium() {
@@ -70,6 +77,17 @@ registerFixture('pageWrapper', async ({ contextWrapper }, runTest) => {
   await runTest(new PageWrapper(page, contextWrapper.output));
   await page.close();
 });
+
+registerFixture('httpServer', async ({parallelIndex}, runTest) => {
+  let handler = (req: http.IncomingMessage, res: http.ServerResponse) => res.end()
+  const port = 8907 + parallelIndex * 2;
+  const server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse)=> handler(req, res)).listen(port);
+  await runTest({
+    setHandler: newHandler => handler = newHandler,
+    PREFIX: `http://127.0.0.1:${port}`,
+  })
+  server.close()
+})
 
 class WritableBuffer {
   lines: string[];
@@ -113,20 +131,24 @@ class WritableBuffer {
 class PageWrapper {
   page: playwright.Page;
   output: WritableBuffer;
-  private _highlightCallback: Function = () => {};
-  private _highlightInstalled = false;
-  private _actionReporterInstalled = false;
-  private _actionPerformedCallback: Function = () => {};
+  _highlightCallback: Function
+  _highlightInstalled: boolean
+  _actionReporterInstalled: boolean
+  _actionPerformedCallback: Function
 
   constructor(page: Page, output: WritableBuffer) {
     this.page = page;
     this.output = output;
+    this._highlightCallback = () => { };
+    this._highlightInstalled = false;
+    this._actionReporterInstalled = false;
+    this._actionPerformedCallback = () => { };
   }
 
-  async setContentAndWait(content: string) {
+  async setContentAndWait(content: string, url: string = 'about:blank') {
     let callback;
     const result = new Promise(f => callback = f);
-    await this.page.goto('about:blank');
+    await this.page.goto(url);
     await this.page.exposeBinding('_recorderScriptReadyForTest', (source, arg) => callback(arg));
     await Promise.all([
       result,

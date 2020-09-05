@@ -15,6 +15,8 @@
  */
 
 import { it, expect, isChromium, isMac } from './playwright.fixtures';
+import * as http from 'http'
+import * as url from 'url'
 
 it('should click', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
@@ -284,7 +286,7 @@ it('should upload a single file', async ({ pageWrapper }) => {
   await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
   await page.click('input[type=file]')
 
-  await output.waitFor("setInputFiles")
+  await output.waitFor('setInputFiles')
   expect(output.text()).toContain(`
   // Upload file-to-upload.txt
   await page.setInputFiles('input[type="file"]', 'file-to-upload.txt');`);
@@ -302,7 +304,7 @@ it('should upload multiple files', async ({ pageWrapper }) => {
   await page.setInputFiles('input[type=file]', ['test/assets/file-to-upload.txt', 'test/assets/file-to-upload-2.txt'])
   await page.click('input[type=file]')
 
-  await output.waitFor("setInputFiles")
+  await output.waitFor('setInputFiles')
   expect(output.text()).toContain(`
   // Upload file-to-upload.txt, file-to-upload-2.txt
   await page.setInputFiles('input[type="file"]', ['file-to-upload.txt', 'file-to-upload-2.txt']);`);
@@ -312,16 +314,46 @@ it('should clear files', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
   await pageWrapper.setContentAndWait(`
   <form>
-    <input type="file">
+    <input type="file" multiple>
   </form>
 `);
-
   await page.focus('input[type=file]')
+  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
   await page.setInputFiles('input[type=file]', [])
   await page.click('input[type=file]')
 
-  await output.waitFor("setInputFiles")
+  await output.waitFor('setInputFiles')
   expect(output.text()).toContain(`
   // Clear selected files
   await page.setInputFiles('input[type="file"]', []);`);
+  });
+
+it('should download files', async ({ pageWrapper, httpServer }) => {
+  const { page, output } = pageWrapper;
+  httpServer.setHandler((req: http.IncomingMessage, res: http.ServerResponse) => {
+    const pathName = url.parse(req.url).path;
+    if (pathName === '/download') {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'attachment; filename=file.txt');
+      res.end(`Hello world`);
+    } else {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end('');
+    }
+  })
+  await pageWrapper.setContentAndWait(`
+    <a href="${httpServer.PREFIX}/download" download>Download</a>
+  `, httpServer.PREFIX);
+  await pageWrapper.hoverOverElement('text=Download')
+  await Promise.all([
+    page.waitForEvent('download'),
+    page.click('text=Download')
+  ]);
+  await output.waitFor('page.click')
+  expect(output.text()).toContain(`
+  // Click text="Download"
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.click('text="Download"')
+  ]);`);
 });

@@ -18,7 +18,7 @@ import * as querystring from 'querystring';
 import * as playwright from 'playwright';
 import { Writable } from 'stream';
 import { quote, Formatter } from './formatter';
-import { Action, actionTitle, NavigationSignal, PopupSignal, Signal } from './recorderActions';
+import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
 import { highlight } from 'highlight.js';
 
@@ -123,23 +123,28 @@ export class TerminalOutput {
 
     let navigationSignal: NavigationSignal | undefined;
     let popupSignal: PopupSignal | undefined;
+    let downloadSignal: DownloadSignal | undefined;
     for (const signal of action.signals) {
       if (signal.name === 'navigation')
         navigationSignal = signal;
-      if (signal.name === 'popup')
+      else if (signal.name === 'popup')
         popupSignal = signal;
+      else if (signal.name === 'download')
+        downloadSignal = signal;
     }
 
     const waitForNavigation = navigationSignal && navigationSignal.type === 'await';
     const assertNavigation = navigationSignal && navigationSignal.type === 'assert';
 
-    const emitPromiseAll = waitForNavigation || popupSignal;
+    const emitPromiseAll = waitForNavigation || popupSignal || downloadSignal;
     if (emitPromiseAll) {
       // Generate either await Promise.all([]) or
       // const [popup1] = await Promise.all([]).
       let leftHandSide = '';
       if (popupSignal)
         leftHandSide = `const [${popupSignal.popupAlias}] = `;
+      else if (downloadSignal)
+        leftHandSide = `const [download] = `;
       formatter.add(`${leftHandSide}await Promise.all([`);
     }
 
@@ -151,7 +156,11 @@ export class TerminalOutput {
     if (waitForNavigation)
       formatter.add(`${pageAlias}.waitForNavigation(/*{ url: ${quote(navigationSignal!.url)} }*/),`);
 
-    const prefix = popupSignal || waitForNavigation ? '' : 'await ';
+    // Download signals.
+    if (downloadSignal)
+      formatter.add(`${pageAlias}.waitForEvent('download'),`);
+
+    const prefix = (popupSignal || waitForNavigation || downloadSignal) ? '' : 'await ';
     const actionCall = this._generateActionCall(action);
     const suffix = (waitForNavigation || emitPromiseAll) ? '' : ';';
     formatter.add(`${prefix}${subject}.${actionCall}${suffix}`);

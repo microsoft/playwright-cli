@@ -103,7 +103,11 @@ export type PopupSignal = {
   popupAlias: string,
 };
 
-export type Signal = NavigationSignal | PopupSignal;
+export type DownloadSignal = {
+  name: 'download',
+};
+
+export type Signal = NavigationSignal | PopupSignal | DownloadSignal;
 
 export function actionTitle(action: Action): string {
   switch (action.name) {
