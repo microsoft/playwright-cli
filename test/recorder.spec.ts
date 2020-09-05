@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { it, expect } from './playwright.fixtures';
+import { it, expect, isChromium, isMac } from './playwright.fixtures';
 
 it('should click', async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
@@ -84,22 +84,26 @@ it('should fill', async ({ pageWrapper }) => {
   expect(message.text()).toBe('John');
 });
 
-it('should press', async ({ pageWrapper }) => {
+it('should press', test => {
+  test.fail(isChromium() && isMac(), 'Upstream issue https://github.com/microsoft/playwright/issues/3781');
+}, async ({ pageWrapper }) => {
   const { page, output } = pageWrapper;
   await pageWrapper.setContentAndWait(`<input name="name" onkeypress="console.log('press')"></input>`);
 
   const selector = await pageWrapper.focusElement('input');
   expect(selector).toBe('input[name="name"]');
 
-  const [message] = await Promise.all([
-    page.waitForEvent('console'),
+  const messages = [];
+  page.on('console', message => messages.push(message)),
+  await Promise.all([
+    pageWrapper.waitForActionPerformed(),
     output.waitFor('press'),
     page.press('input', 'Shift+Enter')
   ]);
   expect(output.text()).toContain(`
   // Press Enter with modifiers
   await page.press('input[name="name"]', 'Shift+Enter');`);
-  expect(message.text()).toBe('press');
+  expect(messages[0].text()).toBe('press');
 });
 
 it('should update selected element after pressing Tab', async ({ pageWrapper }) => {

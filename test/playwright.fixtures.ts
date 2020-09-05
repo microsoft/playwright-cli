@@ -15,7 +15,7 @@
  */
 
 import * as playwright from 'playwright';
-import { registerFixture, registerWorkerFixture } from '@playwright/test-runner';
+import { parameters, registerFixture, registerWorkerFixture } from '@playwright/test-runner';
 import { RecorderController } from '../lib/recorder/recorderController';
 import { Page } from 'playwright';
 export { it, fit, xit, describe, fdescribe, xdescribe, expect } from '@playwright/test-runner';
@@ -30,6 +30,14 @@ declare global {
     contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
     pageWrapper: PageWrapper;
   }
+}
+
+export function isChromium() {
+  return parameters.browserName === 'chromium';
+}
+
+export function isMac() {
+  return process.platform === 'darwin';
 }
 
 registerWorkerFixture('browserType', async ({ browserName }, test) => {
@@ -103,14 +111,14 @@ class WritableBuffer {
 class PageWrapper {
   page: playwright.Page;
   output: WritableBuffer;
-  _highlightCallback: (arg: string) => void;
-  _highlightInstalled: boolean;
+  private _highlightCallback: Function = () => {};
+  private _highlightInstalled = false;
+  private _actionReporterInstalled = false;
+  private _actionPerformedCallback: Function = () => {};
 
   constructor(page: Page, output: WritableBuffer) {
     this.page = page;
     this.output = output;
-    this._highlightInstalled = false;
-    this._highlightCallback = () => {};
   }
 
   async setContentAndWait(content: string) {
@@ -134,6 +142,14 @@ class PageWrapper {
       action()
     ]);
     return generatedSelector;
+  }
+
+  async waitForActionPerformed(): Promise<void> {
+    if (!this._actionReporterInstalled) {
+      this._actionReporterInstalled = true;
+      await this.page.exposeBinding('_actionPerformedForTest', (source, arg) => this._actionPerformedCallback(arg));
+    }
+    await new Promise(f => this._actionPerformedCallback = f);
   }
 
   async hoverOverElement(selector: string): Promise<string> {

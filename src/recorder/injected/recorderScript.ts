@@ -195,9 +195,8 @@ export default class RecorderScript {
   private async _onFocus(event: FocusEvent) {
     const result = document.activeElement ? await buildSelector(document.activeElement) : null;
     this._activeModel = result && result.selector ? result : null;
-    if ((window as any)._highlightUpdatedForTest) {
+    if ((window as any)._highlightUpdatedForTest)
       (window as any)._highlightUpdatedForTest(result ? result.selector : null);
-    }
   }
 
   private async _commitActionAndUpdateModelForHoveredElement() {
@@ -352,6 +351,8 @@ export default class RecorderScript {
     this._performingAction = true;
     await window.performPlaywrightAction(action);
     this._performingAction = false;
+    if ((window as any)._actionPerformedForTest)
+      (window as any)._actionPerformedForTest();
   }
 }
 
