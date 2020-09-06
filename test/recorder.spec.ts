@@ -357,3 +357,23 @@ it('should download files', async ({ pageWrapper, httpServer }) => {
     page.click('text="Download"')
   ]);`);
 });
+
+it('should handle dialogs', async ({ pageWrapper }) => {
+  const { page, output } = pageWrapper;
+  await pageWrapper.setContentAndWait(`
+  <button onclick="alert()">click me</button>
+  `);
+  await pageWrapper.hoverOverElement('button');
+  page.once('dialog', async dialog => {
+    await dialog.dismiss();
+  });
+  await page.click('text="click me"')
+  await output.waitFor("page.click")
+  expect(output.text()).toContain(`
+  // Click text="click me"
+  page.once('dialog', dialog => {
+    console.log(\`Dialog message: $\{dialog.message()}\`);
+    dialog.dismiss().catch(() => {});
+  });
+  await page.click('text="click me"')`)
+});

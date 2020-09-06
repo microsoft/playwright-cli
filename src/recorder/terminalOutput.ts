@@ -18,7 +18,7 @@ import * as querystring from 'querystring';
 import * as playwright from 'playwright';
 import { Writable } from 'stream';
 import { quote, Formatter } from './formatter';
-import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal } from './recorderActions';
+import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal, DialogSignal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
 import { highlight } from 'highlight.js';
 
@@ -51,6 +51,9 @@ export class TerminalOutput {
     highlightedCode = highlightedCode.replace(/<span class="hljs-number">/g, '\x1b[38;5;78m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-string">/g, '\x1b[38;5;130m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-subst">/g, '\x1b[38;5;242m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-function">/g, '');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-params">/g, '');
     highlightedCode = highlightedCode.replace(/<\/span>/g, '\x1b[0m');
     highlightedCode = highlightedCode.replace(/&#x27;/g, "'");
     highlightedCode = highlightedCode.replace(/&quot;/g, '"');
@@ -124,6 +127,7 @@ export class TerminalOutput {
     let navigationSignal: NavigationSignal | undefined;
     let popupSignal: PopupSignal | undefined;
     let downloadSignal: DownloadSignal | undefined;
+    let dialogSignal: DialogSignal | undefined;
     for (const signal of action.signals) {
       if (signal.name === 'navigation')
         navigationSignal = signal;
@@ -131,6 +135,15 @@ export class TerminalOutput {
         popupSignal = signal;
       else if (signal.name === 'download')
         downloadSignal = signal;
+      else if (signal.name === 'dialog')
+        dialogSignal = signal;
+    }
+
+    if (dialogSignal) {
+      formatter.add(`  page.once('dialog', dialog => {
+    console.log(\`Dialog message: $\{dialog.message()}\`);
+    dialog.dismiss().catch(() => {});
+  });`)
     }
 
     const waitForNavigation = navigationSignal && navigationSignal.type === 'await';
