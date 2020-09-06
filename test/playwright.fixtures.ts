@@ -34,6 +34,7 @@ type TestFixtures = {
 
 export const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
 export const it = fixtures.it;
+export const fit = fixtures.fit;
 export const describe = fixtures.describe;
 export const expect = fixtures.expect;
 
@@ -180,10 +181,16 @@ class PageWrapper {
   }
 
   async hoverOverElement(selector: string): Promise<string> {
+    await this.page.waitForSelector(selector, {
+      state: 'attached'
+    });
     return this.waitForHighlight(() => this.page.dispatchEvent(selector, 'mousemove', { detail: 1 }));
   }
 
   async focusElement(selector: string): Promise<string> {
+    await this.page.waitForSelector(selector, {
+      state: 'attached'
+    });
     return this.waitForHighlight(() => this.page.focus(selector));
   }
 }

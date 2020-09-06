@@ -5,7 +5,7 @@
   "repository": "github:Microsoft/playwright-cli",
   "homepage": "https://playwright.dev",
   "scripts": {
-    "test": "test-runner test/",
+    "test": "test-runner test/ --timeout 35000",
     "build": "node utils/runWebpack.js --mode='development' && tsc -p .",
     "watch": "node utils/runWebpack.js --mode='development' --watch --silent | tsc -w -p ."
   },

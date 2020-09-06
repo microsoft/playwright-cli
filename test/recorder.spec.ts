@@ -364,16 +364,20 @@ it('should handle dialogs', async ({ pageWrapper }) => {
   <button onclick="alert()">click me</button>
   `);
   await pageWrapper.hoverOverElement('button');
+  let resolveDialogDismissed;
+  const dialogDismissed = new Promise(resolve => resolveDialogDismissed = resolve);
   page.once('dialog', async dialog => {
     await dialog.dismiss();
+    resolveDialogDismissed();
   });
-  await page.click('text="click me"')
-  await output.waitFor("page.click")
+  await page.click('text="click me"');
+  await dialogDismissed;
+  await output.waitFor("page.click");
   expect(output.text()).toContain(`
   // Click text="click me"
   page.once('dialog', dialog => {
     console.log(\`Dialog message: $\{dialog.message()}\`);
     dialog.dismiss().catch(() => {});
   });
-  await page.click('text="click me"')`)
+  await page.click('text="click me"');`)
 });
