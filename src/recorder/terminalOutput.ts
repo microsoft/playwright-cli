@@ -52,6 +52,8 @@ export class TerminalOutput {
     highlightedCode = highlightedCode.replace(/<span class="hljs-string">/g, '\x1b[38;5;130m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-subst">/g, '\x1b[38;5;242m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-function">/g, '');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-params">/g, '');
     highlightedCode = highlightedCode.replace(/<\/span>/g, '\x1b[0m');
     highlightedCode = highlightedCode.replace(/&#x27;/g, "'");
     highlightedCode = highlightedCode.replace(/&quot;/g, '"');
@@ -138,9 +140,9 @@ export class TerminalOutput {
     }
 
     if (dialogSignal) {
-      formatter.add(`  page.once('dialog', async dialog => {
+      formatter.add(`  page.once('dialog', dialog => {
     console.log(\`Dialog message: $\{dialog.message()}\`);
-    await dialog.dismiss();
+    dialog.dismiss().catch(() => {});
   });`)
     }
 

@@ -368,11 +368,12 @@ it('should handle dialogs', async ({ pageWrapper }) => {
     await dialog.dismiss();
   });
   await page.click('text="click me"')
-  await output.waitFor("dialog")
+  await output.waitFor("page.click")
   expect(output.text()).toContain(`
-  page.once('dialog', async dialog => {
+  // Click text="click me"
+  page.once('dialog', dialog => {
     console.log(\`Dialog message: $\{dialog.message()}\`);
-    await dialog.dismiss();
+    dialog.dismiss().catch(() => {});
   });
   await page.click('text="click me"')`)
 });
