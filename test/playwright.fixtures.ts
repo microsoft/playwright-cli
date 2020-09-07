@@ -29,7 +29,8 @@ type WorkerFixtures = {
 
 type TestFixtures = {
   contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
-  pageWrapper: PageWrapper;
+  page: Page;
+  recorder: Recorder;
 };
 
 export const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
@@ -86,10 +87,16 @@ fixtures.registerFixture('contextWrapper', async ({ browser }, runTest, info) =>
   await context.close();
 });
 
-fixtures.registerFixture('pageWrapper', async ({ contextWrapper }, runTest) => {
+fixtures.registerFixture('recorder', async ({ contextWrapper }, runTest) => {
   const page = await contextWrapper.context.newPage();
-  await runTest(new PageWrapper(page, contextWrapper.output));
+  if (process.env.PWCONSOLE)
+    page.on('console', console.log);
+  await runTest(new Recorder(page, contextWrapper.output));
   await page.close();
+});
+
+fixtures.registerFixture('page', async ({ recorder }, runTest) => {
+  await runTest(recorder.page);
 });
 
 class WritableBuffer {
@@ -111,7 +118,7 @@ class WritableBuffer {
       this._callback();
   }
 
-  waitFor(text: string): Promise<void> {
+  _waitFor(text: string): Promise<void> {
     if (this.lines.join('\n').includes(text))
       return Promise.resolve();
     this._text = text;
@@ -131,9 +138,9 @@ class WritableBuffer {
   }
 }
 
-class PageWrapper {
+class Recorder {
   page: playwright.Page;
-  output: WritableBuffer;
+  _output: WritableBuffer;
   _highlightCallback: Function
   _highlightInstalled: boolean
   _actionReporterInstalled: boolean
@@ -141,7 +148,7 @@ class PageWrapper {
 
   constructor(page: Page, output: WritableBuffer) {
     this.page = page;
-    this.output = output;
+    this._output = output;
     this._highlightCallback = () => { };
     this._highlightInstalled = false;
     this._actionReporterInstalled = false;
@@ -157,6 +164,14 @@ class PageWrapper {
       result,
       this.page.setContent(content)
     ]);
+  }
+
+  async waitForOutput(text: string): Promise<void> {
+    await this._output._waitFor(text);
+  }
+
+  output(): string {
+    return this._output.text();
   }
 
   async waitForHighlight(action: () => Promise<void>): Promise<string> {

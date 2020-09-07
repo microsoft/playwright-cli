@@ -103,7 +103,7 @@ export class RecorderController {
 
   private async _performAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {
     this._performingAction = true;
-    this._recordAction(frame, page, action);
+    this._output.willPerformAction(this._pageAliases.get(page)!, frame, action);
     if (action.name === 'click') {
       const { options } = toClickOptions(action);
       await frame.click(action.selector, options);
@@ -124,6 +124,7 @@ export class RecorderController {
       action.committed = true;
       this._timers.delete(timer);
     }, 5000);
+    this._output.didPerformAction(this._pageAliases.get(page)!, frame, action);
     this._timers.add(timer);
   }
 

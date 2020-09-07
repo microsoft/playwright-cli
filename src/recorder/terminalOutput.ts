@@ -23,6 +23,7 @@ import { MouseClickOptions, toModifiers } from './utils';
 import { highlight } from 'highlight.js';
 
 export class TerminalOutput {
+  private _currentAction: Action | undefined;
   private _lastAction: Action | undefined;
   private _lastActionText: string | undefined;
   private _out: Writable;
@@ -63,6 +64,15 @@ export class TerminalOutput {
   }
 
   addAction(pageAlias: string, frame: playwright.Frame, action: Action) {
+    this.willPerformAction(pageAlias, frame, action);
+    this.didPerformAction(pageAlias, frame, action);
+  }
+
+  willPerformAction(pageAlias: string, frame: playwright.Frame, action: Action) {
+    this._currentAction = action;
+  }
+
+  didPerformAction(pageAlias: string, frame: playwright.Frame, action: Action) {
     // We augment last action based on the type.
     let eraseLastAction = false;
     if (this._lastAction && action.name === 'fill' && this._lastAction.name === 'fill') {
@@ -95,6 +105,7 @@ export class TerminalOutput {
     for (let i = 0; i < eraseLines; ++i)
       this._out.write('\u001B[1A\u001B[2K');
 
+    this._currentAction = undefined;
     this._lastAction = action;
     this._lastActionText = this._generateAction(pageAlias, frame, action);
     this._out.write(this._lastActionText + '\n})();\n');
@@ -105,6 +116,11 @@ export class TerminalOutput {
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {
+    // Signal either arrives while action is being performed or shortly after.
+    if (this._currentAction) {
+      this._currentAction.signals.push(signal);
+      return;
+    }
     if (this._lastAction) {
       this._lastAction.signals.push(signal);
       this._printAction(pageAlias, frame, this._lastAction, true);

@@ -16,68 +16,68 @@
 
 import { it, expect, describe } from './playwright.fixtures';
 
-it('should generate for text', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`<div>Text</div>`);
-  const selector = await pageWrapper.hoverOverElement('div');
+it('should generate for text', async ({ recorder }) => {
+  await recorder.setContentAndWait(`<div>Text</div>`);
+  const selector = await recorder.hoverOverElement('div');
   expect(selector).toBe('text="Text"');
 });
 
-it('should use ordinal for identical nodes', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`<div>Text</div><div>Text</div><div mark=1>Text</div><div>Text</div>`);
-  const selector = await pageWrapper.hoverOverElement('div[mark="1"]');
+it('should use ordinal for identical nodes', async ({ recorder }) => {
+  await recorder.setContentAndWait(`<div>Text</div><div>Text</div><div mark=1>Text</div><div>Text</div>`);
+  const selector = await recorder.hoverOverElement('div[mark="1"]');
   expect(selector).toBe('//div[3][normalize-space(.)=\'Text\']');
 });
 
-it('should prefer data-testid', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`<div>Text</div><div>Text</div><div data-testid=a>Text</div><div>Text</div>`);
-  const selector = await pageWrapper.hoverOverElement('div[data-testid="a"]');
+it('should prefer data-testid', async ({ recorder }) => {
+  await recorder.setContentAndWait(`<div>Text</div><div>Text</div><div data-testid=a>Text</div><div>Text</div>`);
+  const selector = await recorder.hoverOverElement('div[data-testid="a"]');
   expect(selector).toBe('div[data-testid="a"]');
 });
 
-it('should handle first non-unique data-testid', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should handle first non-unique data-testid', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <div data-testid=a mark=1>
       Text
     </div>
     <div data-testid=a>
       Text
     </div>`);
-  const selector = await pageWrapper.hoverOverElement('div[mark="1"]');
+  const selector = await recorder.hoverOverElement('div[mark="1"]');
   expect(selector).toBe('div[data-testid="a"]');
 });
 
-it('should handle second non-unique data-testid', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should handle second non-unique data-testid', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <div data-testid=a>
       Text
     </div>
     <div data-testid=a mark=1>
       Text
     </div>`);
-  const selector = await pageWrapper.hoverOverElement('div[mark="1"]');
+  const selector = await recorder.hoverOverElement('div[mark="1"]');
   expect(selector).toBe('//div[2][normalize-space(.)=\'Text\']');
 });
 
-it('should use readable id', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should use readable id', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <div></div>
     <div id=first-item mark=1></div>
   `);
-  const selector = await pageWrapper.hoverOverElement('div[mark="1"]');
+  const selector = await recorder.hoverOverElement('div[mark="1"]');
   expect(selector).toBe('div[id="first-item"]');
 });
 
-it('should not use generated id', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should not use generated id', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <div></div>
     <div id=aAbBcCdDeE mark=1></div>
   `);
-  const selector = await pageWrapper.hoverOverElement('div[mark="1"]');
+  const selector = await recorder.hoverOverElement('div[mark="1"]');
   expect(selector).toBe('//div[2]');
 });
 
-it('should separate selectors by >>', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should separate selectors by >>', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <div>
       <div>Text</div>
     </div>
@@ -85,12 +85,12 @@ it('should separate selectors by >>', async ({ pageWrapper }) => {
       <div>Text</div>
     </div>
   `);
-  const selector = await pageWrapper.hoverOverElement('#id > div');
+  const selector = await recorder.hoverOverElement('#id > div');
   expect(selector).toBe('div[id=\"id\"] >> text=\"Text\"');
 });
 
-it('should trim long text', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should trim long text', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <div>
       <div>Text that goes on and on and on and on and on and on and on and on and on and on and on and on and on and on and on</div>
     </div>
@@ -98,12 +98,12 @@ it('should trim long text', async ({ pageWrapper }) => {
     <div>Text that goes on and on and on and on and on and on and on and on and on and on and on and on and on and on and on</div>
     </div>
   `);
-  const selector = await pageWrapper.hoverOverElement('#id > div');
+  const selector = await recorder.hoverOverElement('#id > div');
   expect(selector).toBe('div[id=\"id\"] >> text=/.*Text that goes on and on and o.*/');
 });
 
-it('should use nested ordinals', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should use nested ordinals', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <a><b></b></a>
     <a>
       <b>
@@ -116,32 +116,32 @@ it('should use nested ordinals', async ({ pageWrapper }) => {
     </a>
     <a><b></b></a>
   `);
-  const selector = await pageWrapper.hoverOverElement('c[mark="1"]');
+  const selector = await recorder.hoverOverElement('c[mark="1"]');
   expect(selector).toBe('//b[2]/c');
 });
 
 
-it('should not use input[value]', async ({ pageWrapper }) => {
-  await pageWrapper.setContentAndWait(`
+it('should not use input[value]', async ({ recorder }) => {
+  await recorder.setContentAndWait(`
     <input value="one">
     <input value="two" mark="1">
     <input value="three">
   `);
-  const selector = await pageWrapper.hoverOverElement('input[mark="1"]');
+  const selector = await recorder.hoverOverElement('input[mark="1"]');
   expect(selector).toBe('//input[2]');
 });
 
 describe("should prioritise input element attributes correctly", () => {
-  it('name', async ({ pageWrapper }) => {
-    await pageWrapper.setContentAndWait(`<input name="foobar" type="text"/>`);
-    expect(await pageWrapper.hoverOverElement('input')).toBe('input[name="foobar"]');
+  it('name', async ({ recorder }) => {
+    await recorder.setContentAndWait(`<input name="foobar" type="text"/>`);
+    expect(await recorder.hoverOverElement('input')).toBe('input[name="foobar"]');
   });
-  it('placeholder', async ({ pageWrapper }) => {
-    await pageWrapper.setContentAndWait(`<input placeholder="foobar" type="text"/>`);
-    expect(await pageWrapper.hoverOverElement('input')).toBe('input[placeholder="foobar"]');
+  it('placeholder', async ({ recorder }) => {
+    await recorder.setContentAndWait(`<input placeholder="foobar" type="text"/>`);
+    expect(await recorder.hoverOverElement('input')).toBe('input[placeholder="foobar"]');
   });
-  it('type', async ({ pageWrapper }) => {
-    await pageWrapper.setContentAndWait(`<input type="text"/>`);
-    expect(await pageWrapper.hoverOverElement('input')).toBe('input[type="text"]');
+  it('type', async ({ recorder }) => {
+    await recorder.setContentAndWait(`<input type="text"/>`);
+    expect(await recorder.hoverOverElement('input')).toBe('input[type="text"]');
   });
 })
