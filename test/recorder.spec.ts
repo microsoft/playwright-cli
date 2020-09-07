@@ -343,7 +343,7 @@ it('should download files', async ({ page, recorder, httpServer }) => {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.end('');
     }
-  })
+  });
   await recorder.setContentAndWait(`
     <a href="${httpServer.PREFIX}/download" download>Download</a>
   `, httpServer.PREFIX);
@@ -378,4 +378,27 @@ it('should handle dialogs', async ({ page, recorder }) => {
     dialog.dismiss().catch(() => {});
   });
   await page.click('text="click me"')`)
+});
+
+it('should handle history.postData', async ({ page, recorder, httpServer }) => {
+  httpServer.setHandler((req: http.IncomingMessage, res: http.ServerResponse) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.end('Hello world');
+  });
+  await recorder.setContentAndWait(`
+  <script>
+  let seqNum = 0;
+  function pushState() {
+    try {
+       history.pushState({}, 'title', '${httpServer.PREFIX}/#seqNum=' + (++seqNum));
+    } catch (e) {
+      console.log('-------------------' + e);
+    }
+  }
+  </script>`, httpServer.PREFIX);
+  for (let i = 1; i < 3; ++i) {
+    await page.evaluate('pushState()');
+    await recorder.waitForOutput(`seqNum=${i}`);
+    expect(recorder.output()).toContain(`await page.goto('${httpServer.PREFIX}/#seqNum=${i}');`);
+  }
 });

@@ -18,10 +18,12 @@ import { ConsoleAPI, InjectedScript } from './consoleApi';
 import { Recorder } from './recorder';
 
 export default class Script {
-  private _consoleAPI: ConsoleAPI;
+  private _consoleAPI: ConsoleAPI  | undefined;
   private _recorder: Recorder | undefined;
 
   constructor(injectedScript: InjectedScript, options: { enableRecorder: boolean }) {
+    if ((window as any).playwright)
+      return;
     this._consoleAPI = new ConsoleAPI(injectedScript);
     if (options.enableRecorder)
       this._recorder = new Recorder(injectedScript, this._consoleAPI);

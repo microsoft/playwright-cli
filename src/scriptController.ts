@@ -19,10 +19,6 @@ import * as injectedScriptSource from './generated/scriptSource';
 import { Writable } from 'stream';
 import { RecorderController } from './recorderController';
 
-const toImpl = (playwright as any)._toImpl;
-
-const scriptSymbol = Symbol('script');
-
 export class ScriptController {
   private _recorder: RecorderController | undefined;
 
@@ -43,12 +39,20 @@ export class ScriptController {
 
   private async _ensureInstalledInFrame(frame: playwright.Frame) {
     try {
-      const mainContext = await toImpl(frame)._mainContext();
-      if (mainContext[scriptSymbol])
-        return;
-      mainContext[scriptSymbol] = true;
-      await mainContext.extendInjectedScript(injectedScriptSource.source, { enableRecorder: !!this._recorder });
+      const frameAsAny = frame as any;
+      await frameAsAny._extendInjectedScript(injectedScriptSource.source, { enableRecorder: !!this._recorder });
     } catch (e) {
+      const str = e.toString();
+      // Cr
+      if (str.includes('Execution context was destroyed'))
+        return;
+      // Wk
+      if (str.includes('Target closed'))
+        return;
+      // Ff
+      if (str.includes('The page has been closed'))
+        return;
+      console.log(e);
     }
   }
 }

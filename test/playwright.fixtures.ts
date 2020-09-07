@@ -18,8 +18,6 @@ import * as http from 'http'
 import * as playwright from 'playwright';
 import { parameters, fixtures as baseFixtures} from '@playwright/test-runner';
 import { ScriptController } from '../lib/scriptController';
-import { RecorderController } from '../lib/recorderController';
-import { Page } from 'playwright';
 
 type WorkerFixtures = {
   browserType: playwright.BrowserType<playwright.Browser>;
@@ -30,7 +28,7 @@ type WorkerFixtures = {
 
 type TestFixtures = {
   contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
-  page: Page;
+  page: playwright.Page;
   recorder: Recorder;
 };
 
@@ -147,7 +145,7 @@ class Recorder {
   _actionReporterInstalled: boolean
   _actionPerformedCallback: Function
 
-  constructor(page: Page, output: WritableBuffer) {
+  constructor(page: playwright.Page, output: WritableBuffer) {
     this.page = page;
     this._output = output;
     this._highlightCallback = () => { };
