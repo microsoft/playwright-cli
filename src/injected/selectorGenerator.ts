@@ -1,3 +1,4 @@
+import { ConsoleAPI, InjectedScript } from './consoleApi';
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -16,15 +17,16 @@
 
 import { XPathEngine } from './xpathSelectorEngine';
 
-export async function buildSelector(targetElement: Element): Promise<{ selector: string, elements: Element[] }> {
+export function buildSelector(injectedScript: InjectedScript, targetElement: Element): { selector: string, elements: Element[] } {
   const path: SelectorToken[] = [];
   let numberOfMatchingElements = Number.MAX_SAFE_INTEGER;
   for (let element: Element | null = targetElement; element && element !== document.documentElement; element = element.parentElement) {
-    const selector = buildSelectorCandidate(element);
+    const selector = buildSelectorCandidate(injectedScript, element);
     if (!selector)
       continue;
     const fullSelector = joinSelector([selector, ...path]);
-    const selectorTargets = await window.queryPlaywrightSelector(fullSelector);
+    const parsedSelector = injectedScript.parseSelector(fullSelector);
+    const selectorTargets = injectedScript.querySelectorAll(parsedSelector, targetElement.ownerDocument);
     if (!selectorTargets.length)
       break;
     if (selectorTargets[0] === targetElement)
@@ -35,13 +37,14 @@ export async function buildSelector(targetElement: Element): Promise<{ selector:
     }
   }
   const xpathSelector = XPathEngine.create(document.documentElement, targetElement, 'default')!;
+  const parsedSelector = injectedScript.parseSelector(xpathSelector);
   return {
     selector: xpathSelector,
-    elements: await window.queryPlaywrightSelector(xpathSelector)
+    elements: injectedScript.querySelectorAll(parsedSelector, targetElement.ownerDocument)
   };
 }
 
-function buildSelectorCandidate(element: Element): SelectorToken | null {
+function buildSelectorCandidate(injectedScript: InjectedScript, element: Element): SelectorToken | null {
   const nodeName = element.nodeName.toLowerCase();
   for (const attribute of ['data-testid', 'data-test-id', 'data-test']) {
     if (element.hasAttribute(attribute))

@@ -19,11 +19,9 @@ import { Writable } from 'stream';
 import * as actions from './recorderActions';
 import { TerminalOutput } from './terminalOutput';
 import { BindingSource, toClickOptions, toModifiers } from './utils';
-import * as recorderScriptSource from '../generated/recorderScriptSource';
 
 export class RecorderController {
   private _output: TerminalOutput;
-  private _performingAction = false;
   private _pageAliases = new Map<playwright.Page, string>();
   private _lastPopupOrdinal = 0;
   private _timers = new Set<NodeJS.Timeout>();
@@ -42,14 +40,7 @@ export class RecorderController {
 
     // Commits last action so that no furhter signals are added to it.
     context.exposeBinding('commitLastAction',
-        (source: BindingSource, action: actions.Action) => this._commitLastAction()).catch(e => {});
-
-    // Other non-essential actions are simply being recorded.
-    context.exposeBinding('queryPlaywrightSelector', async (source: BindingSource, selector: string) => {
-      return await source.frame.$$(selector).catch(e => []);
-    });
-
-    context.addInitScript(`new (${recorderScriptSource.source})()`);
+        (source: BindingSource, action: actions.Action) => this._output.commitLastAction()).catch(e => {});
 
     context.on('page', page => this._onPage(page));
     for (const page of context.pages())
@@ -95,14 +86,7 @@ export class RecorderController {
     }
   }
 
-  private _commitLastAction() {
-    const action = this._output.lastAction();
-    if (action)
-      action.committed = true;
-  }
-
   private async _performAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {
-    this._performingAction = true;
     this._output.willPerformAction(this._pageAliases.get(page)!, frame, action);
     if (action.name === 'click') {
       const { options } = toClickOptions(action);
@@ -119,7 +103,6 @@ export class RecorderController {
       await frame.uncheck(action.selector);
     if (action.name === 'select')
       await frame.selectOption(action.selector, action.options);
-    this._performingAction = false;
     const timer = setTimeout(() => {
       action.committed = true;
       this._timers.delete(timer);
@@ -137,32 +120,13 @@ export class RecorderController {
     if (frame.parentFrame())
       return;
     const pageAlias = this._pageAliases.get(page);
-    const action = this._output.lastAction();
-    // We only augment actions that have not been committed.
-    if (action && !action.committed && action.name !== 'navigate') {
-      // If we hit a navigation while action is executed, we assert it. Otherwise, we await it.
-      this._output.signal(pageAlias!, frame, { name: 'navigation', url: frame.url(), type: this._performingAction ? 'assert' : 'await' });
-    } else if (!action || action.committed) {
-      // If navigation happens out of the blue, we just log it.
-      this._output.addAction(
-        pageAlias!, frame, {
-          name: 'navigate',
-          committed: true,
-          url: frame.url(),
-          signals: [],
-        });
-    }
+    this._output.signal(pageAlias!, frame, { name: 'navigation', url: frame.url() });
   }
 
   private _onPopup(page: playwright.Page, popup: playwright.Page) {
     const pageAlias = this._pageAliases.get(page)!;
     const popupAlias = this._pageAliases.get(popup)!;
-    const action = this._output.lastAction();
-    // We only augment actions that have not been committed.
-    if (action && !action.committed) {
-      // If we hit a navigation while action is executed, we assert it. Otherwise, we await it.
-      this._output.signal(pageAlias, page.mainFrame(), { name: 'popup', popupAlias });
-    }
+    this._output.signal(pageAlias, page.mainFrame(), { name: 'popup', popupAlias });
   }
   private _onDownload(page: playwright.Page, download: playwright.Download) {
     const pageAlias = this._pageAliases.get(page)!;

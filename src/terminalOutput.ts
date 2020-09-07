@@ -96,6 +96,12 @@ export class TerminalOutput {
     this._printAction(pageAlias, frame, action, eraseLastAction);
   }
 
+  commitLastAction() {
+    const action = this._lastAction;
+    if (action)
+      action.committed = true;
+  }
+
   _printAction(pageAlias: string, frame: playwright.Frame, action: Action, eraseLastAction: boolean) {
     // We erase terminating `})();` at all times.
     let eraseLines = 1;
@@ -105,14 +111,11 @@ export class TerminalOutput {
     for (let i = 0; i < eraseLines; ++i)
       this._out.write('\u001B[1A\u001B[2K');
 
+    const performingAction = !!this._currentAction;
     this._currentAction = undefined;
     this._lastAction = action;
-    this._lastActionText = this._generateAction(pageAlias, frame, action);
+    this._lastActionText = this._generateAction(pageAlias, frame, action, performingAction);
     this._out.write(this._lastActionText + '\n})();\n');
-  }
-
-  lastAction(): Action | undefined {
-    return this._lastAction;
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {
@@ -121,13 +124,24 @@ export class TerminalOutput {
       this._currentAction.signals.push(signal);
       return;
     }
-    if (this._lastAction) {
+    if (this._lastAction && !this._lastAction.committed) {
       this._lastAction.signals.push(signal);
       this._printAction(pageAlias, frame, this._lastAction, true);
+      return;
+    }
+
+    if (signal.name === 'navigation') {
+      this.addAction(
+        pageAlias!, frame, {
+          name: 'navigate',
+          committed: true,
+          url: frame.url(),
+          signals: [],
+        });
     }
   }
 
-  private _generateAction(pageAlias: string, frame: playwright.Frame, action: Action): string {
+  private _generateAction(pageAlias: string, frame: playwright.Frame, action: Action, performingAction: boolean): string {
     const formatter = new Formatter(2);
     formatter.newLine();
     formatter.add('// ' + actionTitle(action));
@@ -162,8 +176,8 @@ export class TerminalOutput {
   });`)
     }
 
-    const waitForNavigation = navigationSignal && navigationSignal.type === 'await';
-    const assertNavigation = navigationSignal && navigationSignal.type === 'assert';
+    const waitForNavigation = navigationSignal && !performingAction;
+    const assertNavigation = navigationSignal && performingAction;
 
     const emitPromiseAll = waitForNavigation || popupSignal || downloadSignal;
     if (emitPromiseAll) {

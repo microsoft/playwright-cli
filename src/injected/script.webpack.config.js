@@ -15,10 +15,10 @@
  */
 
 const path = require('path');
-const InlineSource = require('../../../utils/webpack-inline-source-plugin');
+const InlineSource = require('../../utils/webpack-inline-source-plugin');
 
 module.exports = {
-  entry: path.join(__dirname, 'recorderScript.ts'),
+  entry: path.join(__dirname, 'script.ts'),
   devtool: 'source-map',
   module: {
     rules: [
@@ -37,10 +37,10 @@ module.exports = {
   },
   output: {
     libraryTarget: 'var',
-    filename: 'recorderScriptSource.js',
-    path: path.resolve(__dirname, '../../../lib/packed')
+    filename: 'scriptSource.js',
+    path: path.resolve(__dirname, '../../lib/packed')
   },
   plugins: [
-    new InlineSource(path.join(__dirname, '..', '..', 'generated', 'recorderScriptSource.ts')),
+    new InlineSource(path.join(__dirname, '..', 'generated', 'scriptSource.ts')),
   ]
 };

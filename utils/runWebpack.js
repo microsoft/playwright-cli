@@ -18,7 +18,7 @@ const child_process = require('child_process');
 const path = require('path');
 
 const files = [
-  path.join('src', 'recorder', 'injected', 'recorderScript.webpack.config.js'),
+  path.join('src', 'injected', 'script.webpack.config.js'),
 ];
 
 function runOne(runner, file) {

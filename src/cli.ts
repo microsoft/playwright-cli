@@ -17,10 +17,11 @@
 /* eslint-disable no-console */
 
 import * as program from 'commander';
-import * as playwright from 'playwright';
 import * as os from 'os';
-import { RecorderController } from './recorder/recorderController';
-import { BrowserContext, Page, Browser } from 'playwright';
+import * as playwright from 'playwright';
+import { Browser, BrowserContext, Page } from 'playwright';
+import { RecorderController } from './recorderController';
+import { ScriptController } from './scriptController';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -39,7 +40,7 @@ program
     .command('open [url]')
     .description('open page in browser specified via -b, --browser')
     .action(function(url, command) {
-      open(command.parent, url);
+      open(command.parent, url, false);
     }).on('--help', function() {
       console.log('');
       console.log('Examples:');
@@ -59,7 +60,7 @@ for (const {alias, name, type} of browsers) {
       .command(`${alias} [url]`)
       .description(`open page in ${name}`)
       .action(function(url, command) {
-        open({ ...command.parent, browser: type }, url);
+        open({ ...command.parent, browser: type }, url, false);
       }).on('--help', function() {
         console.log('');
         console.log('Examples:');
@@ -239,8 +240,9 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
   return page;
 }
 
-async function open(options: Options, url: string | undefined) {
-  const { context } = await launchContext(options, false);
+async function open(options: Options, url: string | undefined, enableRecorder: boolean) {
+  const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
+  new ScriptController(browserName, launchOptions, contextOptions, context, process.stdout, enableRecorder);
   await openPage(context, url);
 }
 
@@ -280,9 +282,7 @@ async function pdf(options: Options, captureOptions: CaptureOptions, url: string
 }
 
 async function codegen(options: Options, url: string | undefined) {
-  const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  new RecorderController(browserName, launchOptions, contextOptions, context, process.stdout);
-  await openPage(context, url);
+  return open(options, url, true);
 }
 
 function lookupBrowserType(options: Options): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {

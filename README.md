@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/playwright-cli.svg?style=flat)](https://www.npmjs.com/package/playwright) [![Join Slack](https://img.shields.io/badge/join-slack-infomational)](https://join.slack.com/t/playwright/shared_invite/enQtOTEyMTUxMzgxMjIwLThjMDUxZmIyNTRiMTJjNjIyMzdmZDA3MTQxZWUwZTFjZjQwNGYxZGM5MzRmNzZlMWI5ZWUyOTkzMjE5Njg1NDg)
 
-## [Usage](#usage) | [Examples](#examples)
+## [Usage](#usage) | [Examples](#examples) | [DevTools API](#devtools-api)
 
 Playwright CLI is a CLI wrapper around the [Playwright](https://github.com/Microsoft/playwright) library.
 
@@ -124,9 +124,57 @@ $ npx playwright-cli pdf https://en.wikipedia.org/wiki/PDF wiki.pdf
 
 ### Generate Playwright code
 
+Run `codegen` and perform actions to one or multiple pages. Playwright will generate simple script that will capture the right pages, frames, popups, downloads, etc. It'll attempt to generate a resilient text-based selectors for user actions. This script is available right in the terminal.
+
 ```sh
 # Run the generator
 $ npx playwright-cli codegen wikipedia.org
 ```
 
   <img width="600px" src="https://user-images.githubusercontent.com/883973/92158503-dd54c980-ede0-11ea-95f0-0d8550818871.png">
+
+## DevTools API
+
+You can use following API inside the Dev Tools console of the respective browser:
+
+### playwright.$(selector)
+
+Query Playwright selector, using the actual Playwright query engine, for example:
+
+```js
+> playwright.$('.auth-form >> text=Log in');
+
+<button>Log in</button>
+```
+
+### playwright.$$(selector)
+
+Same as `playwright.$`, but returns all matching elements.
+
+```js
+> playwright.$$('li >> text=John')
+
+> [<li>, <li>, <li>, <li>]
+```
+
+### playwright.inspect(selector)
+
+Reveal element in the Elements panel (if DevTools of the respective browser support that).
+
+```js
+> playwright.inspect('text=Log in')
+
+<button>Log in</button>
+```
+
+### playwright.selector(element)
+
+Generates selector for the given element:
+
+```js
+> playwright.selector($0)
+
+"div[id="glow-ingress-block"] >> text=/.*Hello.*/"
+```
+
+> Note that opening WebKit Web Inspector disconnects Playwright from the browser, so once it is open, code generation is no longer happening.

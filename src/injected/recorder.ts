@@ -15,24 +15,21 @@
  */
 
 import type * as actions from '../recorderActions';
+import { ConsoleAPI, InjectedScript } from './consoleApi';
 import { html } from './html';
-import { RegisteredListener, addEventListener, removeEventListeners } from './util';
-import { Throttler } from './throttler';
-import { buildSelector } from './selectorGenerator';
+import { addEventListener, RegisteredListener, removeEventListeners } from './util';
 
 declare global {
   interface Window {
     performPlaywrightAction: (action: actions.Action) => Promise<void>;
     recordPlaywrightAction: (action: actions.Action) => Promise<void>;
     commitLastAction: () => Promise<void>;
-    queryPlaywrightSelector: (selector: string) => Promise<Element[]>;
-    playwrightRecorderScript: RecorderScript;
   }
 }
 
-const recorderSymbol = Symbol('recorderSymbol');
+const scriptSymbol = Symbol('scriptSymbol');
 
-export default class RecorderScript {
+export class Recorder {
   private _performingAction = false;
   private _outerGlassPaneElement: HTMLElement;
   private _glassPaneShadow: ShadowRoot;
@@ -42,11 +39,11 @@ export default class RecorderScript {
   private _listeners: RegisteredListener[] = [];
   private _hoveredModel: HighlightModel | null = null;
   private _hoveredElement: HTMLElement | null = null;
-  private _throttler = new Throttler(50);
   private _activeModel: HighlightModel | null = null;
+  private _consoleAPI: ConsoleAPI;
 
-  constructor() {
-    window.playwrightRecorderScript = this;
+  constructor(injectedScript: InjectedScript, consoleAPI: ConsoleAPI) {
+    this._consoleAPI = consoleAPI;
 
     this._outerGlassPaneElement = html`
       <x-pw-glass style="
@@ -101,12 +98,13 @@ export default class RecorderScript {
     setInterval(() => {
       this._refreshListenersIfNeeded();
     }, 100);
+    this._consoleAPI = new ConsoleAPI(injectedScript);
   }
 
   private _refreshListenersIfNeeded() {
-    if ((document.documentElement as any)[recorderSymbol])
+    if ((document.documentElement as any)[scriptSymbol])
       return;
-    (document.documentElement as any)[recorderSymbol] = true;
+    (document.documentElement as any)[scriptSymbol] = true;
     removeEventListeners(this._listeners);
     this._listeners = [
       addEventListener(document, 'click', event => this._onClick(event as MouseEvent), true),
@@ -182,31 +180,32 @@ export default class RecorderScript {
       return;
     this._hoveredElement = event.target as HTMLElement | null;
     // Mouse moved -> mark last action as committed via committing a commit action.
-    this._throttler.schedule(() => this._commitActionAndUpdateModelForHoveredElement());
+    this._commitActionAndUpdateModelForHoveredElement();
   }
 
   private _onMouseLeave(event: MouseEvent) {
+    // Leaving iframe.
     if ((event.target as Node).nodeType === Node.DOCUMENT_NODE)  {
       this._hoveredElement = null;
-      this._throttler.schedule(() => this._commitActionAndUpdateModelForHoveredElement(), true);
+      this._commitActionAndUpdateModelForHoveredElement();
     }
   }
 
-  private async _onFocus(event: FocusEvent) {
-    const result = document.activeElement ? await buildSelector(document.activeElement) : null;
+  private _onFocus(event: FocusEvent) {
+    const result = document.activeElement ? this._consoleAPI.buildSelector(document.activeElement) : null;
     this._activeModel = result && result.selector ? result : null;
     if ((window as any)._highlightUpdatedForTest)
       (window as any)._highlightUpdatedForTest(result ? result.selector : null);
   }
 
-  private async _commitActionAndUpdateModelForHoveredElement() {
+  private _commitActionAndUpdateModelForHoveredElement() {
     if (!this._hoveredElement) {
       this._hoveredModel = null;
       this._updateHighlight();
       return;
     }
     const hoveredElement = this._hoveredElement;
-    const { selector, elements } = await buildSelector(hoveredElement);
+    const { selector, elements } = this._consoleAPI.buildSelector(hoveredElement);
     if ((this._hoveredModel && this._hoveredModel.selector === selector) || this._hoveredElement !== hoveredElement)
       return;
     window.commitLastAction();

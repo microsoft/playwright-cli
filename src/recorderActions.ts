@@ -95,7 +95,6 @@ export type Action = ClickAction | CheckAction | ClosesPageAction | OpenPageActi
 export type NavigationSignal = {
   name: 'navigation',
   url: string,
-  type: 'assert' | 'await',
 };
 
 export type PopupSignal = {

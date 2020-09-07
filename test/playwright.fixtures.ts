@@ -17,7 +17,8 @@
 import * as http from 'http'
 import * as playwright from 'playwright';
 import { parameters, fixtures as baseFixtures} from '@playwright/test-runner';
-import { RecorderController } from '../lib/recorder/recorderController';
+import { ScriptController } from '../lib/scriptController';
+import { RecorderController } from '../lib/recorderController';
 import { Page } from 'playwright';
 
 type WorkerFixtures = {
@@ -82,7 +83,7 @@ fixtures.registerWorkerFixture('httpServer', async ({parallelIndex}, runTest) =>
 fixtures.registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
   const output = new WritableBuffer();
-  new RecorderController('chromium', {}, {}, context, output);
+  new ScriptController('chromium', {}, {}, context, output, true);
   await runTest({ context, output });
   await context.close();
 });

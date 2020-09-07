@@ -110,8 +110,6 @@ it('should update selected element after pressing Tab', async ({ page, recorder 
     <input name="two"></input>
   `);
 
-  const selector = await recorder.hoverOverElement('input');
-  expect(selector).toBe('input[name="one"]');
   await page.click('input[name="one"]');
   await recorder.waitForOutput('click');
   await page.keyboard.type('foobar123');
@@ -224,6 +222,25 @@ it('should await popup', async ({ page, recorder }) => {
   ]);`);
   expect(popup.url()).toBe('about:blank');
 });
+
+it('should assert navigation', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<a onclick="window.location.href='about:blank#foo'">link</a>`);
+
+  const selector = await recorder.hoverOverElement('a');
+  expect(selector).toBe('text="link"');
+
+  await Promise.all([
+    page.waitForNavigation(),
+    recorder.waitForOutput('assert'),
+    page.dispatchEvent('a', 'click', { detail: 1 })
+  ]);
+  expect(recorder.output()).toContain(`
+  // Click text="link"
+  await page.click('text="link"');
+  // assert.equal(page.url(), 'about:blank#foo');`);
+  expect(page.url()).toContain('about:blank#foo');
+});
+
 
 it('should await navigation', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<a onclick="setTimeout(() => window.location.href='about:blank#foo', 1000)">link</a>`);
