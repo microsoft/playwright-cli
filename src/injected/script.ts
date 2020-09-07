@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ConsoleAPI, InjectedScript } from './consoleAPI';
+import { ConsoleAPI, InjectedScript } from './consoleApi';
 import { Recorder } from './recorder';
 
 export default class Script {
