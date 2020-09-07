@@ -1,0 +1,21 @@
+name: "publish"
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-npm-release:
+    name: "publish to NPM"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+    - uses: microsoft/playwright-github-action@v1
+    - run: npm install
+    - run: npm run build
+    - run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
