@@ -389,11 +389,7 @@ it('should handle history.postData', async ({ page, recorder, httpServer }) => {
   <script>
   let seqNum = 0;
   function pushState() {
-    try {
-       history.pushState({}, 'title', '${httpServer.PREFIX}/#seqNum=' + (++seqNum));
-    } catch (e) {
-      console.log('-------------------' + e);
-    }
+    history.pushState({}, 'title', '${httpServer.PREFIX}/#seqNum=' + (++seqNum));
   }
   </script>`, httpServer.PREFIX);
   for (let i = 1; i < 3; ++i) {
