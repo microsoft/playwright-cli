@@ -15,8 +15,9 @@
  */
 
 import { it, expect, isChromium, isMac } from './playwright.fixtures';
-import * as http from 'http'
-import * as url from 'url'
+import * as http from 'http';
+import * as url from 'url';
+import * as util from 'util';
 
 it('should click', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<button onclick="console.log('click')">Submit</button>`);
@@ -131,6 +132,27 @@ it('should update selected element after pressing Tab', async ({ page, recorder 
   expect(recorder.output()).toContain(`
   // Fill input[name="two"]
   await page.fill('input[name="two"]', 'barfoo321');`);
+});
+
+it('should record ArrowDown', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<input name="name" onkeydown="console.log('press:' + event.key)"></input>`);
+
+  const selector = await recorder.focusElement('input');
+  expect(selector).toBe('input[name="name"]');
+
+  const messages = [];
+  page.on('console', message => {
+    messages.push(message);
+  }),
+  await Promise.all([
+    recorder.waitForActionPerformed(),
+    recorder.waitForOutput('press'),
+    page.press('input', 'ArrowDown')
+  ]);
+  expect(recorder.output()).toContain(`
+  // Press ArrowDown
+  await page.press('input[name="name"]', 'ArrowDown');`);
+  expect(messages[0].text()).toBe('press:ArrowDown');
 });
 
 it('should check', async ({ page, recorder }) => {

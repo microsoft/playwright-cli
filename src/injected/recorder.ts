@@ -342,8 +342,17 @@ export class Recorder {
   }
 
   private _onKeyDown(event: KeyboardEvent) {
-    if (event.key !== 'Tab' && event.key !== 'Enter' && event.key !== 'Escape')
+    // Backspace, Delte are changing input, will handle it there.
+    if (['Backspace', 'Delete'].includes(event.key))
       return;
+    if (['Shift', 'Control', 'Meta', 'Alt'].includes(event.key))
+      return;
+
+    // Single-character keys with no modifiers produce characters, handle with input.
+    const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
+    if (event.key.length === 1 && !hasModifier)
+      return;
+
     if (this._actionInProgress(event))
       return;
     if (this._consumedDueWrongTarget(event))
