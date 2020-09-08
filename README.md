@@ -1,59 +1,35 @@
-# 🎭 Playwright CLI
+# 🎭 Playwright CLI  [![npm version](https://img.shields.io/npm/v/playwright-cli.svg?style=flat)](https://www.npmjs.com/package/playwright) [![Join Slack](https://img.shields.io/badge/join-slack-infomational)](https://join.slack.com/t/playwright/shared_invite/enQtOTEyMTUxMzgxMjIwLThjMDUxZmIyNTRiMTJjNjIyMzdmZDA3MTQxZWUwZTFjZjQwNGYxZGM5MzRmNzZlMWI5ZWUyOTkzMjE5Njg1NDg)
 
-[![npm version](https://img.shields.io/npm/v/playwright-cli.svg?style=flat)](https://www.npmjs.com/package/playwright) [![Join Slack](https://img.shields.io/badge/join-slack-infomational)](https://join.slack.com/t/playwright/shared_invite/enQtOTEyMTUxMzgxMjIwLThjMDUxZmIyNTRiMTJjNjIyMzdmZDA3MTQxZWUwZTFjZjQwNGYxZGM5MzRmNzZlMWI5ZWUyOTkzMjE5Njg1NDg)
+Playwright CLI enables common [Playwright](https://github.com/Microsoft/playwright) actions. With the CLI, you can:
 
-## [Usage](#usage) | [Examples](#examples) | [DevTools API](#devtools-api)
-
-Playwright CLI is a CLI wrapper around the [Playwright](https://github.com/Microsoft/playwright) library.
-
-Playwright CLI is built to enable shell access to popular Playwright commands such as capturing screenshots, saving as PDF. But it is also useful if you want to see what your web page would look like in WebKit (Safari) while being on Window or Linux.
+* [Generate code](#generate-code): Record user interactions and generate Playwright scripts.
+* [Open pages](#open-page): Open pages in Chromium, Firefox and WebKit (Safari) on all platforms.
+  * Emulate [devices](#emulate-devices), [color schemes](#emulate-color-scheme-and-viewport-size) and [geolocation](#emulate-geolocation-language-and-timezone).
+* [Inspect selectors](#inspect-selectors): Use the Playwright DevTools API to inspect selectors.
+* Generate [page screenshots](#take-screenshot) and [PDFs](#generate-pdf)
 
 ## Usage
 
+```sh
+$ npx playwright-cli --help
 
-Install CLI as follows:
-
-```
+# To save as project dependency
 $ npm install -D playwright-cli
 ```
 
-Print Playwright CLI help
+## Generate code
 
-```
-$ npx playwright-cli --help
-```
-
-```
-Usage: playwright-cli [options] [command]
-
-Options:
-  -V, --version                          output the version number
-  -b, --browser <browserType>            browser to use, one of cr, chromium, ff, firefox, wk, webkit (default: "chromium")
-  --color-scheme <scheme>                emulate preferred color scheme, "light" or "dark"
-  --device <deviceName>                  emulate device, for example  "iPhone 11"
-  --geolocation <coordinates>            specify geolocation coordinates, for example "37.819722,-122.478611"
-  --lang <language>                      specify language / locale, for example "en-GB"
-  --proxy-server <proxy>                 specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"
-  --timezone <time zone>                 time zone to emulate, for example "Europe/Rome"
-  --timeout <timeout>                    timeout for Playwright actions in milliseconds, defaults to 10000 (default: "10000")
-  --user-agent <ua string>               specify user agent string
-  --viewport-size <size>                 specify browser viewport size in pixels, for example "1280, 720"
-  -h, --help                             display help for command
-
-Commands:
-  open [url]                             open page in browser specified via -b, --browser
-  cr [url]                               open page in Chromium
-  ff [url]                               open page in Firefox
-  wk [url]                               open page in WebKit
-  codegen [url]                          open page and generate code for user actions
-  screenshot [options] <url> <filename>  capture a page screenshot
-  pdf [options] <url> <filename>         save page as pdf
-  help [command]                         display help for command
+```sh
+$ npx playwright-cli codegen wikipedia.org
 ```
 
-## Examples
+Run `codegen` and perform actions on one or more pages. Playwright CLI will generate JavaScript code for the user interactions. `codegen` will attempt to generate resilient text-based selectors.
 
-### Open page
+<img src="https://user-images.githubusercontent.com/284612/92536033-7e7ebe00-f1ed-11ea-9e1a-7cbd912e3391.gif">
+
+## Open page
+
+With `open`, you can use Playwright bundled browsers to browse web pages.
 
 ```sh
 # Open page in Chromium
@@ -65,6 +41,15 @@ npx playwright-cli open example.com
 npx playwright-cli wk example.com
 ```
 
+### Emulate devices
+```sh
+# Emulate iPhone 11.
+npx playwright-cli \
+  --device="iPhone 11" \
+  open wikipedia.org
+```
+
+### Emulate color scheme and viewport size
 ```sh
 # Emulate screen size and color scheme.
 npx playwright-cli \
@@ -73,26 +58,61 @@ npx playwright-cli \
   wk twitter.com/explore
 ```
 
+### Emulate geolocation, language and timezone
 ```sh
-# Emulate timezone, language & location, color scheme.
+# Emulate timezone, language & location
 # Once page opens, click the "my location" button to see geolocation in action
 npx playwright-cli \
   --timezone="Europe/Rome" \
   --geolocation="41.890221,12.492348" \
   --lang="it-IT" \
-  --color-scheme=dark \
   open maps.google.com
 ```
 
-```sh
-# Emulate iPhone 11.
-npx playwright-cli \
-  --device="iPhone 11" \
-  open wikipedia.org
+## Inspect selectors
+During `open` or `codegen`, you can use following API inside the developer tools console of any browser.
+
+#### playwright.$(selector)
+
+Query Playwright selector, using the actual Playwright query engine, for example:
+
+```js
+> playwright.$('.auth-form >> text=Log in');
+
+<button>Log in</button>
 ```
 
-### Screenshot
+#### playwright.$$(selector)
 
+Same as `playwright.$`, but returns all matching elements.
+
+```js
+> playwright.$$('li >> text=John')
+
+> [<li>, <li>, <li>, <li>]
+```
+
+#### playwright.inspect(selector)
+
+Reveal element in the Elements panel (if DevTools of the respective browser support that).
+
+```js
+> playwright.inspect('text=Log in')
+
+<button>Log in</button>
+```
+
+#### playwright.selector(element)
+
+Generates selector for the given element:
+
+```js
+> playwright.selector($0)
+
+"div[id="glow-ingress-block"] >> text=/.*Hello.*/"
+```
+
+## Take screenshot
 ```sh
 # See command help
 $ npx playwright-cli screenshot --help
@@ -113,68 +133,14 @@ npx playwright-cli \
 npx playwright-cli screenshot --full-page en.wikipedia.org wiki-full.png
 ```
 
-### PDF
+## Generate PDF
 
-> Note that PDF generation only works on Headless Chromium.
+PDF generation only works in Headless Chromium.
 
 ```sh
 # See command help
 $ npx playwright-cli pdf https://en.wikipedia.org/wiki/PDF wiki.pdf
 ```
 
-### Generate Playwright code
-
-Run `codegen` and perform actions to one or multiple pages. Playwright will generate simple script that will capture the right pages, frames, popups, downloads, etc. It'll attempt to generate a resilient text-based selectors for user actions. This script is available right in the terminal.
-
-```sh
-# Run the generator
-$ npx playwright-cli codegen wikipedia.org
-```
-
-  <img width="600px" src="https://user-images.githubusercontent.com/883973/92158503-dd54c980-ede0-11ea-95f0-0d8550818871.png">
-
-## DevTools API
-
-You can use following API inside the Dev Tools console of the respective browser:
-
-### playwright.$(selector)
-
-Query Playwright selector, using the actual Playwright query engine, for example:
-
-```js
-> playwright.$('.auth-form >> text=Log in');
-
-<button>Log in</button>
-```
-
-### playwright.$$(selector)
-
-Same as `playwright.$`, but returns all matching elements.
-
-```js
-> playwright.$$('li >> text=John')
-
-> [<li>, <li>, <li>, <li>]
-```
-
-### playwright.inspect(selector)
-
-Reveal element in the Elements panel (if DevTools of the respective browser support that).
-
-```js
-> playwright.inspect('text=Log in')
-
-<button>Log in</button>
-```
-
-### playwright.selector(element)
-
-Generates selector for the given element:
-
-```js
-> playwright.selector($0)
-
-"div[id="glow-ingress-block"] >> text=/.*Hello.*/"
-```
-
-> Note that opening WebKit Web Inspector disconnects Playwright from the browser, so once it is open, code generation is no longer happening.
+## Known limitations
+* Opening WebKit Web Inspector will disconnect Playwright from the browser. In such cases, code generation will stop.
