@@ -36,7 +36,9 @@ const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
 const exported = {
   ...fixtures,
   isMac,
-  isChromium
+  isChromium,
+  isWebKit,
+  isFirefox
 };
 export = exported;
 
@@ -47,6 +49,14 @@ interface httpServer {
 
 function isChromium() {
   return baseFixtures.parameters.browserName === 'chromium';
+}
+
+function isFirefox() {
+  return baseFixtures.parameters.browserName === 'firefox';
+}
+
+function isWebKit() {
+  return baseFixtures.parameters.browserName === 'webkit';
 }
 
 function isMac() {

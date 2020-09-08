@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-import { it, expect, isChromium, isMac } from './playwright.fixtures';
+import { it, expect, isChromium, isWebKit, isFirefox, isMac } from './playwright.fixtures';
 import * as http from 'http';
 import * as url from 'url';
-import * as util from 'util';
 
 it('should click', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<button onclick="console.log('click')">Submit</button>`);
@@ -418,5 +417,32 @@ it('should handle history.postData', async ({ page, recorder, httpServer }) => {
     await page.evaluate('pushState()');
     await recorder.waitForOutput(`seqNum=${i}`);
     expect(recorder.output()).toContain(`await page.goto('${httpServer.PREFIX}/#seqNum=${i}');`);
+  }
+});
+
+it('should record open in a new tab with url', test => {
+  test.fixme(isWebKit(), 'Ctrl+click does not open in new tab on WebKit');
+}, async ({ page, recorder, httpServer }) => {
+  await recorder.setContentAndWait(`<a href="about:blank?foo">link</a>`);
+
+  const selector = await recorder.hoverOverElement('a');
+  expect(selector).toBe('text="link"');
+
+  await page.click('a', { modifiers: ['Control'] });
+  await recorder.waitForOutput('page1');
+  if (isChromium()) {
+    expect(recorder.output()).toContain(`
+  // Open new page
+  const page1 = await context.newPage();
+  page1.load('about:blank?foo');`);  
+  } else if (isFirefox()) {
+    expect(recorder.output()).toContain(`
+  // Click text="link"
+  const [page1] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.click('text="link"', {
+      modifiers: ['Control']
+    })
+  ]);`);
   }
 });

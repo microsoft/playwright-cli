@@ -148,6 +148,8 @@ export class TerminalOutput {
 
     if (action.name === 'openPage') {
       formatter.add(`const ${pageAlias} = await context.newPage();`);
+      if (action.url && action.url !== 'about:blank' && action.url !== 'chrome://newtab/')
+        formatter.add(`${pageAlias}.load('${action.url}');`);
       return this._highlight(formatter.format());
     }
 

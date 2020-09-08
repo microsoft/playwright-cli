@@ -80,6 +80,7 @@ export class RecorderController {
       this._output.addAction(
         pageAlias, page.mainFrame(), {
           name: 'openPage',
+          url: page.url(),
           committed: true,
           signals: [],
         });

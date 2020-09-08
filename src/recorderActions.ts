@@ -63,6 +63,7 @@ export type NavigateAction = ActionBase & {
 
 export type OpenPageAction = ActionBase & {
   name: 'openPage',
+  url: string,
 };
 
 export type ClosesPageAction = ActionBase & {
