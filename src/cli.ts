@@ -87,6 +87,7 @@ program
     .description('capture a page screenshot')
     .option('--wait-for-selector <selector>', 'wait for selector before taking a screenshot')
     .option('--wait-for-timeout <timeout>', 'wait for timeout in milliseconds before taking a screenshot')
+    .option('--wait-for-networkidle', 'wait for network idle of at least 500ms before taking a screenshot')
     .option('--full-page', 'Whether to take a full page screenshot (entire scrollable area)')
     .action(function(url, filename, command) {
       screenshot(command.parent, command, url, filename);
@@ -129,6 +130,7 @@ type Options = {
 type CaptureOptions = {
   waitForSelector: string | undefined;
   waitForTimeout: string | undefined;
+  waitForNetworkidle: boolean;
   fullPage: boolean;
 };
 
@@ -254,6 +256,10 @@ async function waitForPage(page: Page, captureOptions: CaptureOptions) {
   if (captureOptions.waitForTimeout) {
     console.log(`Waiting for timeout ${captureOptions.waitForTimeout}...`);
     await page.waitForTimeout(parseInt(captureOptions.waitForTimeout, 10));
+  }
+  if (captureOptions.waitForNetworkidle) {
+    console.log(`Waiting for network idle...`);
+    await page.waitForLoadState("networkidle");
   }
 }
 
