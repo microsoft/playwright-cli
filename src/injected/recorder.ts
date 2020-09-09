@@ -113,6 +113,7 @@ export class Recorder {
       addEventListener(document, 'keydown', event => this._onKeyDown(event as KeyboardEvent), true),
       addEventListener(document, 'keyup', event => this._onKeyUp(event as KeyboardEvent), true),
       addEventListener(document, 'mousedown', event => this._onMouseDown(event as MouseEvent), true),
+      addEventListener(document, 'mouseup', event => this._onMouseUp(event as MouseEvent), true),
       addEventListener(document, 'mousemove', event => this._onMouseMove(event as MouseEvent), true),
       addEventListener(document, 'mouseleave', event => this._onMouseLeave(event as MouseEvent), true),
       addEventListener(document, 'focus', event => this._onFocus(event as FocusEvent), true),
@@ -174,7 +175,14 @@ export class Recorder {
   }
 
   private _onMouseDown(event: MouseEvent) {
+    if (!this._performingAction)
+      consumeEvent(event);
     this._activeModel = this._hoveredModel;
+  }
+
+  private _onMouseUp(event: MouseEvent) {
+    if (!this._performingAction)
+      consumeEvent(event);
   }
 
   private _onMouseMove(event: MouseEvent) {

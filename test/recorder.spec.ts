@@ -511,3 +511,22 @@ it('should not clash pages', test => {
   expect(recorder.output()).toContain(`await page1.fill('input[id="name"]', 'TextA');`);
   expect(recorder.output()).toContain(`await page2.fill('input[id="name"]', 'TextB');`);
 });
+
+it('click should emit events in order', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`
+    <button id=button>
+    <script>
+    button.addEventListener('mousedown', e => console.log(e.type));
+    button.addEventListener('mouseup', e => console.log(e.type));
+    button.addEventListener('click', e => console.log(e.type));
+    </script>
+  `);
+
+  const messages = [];
+  page.on('console', message => messages.push(message.text()));
+  await Promise.all([
+    page.click('button'),
+    recorder.waitForOutput('page.click')  
+  ]);
+  expect(messages).toEqual(['mousedown', 'mouseup', 'click']);
+});
