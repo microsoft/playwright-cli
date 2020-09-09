@@ -54,13 +54,14 @@ function buildSelectorCandidate(injectedScript: InjectedScript, element: Element
     if (element.hasAttribute(attribute))
       return { engine: 'css', selector: `${element.nodeName.toLocaleLowerCase()}[${attribute}=${quoteString(element.getAttribute(attribute)!)}]` };
   }
-  if (element.nodeName === 'INPUT') {
+  if (['INPUT', 'TEXTAREA'].includes(element.nodeName)) {
+    const nodeNameLowercase = element.nodeName.toLowerCase()
     if (element.getAttribute('name'))
-      return { engine: 'css', selector: `input[name=${quoteString(element.getAttribute('name')!)}]` };
+      return { engine: 'css', selector: `${nodeNameLowercase}[name=${quoteString(element.getAttribute('name')!)}]` };
     if (element.getAttribute('placeholder'))
-      return { engine: 'css', selector: `input[placeholder=${quoteString(element.getAttribute('placeholder')!)}]` };
+      return { engine: 'css', selector: `${nodeNameLowercase}[placeholder=${quoteString(element.getAttribute('placeholder')!)}]` };
     if (element.getAttribute('type'))
-      return { engine: 'css', selector: `input[type=${quoteString(element.getAttribute('type')!)}]` };
+      return { engine: 'css', selector: `${nodeNameLowercase}[type=${quoteString(element.getAttribute('type')!)}]` };
   } else if (element.nodeName === 'IMG') {
     if (element.getAttribute('alt'))
       return { engine: 'css', selector: `img[alt=${quoteString(element.getAttribute('alt')!)}]` };

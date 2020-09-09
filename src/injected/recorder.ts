@@ -293,7 +293,7 @@ export class Recorder {
   }
 
   private _onInput(event: Event) {
-    if ((event.target as Element).nodeName === 'INPUT') {
+    if (['INPUT', 'TEXTAREA'].includes((event.target as Element).nodeName)) {
       const inputElement = event.target as HTMLInputElement;
       const elementType = (inputElement.type || '').toLowerCase()
       if (elementType === 'checkbox') {

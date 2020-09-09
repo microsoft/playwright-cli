@@ -87,6 +87,7 @@ export const XPathEngine = {
       [ 'form', [ 'action' ] ],
       [ 'img', [ 'alt' ] ],
       [ 'input', [ 'placeholder', 'type', 'name' ] ],
+      [ 'textarea', [ 'placeholder', 'type', 'name' ] ],
     ]);
 
     let usedTextConditions = false;
