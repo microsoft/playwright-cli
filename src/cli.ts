@@ -152,6 +152,10 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
     delete contextOptions.isMobile;
   }
 
+  if (contextOptions.isMobile && browserType.name() === 'firefox') {
+    contextOptions.isMobile = undefined
+  }
+
   // Proxy
 
   if (options.proxyServer) {
