@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
+import * as path from 'path';
 import { fixtures} from './playwright.fixtures';
 const { it, expect } = fixtures;
 
+const emptyHTML = "file://" + path.join(__dirname, "assets", "empty.html")
+
 it('should print the correct imports and context options', async ({ runCLI }) => {
-  const cli = runCLI(['codegen', 'wikipedia.org']);
+  const cli = runCLI(['codegen', emptyHTML]);
   const expectedResult = `const { chromium } = require('playwright');
 
 (async () => {
@@ -32,7 +35,7 @@ it('should print the correct imports and context options', async ({ runCLI }) =>
 });
 
 it('should print the correct context options for custom settings', async ({ runCLI }) => {
-  const cli = runCLI(['--color-scheme=light', 'codegen', 'wikipedia.org']);
+  const cli = runCLI(['--color-scheme=light', 'codegen', emptyHTML]);
   const expectedResult = `const { chromium } = require('playwright');
 
 (async () => {
@@ -49,7 +52,7 @@ it('should print the correct context options for custom settings', async ({ runC
 
 
 it('should print the correct context options when using a device', async ({ runCLI }) => {
-  const cli = runCLI(['--device=Pixel 2', 'codegen', 'wikipedia.org'])
+  const cli = runCLI(['--device=Pixel 2', 'codegen', emptyHTML])
   const expectedResult = `const { chromium, devices } = require('playwright');
 
 (async () => {
@@ -65,7 +68,7 @@ it('should print the correct context options when using a device', async ({ runC
 });
 
 it('should print the correct context options when using a device and additional options', async ({ runCLI }) => {
-  const cli = runCLI(['--color-scheme=light', '--device=Pixel 2', 'codegen', 'wikipedia.org']);
+  const cli = runCLI(['--color-scheme=light', '--device=Pixel 2', 'codegen', emptyHTML]);
   const expectedResult = `const { chromium, devices } = require('playwright');
 
 (async () => {
