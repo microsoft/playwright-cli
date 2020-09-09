@@ -16,7 +16,7 @@
 
 import * as http from 'http'
 import * as playwright from 'playwright';
-import baseFixtures from '@playwright/test-runner';
+import { fixtures as baseFixtures } from '@playwright/test-runner';
 import { ScriptController } from '../lib/scriptController';
 
 type WorkerFixtures = {
@@ -32,34 +32,26 @@ type TestFixtures = {
   recorder: Recorder;
 };
 
-const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
-const exported = {
-  ...fixtures,
-  isMac,
-  isChromium,
-  isWebKit,
-  isFirefox
-};
-export = exported;
+export const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
 
 interface httpServer {
   setHandler: (handler: http.RequestListener) => void
   PREFIX: string
 }
 
-function isChromium() {
+export function isChromium() {
   return baseFixtures.parameters.browserName === 'chromium';
 }
 
-function isFirefox() {
+export function isFirefox() {
   return baseFixtures.parameters.browserName === 'firefox';
 }
 
-function isWebKit() {
+export function isWebKit() {
   return baseFixtures.parameters.browserName === 'webkit';
 }
 
-function isMac() {
+export function isMac() {
   return process.platform === 'darwin';
 }
 

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import { it, expect, isChromium, isWebKit, isFirefox, isMac } from './playwright.fixtures';
+import { fixtures, isChromium, isWebKit, isFirefox, isMac } from './playwright.fixtures';
 import * as http from 'http';
 import * as url from 'url';
+const { it, expect } = fixtures;
 
 it('should click', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<button onclick="console.log('click')">Submit</button>`);

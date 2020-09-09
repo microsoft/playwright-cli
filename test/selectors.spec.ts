@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { it, expect, describe } from './playwright.fixtures';
+import { fixtures } from './playwright.fixtures';
+const { it, expect, describe } = fixtures;
 
 it('should generate for text', async ({ recorder }) => {
   await recorder.setContentAndWait(`<div>Text</div>`);
