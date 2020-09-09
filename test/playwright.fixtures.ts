@@ -20,6 +20,7 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as playwright from 'playwright';
 import { fixtures as baseFixtures } from '@playwright/test-runner';
 import { ScriptController } from '../lib/scriptController';
+import { Page } from 'playwright';
 
 type WorkerFixtures = {
   browserType: playwright.BrowserType<playwright.Browser>;
@@ -167,13 +168,17 @@ class Recorder {
   }
 
   async setContentAndWait(content: string, url: string = 'about:blank') {
+    await this.setPageContentAndWait(this.page, content, url);
+  }
+
+  async setPageContentAndWait(page: Page, content: string, url: string = 'about:blank') {
     let callback;
     const result = new Promise(f => callback = f);
-    await this.page.goto(url);
-    await this.page.exposeBinding('_recorderScriptReadyForTest', (source, arg) => callback(arg));
+    await page.goto(url);
+    await page.exposeBinding('_recorderScriptReadyForTest', (source, arg) => callback(arg));
     await Promise.all([
       result,
-      this.page.setContent(content)
+      page.setContent(content)
     ]);
   }
 

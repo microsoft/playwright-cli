@@ -29,7 +29,6 @@ export type ActionName =
 export type ActionBase = {
   name: ActionName,
   signals: Signal[],
-  committed?: boolean,
 }
 
 export type ClickAction = ActionBase & {

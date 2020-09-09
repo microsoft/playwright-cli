@@ -486,3 +486,28 @@ it('should record open in a new tab with url', test => {
   ]);`);
   }
 });
+
+it('should not clash pages', test => {
+  test.fixme(isFirefox(), 'Times out on Firefox, maybe the focus issue')
+}, async ({ page, recorder }) => {
+  const [popup1] = await Promise.all([
+    page.context().waitForEvent('page'),
+    page.evaluate(`window.open('about:blank')`)
+  ]);
+  await recorder.setPageContentAndWait(popup1, '<input id=name>');
+
+  const [popup2] = await Promise.all([
+    page.context().waitForEvent('page'),
+    page.evaluate(`window.open('about:blank')`)
+  ]);
+  await recorder.setPageContentAndWait(popup2, '<input id=name>');
+
+  await popup1.type('input', 'TextA');
+  await recorder.waitForOutput('TextA');
+
+  await popup2.type('input', 'TextB');
+  await recorder.waitForOutput('TextB');
+
+  expect(recorder.output()).toContain(`await page1.fill('input[id="name"]', 'TextA');`);
+  expect(recorder.output()).toContain(`await page2.fill('input[id="name"]', 'TextB');`);
+});

@@ -21,10 +21,18 @@ import { quote, Formatter } from './formatter';
 import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal, DialogSignal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
 import { highlight } from 'highlight.js';
+import { Frame } from 'playwright';
+
+export type ActionInContext = {
+  pageAlias: string;
+  frame: Frame;
+  action: Action;
+  committed?: boolean;
+}
 
 export class TerminalOutput {
-  private _currentAction: Action | undefined;
-  private _lastAction: Action | undefined;
+  private _currentAction: ActionInContext | undefined;
+  private _lastAction: ActionInContext | undefined;
   private _lastActionText: string | undefined;
   private _out: Writable;
 
@@ -63,37 +71,41 @@ export class TerminalOutput {
     return highlightedCode;
   }
 
-  addAction(pageAlias: string, frame: playwright.Frame, action: Action) {
-    this.willPerformAction(pageAlias, frame, action);
-    this.didPerformAction(pageAlias, frame, action);
+  addAction(action: ActionInContext) {
+    this.willPerformAction(action);
+    this.didPerformAction(action);
   }
 
-  willPerformAction(pageAlias: string, frame: playwright.Frame, action: Action) {
+  willPerformAction(action: ActionInContext) {
     this._currentAction = action;
   }
 
-  didPerformAction(pageAlias: string, frame: playwright.Frame, action: Action) {
-    // We augment last action based on the type.
+  didPerformAction(actionInContext: ActionInContext) {
+    const { action, pageAlias } = actionInContext;
     let eraseLastAction = false;
-    if (this._lastAction && action.name === 'fill' && this._lastAction.name === 'fill') {
-      if (action.selector === this._lastAction.selector)
-        eraseLastAction = true;
-    }
-    if (this._lastAction && action.name === 'click' && this._lastAction.name === 'click') {
-      if (action.selector === this._lastAction.selector && action.clickCount > this._lastAction.clickCount)
-        eraseLastAction = true;
-    }
-    if (this._lastAction && action.name === 'navigate' && this._lastAction.name === 'navigate') {
-      if (action.url === this._lastAction.url)
-        return;
-    }
-    for (const name of ['check', 'uncheck']) {
-      if (this._lastAction && action.name === name && this._lastAction.name === 'click') {
-        if ((action as any).selector === (this._lastAction as any).selector)
+    if (this._lastAction && this._lastAction.pageAlias === pageAlias) {
+      const { action: lastAction } = this._lastAction;
+      // We augment last action based on the type.
+      if (this._lastAction && action.name === 'fill' && lastAction.name === 'fill') {
+        if (action.selector === lastAction.selector)
           eraseLastAction = true;
       }
+      if (lastAction && action.name === 'click' && lastAction.name === 'click') {
+        if (action.selector === lastAction.selector && action.clickCount > lastAction.clickCount)
+          eraseLastAction = true;
+      }
+      if (lastAction && action.name === 'navigate' && lastAction.name === 'navigate') {
+        if (action.url === lastAction.url)
+          return;
+      }
+      for (const name of ['check', 'uncheck']) {
+        if (lastAction && action.name === name && lastAction.name === 'click') {
+          if ((action as any).selector === (lastAction as any).selector)
+            eraseLastAction = true;
+        }
+      }
     }
-    this._printAction(pageAlias, frame, action, eraseLastAction);
+    this._printAction(actionInContext, eraseLastAction);
   }
 
   commitLastAction() {
@@ -102,7 +114,7 @@ export class TerminalOutput {
       action.committed = true;
   }
 
-  _printAction(pageAlias: string, frame: playwright.Frame, action: Action, eraseLastAction: boolean) {
+  _printAction(actionInContext: ActionInContext, eraseLastAction: boolean) {
     // We erase terminating `})();` at all times.
     let eraseLines = 1;
     if (eraseLastAction && this._lastActionText)
@@ -113,35 +125,39 @@ export class TerminalOutput {
 
     const performingAction = !!this._currentAction;
     this._currentAction = undefined;
-    this._lastAction = action;
-    this._lastActionText = this._generateAction(pageAlias, frame, action, performingAction);
+    this._lastAction = actionInContext;
+    this._lastActionText = this._generateAction(actionInContext, performingAction);
     this._out.write(this._lastActionText + '\n})();\n');
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {
     // Signal either arrives while action is being performed or shortly after.
     if (this._currentAction) {
-      this._currentAction.signals.push(signal);
+      this._currentAction.action.signals.push(signal);
       return;
     }
     if (this._lastAction && !this._lastAction.committed) {
-      this._lastAction.signals.push(signal);
-      this._printAction(pageAlias, frame, this._lastAction, true);
+      this._lastAction.action.signals.push(signal);
+      this._printAction(this._lastAction, true);
       return;
     }
 
     if (signal.name === 'navigation') {
-      this.addAction(
-        pageAlias!, frame, {
+      this.addAction({
+        pageAlias,
+        frame,
+        committed: true,
+        action: {
           name: 'navigate',
-          committed: true,
           url: frame.url(),
           signals: [],
-        });
+        }
+      });
     }
   }
 
-  private _generateAction(pageAlias: string, frame: playwright.Frame, action: Action, performingAction: boolean): string {
+  private _generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
+    const { action, pageAlias, frame } = actionInContext;
     const formatter = new Formatter(2);
     formatter.newLine();
     formatter.add('// ' + actionTitle(action));
