@@ -68,6 +68,7 @@ export class TerminalOutput {
     highlightedCode = highlightedCode.replace(/&quot;/g, '"');
     highlightedCode = highlightedCode.replace(/&gt;/g, '>');
     highlightedCode = highlightedCode.replace(/&lt;/g, '<');
+    highlightedCode = highlightedCode.replace(/&amp;/g, '&');
     return highlightedCode;
   }
 
