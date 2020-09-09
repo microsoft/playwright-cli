@@ -355,6 +355,12 @@ export class Recorder {
     // Backspace, Delete are changing input, will handle it there.
     if (['Backspace', 'Delete'].includes(event.key))
       return false;
+    // Ignore the QWERTZ shortcut for creating a at sign on MacOS
+    if (event.key === "@" && event.code === "KeyL")
+      return false
+    // Allow and ignore common used shortcuts in testing (Select all, copy, paste)
+    if (['a', 'c', 'v'].includes(event.key) && event.metaKey)
+      return false
     if (['Shift', 'Control', 'Meta', 'Alt'].includes(event.key))
       return false;
     const hasModifier = event.ctrlKey || event.altKey || event.metaKey;

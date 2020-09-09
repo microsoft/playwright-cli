@@ -100,9 +100,7 @@ it('should fill textarea', async ({ page, recorder }) => {
   expect(message.text()).toBe('John');
 });
 
-it('should press', test => {
-  test.fail(isChromium() && isMac(), 'Upstream issue https://github.com/microsoft/playwright/issues/3781');
-}, async ({ page, recorder }) => {
+it('should press', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<input name="name" onkeypress="console.log('press')"></input>`);
 
   const selector = await recorder.focusElement('input');
@@ -526,7 +524,7 @@ it('click should emit events in order', async ({ page, recorder }) => {
   page.on('console', message => messages.push(message.text()));
   await Promise.all([
     page.click('button'),
-    recorder.waitForOutput('page.click')  
+    recorder.waitForOutput('page.click')
   ]);
   expect(messages).toEqual(['mousedown', 'mouseup', 'click']);
 });
