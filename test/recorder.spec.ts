@@ -462,13 +462,13 @@ it('should handle history.postData', async ({ page, recorder, httpServer }) => {
 
 it('should record open in a new tab with url', test => {
   test.fixme(isWebKit(), 'Ctrl+click does not open in new tab on WebKit');
-}, async ({ page, recorder, httpServer }) => {
+}, async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<a href="about:blank?foo">link</a>`);
 
   const selector = await recorder.hoverOverElement('a');
   expect(selector).toBe('text="link"');
 
-  await page.click('a', { modifiers: ['Control'] });
+  await page.click('a', { modifiers: [ isMac() ? 'Meta' : 'Control'] });
   await recorder.waitForOutput('page1');
   if (isChromium()) {
     expect(recorder.output()).toContain(`
@@ -481,7 +481,7 @@ it('should record open in a new tab with url', test => {
   const [page1] = await Promise.all([
     page.waitForEvent('popup'),
     page.click('text="link"', {
-      modifiers: ['Control']
+      modifiers: ['${isMac() ? 'Meta' : 'Control'}']
     })
   ]);`);
   }
