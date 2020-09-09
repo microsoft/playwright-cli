@@ -17,7 +17,7 @@
 import * as playwright from 'playwright';
 import { Writable } from 'stream';
 import * as actions from './recorderActions';
-import { TerminalOutput } from './terminalOutput';
+import { TerminalOutput, ActionInContext } from './terminalOutput';
 import { BindingSource, toClickOptions, toModifiers } from './utils';
 
 export class RecorderController {
@@ -57,12 +57,15 @@ export class RecorderController {
     // First page is called page, others are called popup1, popup2, etc.
     page.on('close', () => {
       this._pageAliases.delete(page);
-      this._output.addAction(
-        pageAlias, page.mainFrame(), {
+      this._output.addAction({
+        pageAlias,
+        frame: page.mainFrame(),
+        committed: true,
+        action: {
           name: 'closePage',
-          committed: true,
           signals: [],
-        });
+        }
+      });
     });
     page.on('framenavigated', frame => this._onFrameNavigated(frame, page));
     page.on('download', download => this._onDownload(page, download));
@@ -77,18 +80,26 @@ export class RecorderController {
     if (page.isClosed())
       return;
     if (!isPopup) {
-      this._output.addAction(
-        pageAlias, page.mainFrame(), {
+      this._output.addAction({
+        pageAlias,
+        frame: page.mainFrame(),
+        committed: true,
+        action: {
           name: 'openPage',
           url: page.url(),
-          committed: true,
           signals: [],
-        });
+        }
+      });
     }
   }
 
   private async _performAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {
-    this._output.willPerformAction(this._pageAliases.get(page)!, frame, action);
+    const actionInContext: ActionInContext = {
+      pageAlias: this._pageAliases.get(page)!,
+      frame,
+      action
+    };
+    this._output.willPerformAction(actionInContext);
     if (action.name === 'click') {
       const { options } = toClickOptions(action);
       await frame.click(action.selector, options);
@@ -105,16 +116,20 @@ export class RecorderController {
     if (action.name === 'select')
       await frame.selectOption(action.selector, action.options);
     const timer = setTimeout(() => {
-      action.committed = true;
+      actionInContext.committed = true;
       this._timers.delete(timer);
     }, 5000);
-    this._output.didPerformAction(this._pageAliases.get(page)!, frame, action);
+    this._output.didPerformAction(actionInContext);
     this._timers.add(timer);
   }
 
   private async _recordAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {
     // We are lacking frame.page() in Playwright.
-    this._output.addAction(this._pageAliases.get(page)!, frame, action);
+    this._output.addAction({
+      pageAlias: this._pageAliases.get(page)!,
+      frame,
+      action
+    });
   }
 
   private _onFrameNavigated(frame: playwright.Frame, page: playwright.Page) {

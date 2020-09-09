@@ -25,7 +25,7 @@ jobs:
       run: npm run build
     - name: test (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: xvfb-run npm run test
+      run: xvfb-run npm run test -- --forbid-only --timeout=30000 --retries=3 --global-timeout=1200000 --retries=3
     - name: test
       if: matrix.os != 'ubuntu-latest'
-      run: npm run test
+      run: npm run test -- --forbid-only --timeout=30000 --retries=3 --global-timeout=1200000 --retries=3
