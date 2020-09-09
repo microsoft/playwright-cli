@@ -16,10 +16,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
+      with:
+        node-version: 10.17
     - uses: microsoft/playwright-github-action@v1
     - name: install
       run: npm ci
     - name: build
       run: npm run build
+    - name: test (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: xvfb-run npm run test
     - name: test
+      if: matrix.os != 'ubuntu-latest'
       run: npm run test

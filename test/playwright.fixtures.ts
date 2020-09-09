@@ -15,6 +15,8 @@
  */
 
 import * as http from 'http'
+import * as path from 'path';
+import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as playwright from 'playwright';
 import { fixtures as baseFixtures } from '@playwright/test-runner';
 import { ScriptController } from '../lib/scriptController';
@@ -30,6 +32,7 @@ type TestFixtures = {
   contextWrapper: { context: playwright.BrowserContext, output: WritableBuffer };
   page: playwright.Page;
   recorder: Recorder;
+  runCLI: (args: string[]) => CLIMock;
 };
 
 export const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
@@ -103,6 +106,14 @@ fixtures.registerFixture('page', async ({ recorder }, runTest) => {
   await runTest(recorder.page);
 });
 
+function removeAnsiColors(input: string): string {
+  const pattern = [
+    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
+    '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
+  ].join('|');
+  return input.replace(new RegExp(pattern, 'g'), '');
+}
+
 class WritableBuffer {
   lines: string[];
   private _callback: () => void;
@@ -134,11 +145,7 @@ class WritableBuffer {
   }
 
   text() {
-    const pattern = [
-      '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-      '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
-    ].join('|');
-    return this.data().replace(new RegExp(pattern, 'g'), '');
+    return removeAnsiColors(this.data())
   }
 }
 
@@ -204,5 +211,51 @@ class Recorder {
 
   async focusElement(selector: string): Promise<string> {
     return this.waitForHighlight(() => this.page.focus(selector));
+  }
+}
+
+fixtures.registerFixture('runCLI', async ({  }, runTest, info) => {
+  let cli: CLIMock
+  const cliFactory = (args: string[]) => {
+    cli = new CLIMock(args);
+    return cli
+  }
+  await runTest(cliFactory);
+  cli.kill()
+});
+
+class CLIMock {
+  private process: ChildProcessWithoutNullStreams
+  private lines: string[]
+  private waitForText: string
+  private waitForCallback: () => void;
+  constructor(args: string[]) {
+    this.lines = []
+    this.process = spawn('node', [
+      path.join(__dirname, '..', 'lib', 'cli.js'),
+      ...args
+    ], {
+      env: {
+        ...process.env,
+        PWCLI_EXIT_FOR_TEST: "1"
+      }
+    });
+    this.process.stdout.on('data', line => {
+      this.lines.push(removeAnsiColors(line.toString()))
+      if (this.waitForCallback && this.lines.join('\n').includes(this.waitForText))
+        this.waitForCallback()
+    })
+  }
+  async waitFor(text: string): Promise<void> {
+    if (this.lines.join('\n').includes(text))
+      return Promise.resolve();
+    this.waitForText = text;
+    return new Promise(f => this.waitForCallback = f);
+  }
+  text() {
+    return removeAnsiColors(this.lines.join('\n'))
+  }
+  kill() {
+    this.process.kill()
   }
 }
