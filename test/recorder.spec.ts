@@ -154,6 +154,29 @@ it('should record ArrowDown', async ({ page, recorder }) => {
   expect(messages[0].text()).toBe('press:ArrowDown');
 });
 
+it('should emit single keyup on ArrowDown', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<input name="name" onkeydown="console.log('down:' + event.key)" onkeyup="console.log('up:' + event.key)"></input>`);
+
+  const selector = await recorder.focusElement('input');
+  expect(selector).toBe('input[name="name"]');
+
+  const messages = [];
+  page.on('console', message => {
+    messages.push(message);
+  }),
+  await Promise.all([
+    recorder.waitForActionPerformed(),
+    recorder.waitForOutput('press'),
+    page.press('input', 'ArrowDown')
+  ]);
+  expect(recorder.output()).toContain(`
+  // Press ArrowDown
+  await page.press('input[name="name"]', 'ArrowDown');`);
+  expect(messages.length).toBe(2);
+  expect(messages[0].text()).toBe('down:ArrowDown');
+  expect(messages[1].text()).toBe('up:ArrowDown');
+});
+
 it('should check', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="console.log(checkbox.checked)"></input>`);
 

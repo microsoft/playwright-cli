@@ -41,6 +41,7 @@ export class Recorder {
   private _hoveredElement: HTMLElement | null = null;
   private _activeModel: HighlightModel | null = null;
   private _consoleAPI: ConsoleAPI;
+  private _expectProgrammaticKeyUp = false;
 
   constructor(injectedScript: InjectedScript, consoleAPI: ConsoleAPI) {
     this._consoleAPI = consoleAPI;
@@ -110,6 +111,7 @@ export class Recorder {
       addEventListener(document, 'click', event => this._onClick(event as MouseEvent), true),
       addEventListener(document, 'input', event => this._onInput(event), true),
       addEventListener(document, 'keydown', event => this._onKeyDown(event as KeyboardEvent), true),
+      addEventListener(document, 'keyup', event => this._onKeyUp(event as KeyboardEvent), true),
       addEventListener(document, 'mousedown', event => this._onMouseDown(event as MouseEvent), true),
       addEventListener(document, 'mousemove', event => this._onMouseMove(event as MouseEvent), true),
       addEventListener(document, 'mouseleave', event => this._onMouseLeave(event as MouseEvent), true),
@@ -341,20 +343,25 @@ export class Recorder {
     }
   }
 
-  private _onKeyDown(event: KeyboardEvent) {
-    // Backspace, Delte are changing input, will handle it there.
+  private _shouldGenerateKeyPressFor(event: KeyboardEvent): boolean {
+    // Backspace, Delete are changing input, will handle it there.
     if (['Backspace', 'Delete'].includes(event.key))
-      return;
+      return false;
     if (['Shift', 'Control', 'Meta', 'Alt'].includes(event.key))
-      return;
-
-    // Single-character keys with no modifiers produce characters, handle with input.
+      return false;
     const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
     if (event.key.length === 1 && !hasModifier)
-      return;
+      return false;
+    return true;
+  }
 
-    if (this._actionInProgress(event))
+  private _onKeyDown(event: KeyboardEvent) {
+    if (!this._shouldGenerateKeyPressFor(event))
       return;
+    if (this._actionInProgress(event)) {
+      this._expectProgrammaticKeyUp = true;
+      return;
+    }
     if (this._consumedDueWrongTarget(event))
       return;
     this._performAction({
@@ -364,6 +371,18 @@ export class Recorder {
       key: event.key,
       modifiers: modifiersForEvent(event),
     });
+  }
+
+  private _onKeyUp(event: KeyboardEvent) {
+    if (!this._shouldGenerateKeyPressFor(event))
+      return;
+
+    // Only allow programmatic keyups, ignore user input.
+    if (!this._expectProgrammaticKeyUp) {
+      consumeEvent(event);
+      return;
+    }
+    this._expectProgrammaticKeyUp = false;
   }
 
   private async _performAction(action: actions.Action) {
