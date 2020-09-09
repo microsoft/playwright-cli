@@ -28,17 +28,17 @@ export class TerminalOutput {
   private _lastActionText: string | undefined;
   private _out: Writable;
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, out: Writable) {
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, out: Writable, deviceName: string | undefined) {
     this._out = out;
     const formatter = new Formatter();
     launchOptions = { headless: false, ...launchOptions };
 
     formatter.add(`
-      const { ${browserName} } = require('playwright');
+      const { ${browserName}${deviceName ? ', devices' : ''} } = require('playwright');
 
-      (async() => {
+      (async () => {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
-        const context = await browser.newContext(${formatObjectOrVoid(contextOptions)});
+        const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
       })();`);
     this._out.write(this._highlight(formatter.format()) + '\n');
   }
@@ -286,4 +286,22 @@ function formatObject(value: any, indent = '  '): string {
 function formatObjectOrVoid(value: any, indent = '  '): string {
   const result = formatObject(value, indent);
   return result === '{}' ? '' : result;
+}
+
+function formatContextOptions(options: playwright.BrowserContextOptions, deviceName: string | undefined): string {
+  const device = deviceName && playwright.devices[deviceName];
+  if (!device)
+    return formatObjectOrVoid(options);
+  // Filter out all the properties from the device descriptor.
+  const cleanedOptions: Record<string, any> = {}
+  for(const property in options)
+    if ((device as any)[property] !== (options as any)[property])
+      cleanedOptions[property] = (options as any)[property]
+  let serializedObject = formatObjectOrVoid(cleanedOptions);
+  // When there are no additional context options, we still want to spread the device inside.
+  if (!serializedObject)
+    serializedObject = '{\n}';
+  const lines = serializedObject.split('\n');
+  lines.splice(1, 0, `...devices['${deviceName}'],`);
+  return lines.join('\n');
 }

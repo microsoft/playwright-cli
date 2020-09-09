@@ -139,7 +139,8 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
     headless,
   };
   const contextOptions: playwright.BrowserContextOptions =
-      options.device ? playwright.devices[options.device] :
+    // Copy the device descriptor since we have to compare and modify the options.
+    options.device ? { ...playwright.devices[options.device] } :
       // In headful mode, use host device scale factor for things to look nice.
       // In headless, keep things the way it works in Playwright by default.
       // Assume high-dpi on MacOS. TODO: this is not perfect.
@@ -242,7 +243,7 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
 
 async function open(options: Options, url: string | undefined, enableRecorder: boolean) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  new ScriptController(browserName, launchOptions, contextOptions, context, process.stdout, enableRecorder);
+  new ScriptController(browserName, launchOptions, contextOptions, context, process.stdout, enableRecorder, options.device);
   await openPage(context, url);
 }
 
