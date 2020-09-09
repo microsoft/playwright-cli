@@ -234,7 +234,12 @@ class CLIMock {
     this.process = spawn('node', [
       path.join(__dirname, '..', 'lib', 'cli.js'),
       ...args
-    ]);
+    ], {
+      env: {
+        ...process.env,
+        PWCLI_EXIT_FOR_TEST: "1"
+      }
+    });
     this.process.stdout.on('data', line => {
       this.lines.push(removeAnsiColors(line.toString()))
       if (this.waitForCallback && this.lines.join('\n').includes(this.waitForText))

@@ -244,6 +244,10 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
 async function open(options: Options, url: string | undefined, enableRecorder: boolean) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
   new ScriptController(browserName, launchOptions, contextOptions, context, process.stdout, enableRecorder, options.device);
+  if (process.env.PWCLI_EXIT_FOR_TEST) {
+    await context.close()
+    process.exit(0)
+  }
   await openPage(context, url);
 }
 
