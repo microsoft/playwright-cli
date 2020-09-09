@@ -84,6 +84,22 @@ it('should fill', async ({ page, recorder }) => {
   expect(message.text()).toBe('John');
 });
 
+it('should fill textarea', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<textarea id="textarea" name="name" oninput="console.log(textarea.value)"></textarea>`);
+  const selector = await recorder.focusElement('textarea');
+  expect(selector).toBe('textarea[name="name"]');
+
+  const [message] = await Promise.all([
+    page.waitForEvent('console'),
+    recorder.waitForOutput('fill'),
+    page.fill('textarea', 'John')
+  ]);
+  expect(recorder.output()).toContain(`
+  // Fill textarea[name="name"]
+  await page.fill('textarea[name="name"]', 'John');`);
+  expect(message.text()).toBe('John');
+});
+
 it('should press', test => {
   test.fail(isChromium() && isMac(), 'Upstream issue https://github.com/microsoft/playwright/issues/3781');
 }, async ({ page, recorder }) => {
@@ -458,7 +474,7 @@ it('should record open in a new tab with url', test => {
     expect(recorder.output()).toContain(`
   // Open new page
   const page1 = await context.newPage();
-  page1.load('about:blank?foo');`);  
+  page1.load('about:blank?foo');`);
   } else if (isFirefox()) {
     expect(recorder.output()).toContain(`
   // Click text="link"
