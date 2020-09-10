@@ -358,9 +358,16 @@ export class Recorder {
     // Ignore the QWERTZ shortcut for creating a at sign on MacOS
     if (event.key === "@" && event.code === "KeyL")
       return false
-    // Allow and ignore common used shortcuts in testing (Select all, copy, paste)
-    if (['a', 'c', 'v'].includes(event.key) && event.metaKey)
-      return false
+    // Allow and ignore common used shortcut for pasting.
+    if (process.platform === 'darwin') {
+      if (event.key === 'v' && event.metaKey)
+        return false;
+    } else {
+      if (event.key === 'v' && event.ctrlKey)
+        return false;
+      if (event.key === 'Insert' && event.shiftKey)
+        return false;
+    }
     if (['Shift', 'Control', 'Meta', 'Alt'].includes(event.key))
       return false;
     const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
