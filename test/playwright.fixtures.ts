@@ -244,6 +244,7 @@ class CLIMock {
   private lines: string[]
   private waitForText: string
   private waitForCallback: () => void;
+  exited: Promise<number>
   constructor(args: string[]) {
     this.lines = []
     this.process = spawn('node', [
@@ -252,7 +253,7 @@ class CLIMock {
     ], {
       env: {
         ...process.env,
-        PWCLI_EXIT_FOR_TEST: "1"
+        PWCLI_EXIT_FOR_TEST: '1'
       }
     });
     this.process.stdout.on('data', line => {
@@ -260,6 +261,7 @@ class CLIMock {
       if (this.waitForCallback && this.lines.join('\n').includes(this.waitForText))
         this.waitForCallback()
     })
+    this.exited = new Promise(r => this.process.on('exit', r))
   }
   async waitFor(text: string): Promise<void> {
     if (this.lines.join('\n').includes(text))

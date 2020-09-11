@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import * as querystring from 'querystring';
 import * as playwright from 'playwright';
 import { Writable } from 'stream';
+import { Frame } from 'playwright';
 import { quote, Formatter } from './formatter';
 import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal, DialogSignal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
-import { highlight } from 'highlight.js';
-import { Frame } from 'playwright';
+import {OutputMultiplexer, TerminalOutput, FileOutput} from './outputs'
 
 export type ActionInContext = {
   pageAlias: string;
@@ -30,14 +29,17 @@ export type ActionInContext = {
   committed?: boolean;
 }
 
-export class TerminalOutput {
+export class Output {
   private _currentAction: ActionInContext | undefined;
   private _lastAction: ActionInContext | undefined;
   private _lastActionText: string | undefined;
-  private _out: Writable;
+  private _outputs: OutputMultiplexer;
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, out: Writable, deviceName: string | undefined) {
-    this._out = out;
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, out: Writable, outputFile: string | undefined, deviceName: string | undefined) {
+    this._outputs = new OutputMultiplexer()
+    this._outputs.add(new TerminalOutput(out))
+    if (outputFile)
+      this._outputs.add(new FileOutput(outputFile))
     const formatter = new Formatter();
     launchOptions = { headless: false, ...launchOptions };
 
@@ -48,28 +50,11 @@ export class TerminalOutput {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
         const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
       })();`);
-    this._out.write(this._highlight(formatter.format()) + '\n');
+    this._outputs.write(formatter.format(), '\n');
   }
 
-  _highlight(text: string)  {
-    let highlightedCode = highlight('typescript', text).value;
-    highlightedCode = querystring.unescape(highlightedCode);
-    highlightedCode = highlightedCode.replace(/<span class="hljs-keyword">/g, '\x1b[38;5;205m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-built_in">/g, '\x1b[38;5;220m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-literal">/g, '\x1b[38;5;159m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-number">/g, '\x1b[38;5;78m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-string">/g, '\x1b[38;5;130m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-subst">/g, '\x1b[38;5;242m');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-function">/g, '');
-    highlightedCode = highlightedCode.replace(/<span class="hljs-params">/g, '');
-    highlightedCode = highlightedCode.replace(/<\/span>/g, '\x1b[0m');
-    highlightedCode = highlightedCode.replace(/&#x27;/g, "'");
-    highlightedCode = highlightedCode.replace(/&quot;/g, '"');
-    highlightedCode = highlightedCode.replace(/&gt;/g, '>');
-    highlightedCode = highlightedCode.replace(/&lt;/g, '<');
-    highlightedCode = highlightedCode.replace(/&amp;/g, '&');
-    return highlightedCode;
+  flush() {
+    this._outputs.flush()
   }
 
   addAction(action: ActionInContext) {
@@ -122,13 +107,12 @@ export class TerminalOutput {
       eraseLines += this._lastActionText.split('\n').length;
     // And we erase the last action too if augmenting.
     for (let i = 0; i < eraseLines; ++i)
-      this._out.write('\u001B[1A\u001B[2K');
-
+      this._outputs.popLine()
     const performingAction = !!this._currentAction;
     this._currentAction = undefined;
     this._lastAction = actionInContext;
     this._lastActionText = this._generateAction(actionInContext, performingAction);
-    this._out.write(this._lastActionText + '\n})();\n');
+    this._outputs.write(this._lastActionText, '\n})();\n');
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {
@@ -167,7 +151,7 @@ export class TerminalOutput {
       formatter.add(`const ${pageAlias} = await context.newPage();`);
       if (action.url && action.url !== 'about:blank' && action.url !== 'chrome://newtab/')
         formatter.add(`${pageAlias}.load('${action.url}');`);
-      return this._highlight(formatter.format());
+      return formatter.format();
     }
 
     const subject = !frame.parentFrame() ? pageAlias :
@@ -231,7 +215,7 @@ export class TerminalOutput {
       formatter.add(`]);`);
     else if (assertNavigation)
       formatter.add(`  // assert.equal(${pageAlias}.url(), ${quote(navigationSignal!.url)});`);
-    return this._highlight(formatter.format());
+    return formatter.format();
   }
 
   private _generateActionCall(action: Action): string {

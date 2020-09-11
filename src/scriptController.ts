@@ -22,9 +22,9 @@ import { RecorderController } from './recorderController';
 export class ScriptController {
   private _recorder: RecorderController | undefined;
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: Writable, enableRecorder: boolean, deviceName: string | undefined) {
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: Writable, enableRecorder: boolean, outputFile: string | undefined, deviceName: string | undefined) {
     if (enableRecorder)
-      this._recorder = new RecorderController(browserName, launchOptions, contextOptions, context, output, deviceName);
+      this._recorder = new RecorderController(browserName, launchOptions, contextOptions, context, output, outputFile, deviceName);
     context.on('page', page => this._onPage(page));
     for (const page of context.pages())
       this._onPage(page);
