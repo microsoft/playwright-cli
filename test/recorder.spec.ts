@@ -458,9 +458,9 @@ it('should handle history.postData', async ({ page, recorder, httpServer }) => {
   }
 });
 
-it('should record open in a new tab with url', test => {
-  test.fixme(isWebKit(), 'Ctrl+click does not open in new tab on WebKit');
-}, async ({ page, recorder }) => {
+it('should record open in a new tab with url', (test, parameters) => {
+  test.fixme(isWebKit(parameters), 'Ctrl+click does not open in new tab on WebKit');
+}, async ({ page, recorder, browserName }) => {
   await recorder.setContentAndWait(`<a href="about:blank?foo">link</a>`);
 
   const selector = await recorder.hoverOverElement('a');
@@ -468,12 +468,12 @@ it('should record open in a new tab with url', test => {
 
   await page.click('a', { modifiers: [ isMac() ? 'Meta' : 'Control'] });
   await recorder.waitForOutput('page1');
-  if (isChromium()) {
+  if (isChromium(browserName)) {
     expect(recorder.output()).toContain(`
   // Open new page
   const page1 = await context.newPage();
   page1.load('about:blank?foo');`);
-  } else if (isFirefox()) {
+  } else if (isFirefox(browserName)) {
     expect(recorder.output()).toContain(`
   // Click text="link"
   const [page1] = await Promise.all([
@@ -485,8 +485,8 @@ it('should record open in a new tab with url', test => {
   }
 });
 
-it('should not clash pages', test => {
-  test.fixme(isFirefox(), 'Times out on Firefox, maybe the focus issue')
+it('should not clash pages', (test, parameters) => {
+  test.fixme(isFirefox(parameters), 'Times out on Firefox, maybe the focus issue')
 }, async ({ page, recorder }) => {
   const [popup1] = await Promise.all([
     page.context().waitForEvent('page'),

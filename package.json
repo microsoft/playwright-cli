@@ -22,7 +22,7 @@
     "playwright": "~1.4.0"
   },
   "devDependencies": {
-    "@playwright/test-runner": "^0.3.4",
+    "@playwright/test-runner": "^0.3.7",
     "ts-loader": "^8.0.3",
     "typescript": "^4.0.2",
     "webpack": "^4.44.1",

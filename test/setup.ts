@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-declare const matrix: (m: any) => void;
-
-matrix({
-  'browserName': process.env.BROWSER ? [process.env.BROWSER] : ['chromium', 'webkit', 'firefox'],
-});
+(global as any).setParameterValues(
+    'browserName',
+    process.env.BROWSER ? [process.env.BROWSER] : ['chromium', 'webkit', 'firefox']);

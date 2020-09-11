@@ -22,9 +22,12 @@ import { fixtures as baseFixtures } from '@playwright/test-runner';
 import { ScriptController } from '../lib/scriptController';
 import { Page } from 'playwright';
 
+type Parameters = {
+  browserName: string;
+}
+
 type WorkerFixtures = {
   browserType: playwright.BrowserType<playwright.Browser>;
-  browserName: string;
   browser: playwright.Browser;
   httpServer: httpServer;
 };
@@ -36,39 +39,46 @@ type TestFixtures = {
   runCLI: (args: string[]) => CLIMock;
 };
 
-export const fixtures = baseFixtures.extend<WorkerFixtures, TestFixtures>();
+export const fixtures = baseFixtures
+    .declareParameters<Parameters>()
+    .declareWorkerFixtures<WorkerFixtures>()
+    .declareTestFixtures<TestFixtures>();
 
 interface httpServer {
   setHandler: (handler: http.RequestListener) => void
   PREFIX: string
 }
 
-export function isChromium() {
-  return baseFixtures.parameters.browserName === 'chromium';
+export function isChromium(browserName: string): boolean;
+export function isChromium(parameters: { browserName: string }): boolean;
+export function isChromium(parameters: string | { browserName: string }) {
+  return (typeof parameters === 'string' ? parameters : parameters.browserName) === 'chromium';
 }
 
-export function isFirefox() {
-  return baseFixtures.parameters.browserName === 'firefox';
+export function isFirefox(browserName: string): boolean;
+export function isFirefox(parameters: { browserName: string }): boolean;
+export function isFirefox(parameters: string | { browserName: string }) {
+  return (typeof parameters === 'string' ? parameters : parameters.browserName) === 'firefox';
 }
 
-export function isWebKit() {
-  return baseFixtures.parameters.browserName === 'webkit';
+export function isWebKit(browserName: string): boolean;
+export function isWebKit(parameters: { browserName: string }): boolean;
+export function isWebKit(parameters: string | { browserName: string }) {
+  return (typeof parameters === 'string' ? parameters : parameters.browserName) === 'webkit';
 }
 
 export function isMac() {
   return process.platform === 'darwin';
 }
 
-fixtures.registerWorkerFixture('browserType', async ({ browserName }, test) => {
+fixtures.defineParameter('browserName', 'Browser type', 'chromium');
+
+fixtures.defineWorkerFixture('browserType', async ({ browserName }, test) => {
   const browserType = playwright[browserName];
   await test(browserType);
 });
 
-fixtures.registerWorkerFixture('browserName', async ({ }, test) => {
-  await test(process.env.BROWSER || 'chromium');
-});
-
-fixtures.registerWorkerFixture('browser', async ({ browserType }, test) => {
+fixtures.defineWorkerFixture('browser', async ({ browserType }, test) => {
   const browser = await browserType.launch({
     headless: !process.env.HEADFUL
   });
@@ -76,7 +86,7 @@ fixtures.registerWorkerFixture('browser', async ({ browserType }, test) => {
   await browser.close();
 });
 
-fixtures.registerWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
+fixtures.defineWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
   let handler = (req: http.IncomingMessage, res: http.ServerResponse) => res.end()
   const port = 8907 + parallelIndex * 2;
   const server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse)=> handler(req, res)).listen(port);
@@ -87,7 +97,7 @@ fixtures.registerWorkerFixture('httpServer', async ({parallelIndex}, runTest) =>
   server.close()
 })
 
-fixtures.registerFixture('contextWrapper', async ({ browser }, runTest, info) => {
+fixtures.defineTestFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
   const output = new WritableBuffer();
   new ScriptController('chromium', {}, {}, context, output, true);
@@ -95,7 +105,7 @@ fixtures.registerFixture('contextWrapper', async ({ browser }, runTest, info) =>
   await context.close();
 });
 
-fixtures.registerFixture('recorder', async ({ contextWrapper }, runTest) => {
+fixtures.defineTestFixture('recorder', async ({ contextWrapper }, runTest) => {
   const page = await contextWrapper.context.newPage();
   if (process.env.PWCONSOLE)
     page.on('console', console.log);
@@ -103,7 +113,7 @@ fixtures.registerFixture('recorder', async ({ contextWrapper }, runTest) => {
   await page.close();
 });
 
-fixtures.registerFixture('page', async ({ recorder }, runTest) => {
+fixtures.defineTestFixture('page', async ({ recorder }, runTest) => {
   await runTest(recorder.page);
 });
 
@@ -219,7 +229,7 @@ class Recorder {
   }
 }
 
-fixtures.registerFixture('runCLI', async ({  }, runTest, info) => {
+fixtures.defineTestFixture('runCLI', async ({  }, runTest, info) => {
   let cli: CLIMock
   const cliFactory = (args: string[]) => {
     cli = new CLIMock(args);
