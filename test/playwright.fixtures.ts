@@ -1,6 +1,7 @@
 /**
  * Copyright Microsoft Corporation. All rights reserved.
  *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,12 +16,14 @@
  */
 
 import * as http from 'http'
+import { Writable } from 'stream';
 import * as path from 'path';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as playwright from 'playwright';
 import { fixtures as baseFixtures } from '@playwright/test-runner';
-import { ScriptController } from '../lib/scriptController';
+import { ScriptController } from '../src/scriptController';
 import { Page } from 'playwright';
+import { TerminalOutput } from '../src/outputs';
 
 type Parameters = {
   browserName: string;
@@ -100,7 +103,7 @@ fixtures.defineWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
 fixtures.defineTestFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
   const output = new WritableBuffer();
-  new ScriptController('chromium', {}, {}, context, output, true);
+  new ScriptController('chromium', {}, {}, context, new TerminalOutput(output as any as Writable), true);
   await runTest({ context, output });
   await context.close();
 });
@@ -244,6 +247,7 @@ class CLIMock {
   private lines: string[]
   private waitForText: string
   private waitForCallback: () => void;
+  exited: Promise<number>
   constructor(args: string[]) {
     this.lines = []
     this.process = spawn('node', [
@@ -252,7 +256,7 @@ class CLIMock {
     ], {
       env: {
         ...process.env,
-        PWCLI_EXIT_FOR_TEST: "1"
+        PWCLI_EXIT_FOR_TEST: '1'
       }
     });
     this.process.stdout.on('data', line => {
@@ -260,6 +264,7 @@ class CLIMock {
       if (this.waitForCallback && this.lines.join('\n').includes(this.waitForText))
         this.waitForCallback()
     })
+    this.exited = new Promise(r => this.process.on('exit', r))
   }
   async waitFor(text: string): Promise<void> {
     if (this.lines.join('\n').includes(text))

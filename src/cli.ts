@@ -20,8 +20,8 @@ import * as program from 'commander';
 import * as os from 'os';
 import * as playwright from 'playwright';
 import { Browser, BrowserContext, Page } from 'playwright';
-import { RecorderController } from './recorderController';
 import { ScriptController } from './scriptController';
+import { OutputMultiplexer, TerminalOutput, FileOutput } from './outputs'
 
 program
     .version('Version ' + require('../package.json').version)
@@ -72,8 +72,9 @@ for (const {alias, name, type} of browsers) {
 program
     .command('codegen [url]')
     .description('open page and generate code for user actions')
+    .option('-o --output <file name>', 'saves the generated script to a file')
     .action(function(url, command) {
-      codegen(command.parent, url);
+      codegen(command.parent, url, command.output);
     }).on('--help', function() {
       console.log('');
       console.log('Examples:');
@@ -87,7 +88,7 @@ program
     .description('capture a page screenshot')
     .option('--wait-for-selector <selector>', 'wait for selector before taking a screenshot')
     .option('--wait-for-timeout <timeout>', 'wait for timeout in milliseconds before taking a screenshot')
-    .option('--full-page', 'Whether to take a full page screenshot (entire scrollable area)')
+    .option('--full-page', 'whether to take a full page screenshot (entire scrollable area)')
     .action(function(url, filename, command) {
       screenshot(command.parent, command, url, filename);
     }).on('--help', function() {
@@ -245,14 +246,15 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
   return page;
 }
 
-async function open(options: Options, url: string | undefined, enableRecorder: boolean) {
+async function open(options: Options, url: string | undefined, enableRecorder: boolean, outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  new ScriptController(browserName, launchOptions, contextOptions, context, process.stdout, enableRecorder, options.device);
-  if (process.env.PWCLI_EXIT_FOR_TEST) {
-    await context.close()
-    process.exit(0)
-  }
+  const output = new OutputMultiplexer([new TerminalOutput(process.stdout)])
+  if (outputFile)
+    output.add(new FileOutput(outputFile))
+  new ScriptController(browserName, launchOptions, contextOptions, context, output, enableRecorder, options.device);
   await openPage(context, url);
+  if (process.env.PWCLI_EXIT_FOR_TEST)
+    await Promise.all(context.pages().map(p => p.close()))
 }
 
 async function waitForPage(page: Page, captureOptions: CaptureOptions) {
@@ -290,8 +292,8 @@ async function pdf(options: Options, captureOptions: CaptureOptions, url: string
   await browser.close();
 }
 
-async function codegen(options: Options, url: string | undefined) {
-  return open(options, url, true);
+async function codegen(options: Options, url: string | undefined, outputFile?: string) {
+  return open(options, url, true, outputFile);
 }
 
 function lookupBrowserType(options: Options): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {

@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+import * as fs from 'fs';
 import * as path from 'path';
+import {promisify} from 'util';
 import { fixtures} from './playwright.fixtures';
 const { it, expect } = fixtures;
 
-const emptyHTML = "file://" + path.join(__dirname, "assets", "empty.html")
+const readFileAsync = promisify(fs.readFile)
+
+const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString()
 
 it('should print the correct imports and context options', async ({ runCLI }) => {
   const cli = runCLI(['codegen', emptyHTML]);
@@ -82,4 +86,28 @@ it('should print the correct context options when using a device and additional 
 })();`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
+});
+
+it('should save the codegen output to a file if specified', async ({ runCLI, tmpDir }) => {
+  const tmpFile = path.join(tmpDir, 'script.js')
+  const cli = runCLI(['codegen', '--output', tmpFile, emptyHTML]);
+  await cli.exited
+  const content = await readFileAsync(tmpFile)
+  expect(content.toString()).toBe(`const { chromium } = require('playwright');
+
+(async () => {
+  const browser = await chromium.launch({
+    headless: false
+  });
+  const context = await browser.newContext();
+
+  // Open new page
+  const page = await context.newPage();
+
+  // Go to ${emptyHTML}
+  await page.goto('${emptyHTML}');
+
+  // Close page
+  await page.close();
+})();`)
 });
