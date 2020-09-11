@@ -15,20 +15,18 @@
  */
 
 import * as playwright from 'playwright';
-import { Writable } from 'stream';
 import * as actions from './recorderActions';
-import { CodeGenerator, ActionInContext } from './codeGenerator';
+import { CodeGenerator, ActionInContext, CodeGeneratorOutput } from './codeGenerator';
 import { BindingSource, toClickOptions, toModifiers } from './utils';
-import { IOutput } from './outputs';
 
 export class RecorderController {
-  private _output: CodeGenerator;
+  private _generator: CodeGenerator;
   private _pageAliases = new Map<playwright.Page, string>();
   private _lastPopupOrdinal = 0;
   private _timers = new Set<NodeJS.Timeout>();
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: IOutput, deviceName: string | undefined) {
-    this._output = new CodeGenerator(browserName, launchOptions, contextOptions, output, deviceName);
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: CodeGeneratorOutput, deviceName: string | undefined) {
+    this._generator = new CodeGenerator(browserName, launchOptions, contextOptions, output, deviceName);
 
     // Input actions that potentially lead to navigation are intercepted on the page and are
     // performed by the Playwright.
@@ -39,9 +37,9 @@ export class RecorderController {
     context.exposeBinding('recordPlaywrightAction',
         (source: BindingSource, action: actions.Action) => this._recordAction(source.frame, source.page, action)).catch(e => {});
 
-    // Commits last action so that no furhter signals are added to it.
+    // Commits last action so that no further signals are added to it.
     context.exposeBinding('commitLastAction',
-        (source: BindingSource, action: actions.Action) => this._output.commitLastAction()).catch(e => {});
+        (source: BindingSource, action: actions.Action) => this._generator.commitLastAction()).catch(e => {});
 
     context.on('page', page => this._onPage(page));
     for (const page of context.pages())
@@ -51,7 +49,7 @@ export class RecorderController {
       for (const timer of this._timers)
         clearTimeout(timer);
       this._timers.clear();
-      this._output.flush();
+      this._generator.exit();
     });
   }
 
@@ -59,7 +57,7 @@ export class RecorderController {
     // First page is called page, others are called popup1, popup2, etc.
     page.on('close', () => {
       this._pageAliases.delete(page);
-      this._output.addAction({
+      this._generator.addAction({
         pageAlias,
         frame: page.mainFrame(),
         committed: true,
@@ -82,7 +80,7 @@ export class RecorderController {
     if (page.isClosed())
       return;
     if (!isPopup) {
-      this._output.addAction({
+      this._generator.addAction({
         pageAlias,
         frame: page.mainFrame(),
         committed: true,
@@ -101,7 +99,7 @@ export class RecorderController {
       frame,
       action
     };
-    this._output.willPerformAction(actionInContext);
+    this._generator.willPerformAction(actionInContext);
     if (action.name === 'click') {
       const { options } = toClickOptions(action);
       await frame.click(action.selector, options);
@@ -121,13 +119,13 @@ export class RecorderController {
       actionInContext.committed = true;
       this._timers.delete(timer);
     }, 5000);
-    this._output.didPerformAction(actionInContext);
+    this._generator.didPerformAction(actionInContext);
     this._timers.add(timer);
   }
 
   private async _recordAction(frame: playwright.Frame, page: playwright.Page, action: actions.Action) {
     // We are lacking frame.page() in Playwright.
-    this._output.addAction({
+    this._generator.addAction({
       pageAlias: this._pageAliases.get(page)!,
       frame,
       action
@@ -138,22 +136,22 @@ export class RecorderController {
     if (frame.parentFrame())
       return;
     const pageAlias = this._pageAliases.get(page);
-    this._output.signal(pageAlias!, frame, { name: 'navigation', url: frame.url() });
+    this._generator.signal(pageAlias!, frame, { name: 'navigation', url: frame.url() });
   }
 
   private _onPopup(page: playwright.Page, popup: playwright.Page) {
     const pageAlias = this._pageAliases.get(page)!;
     const popupAlias = this._pageAliases.get(popup)!;
-    this._output.signal(pageAlias, page.mainFrame(), { name: 'popup', popupAlias });
+    this._generator.signal(pageAlias, page.mainFrame(), { name: 'popup', popupAlias });
   }
   private _onDownload(page: playwright.Page, download: playwright.Download) {
     const pageAlias = this._pageAliases.get(page)!;
-    this._output.signal(pageAlias, page.mainFrame(), { name: 'download' });
+    this._generator.signal(pageAlias, page.mainFrame(), { name: 'download' });
   }
 
   private _onDialog(page: playwright.Page, download: playwright.Dialog) {
     const pageAlias = this._pageAliases.get(page)!;
-    this._output.signal(pageAlias, page.mainFrame(), { name: 'dialog' });
+    this._generator.signal(pageAlias, page.mainFrame(), { name: 'dialog' });
   }
 }
 
