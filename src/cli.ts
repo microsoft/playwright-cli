@@ -20,8 +20,8 @@ import * as program from 'commander';
 import * as os from 'os';
 import * as playwright from 'playwright';
 import { Browser, BrowserContext, Page } from 'playwright';
-import { RecorderController } from './recorderController';
 import { ScriptController } from './scriptController';
+import { OutputMultiplexer, TerminalOutput, FileOutput } from './outputs'
 
 program
     .version('Version ' + require('../package.json').version)
@@ -248,7 +248,10 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
 
 async function open(options: Options, url: string | undefined, enableRecorder: boolean, outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  new ScriptController(browserName, launchOptions, contextOptions, context, process.stdout, enableRecorder, outputFile, options.device);
+  const output = new OutputMultiplexer([new TerminalOutput(process.stdout)])
+  if (outputFile)
+    output.add(new FileOutput(outputFile))
+  new ScriptController(browserName, launchOptions, contextOptions, context, output, enableRecorder, options.device);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)
     await Promise.all(context.pages().map(p => p.close()))

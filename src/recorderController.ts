@@ -17,17 +17,18 @@
 import * as playwright from 'playwright';
 import { Writable } from 'stream';
 import * as actions from './recorderActions';
-import { Output, ActionInContext } from './output';
+import { CodeGenerator, ActionInContext } from './codeGenerator';
 import { BindingSource, toClickOptions, toModifiers } from './utils';
+import { IOutput } from './outputs';
 
 export class RecorderController {
-  private _output: Output;
+  private _output: CodeGenerator;
   private _pageAliases = new Map<playwright.Page, string>();
   private _lastPopupOrdinal = 0;
   private _timers = new Set<NodeJS.Timeout>();
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: Writable, outputFile: string | undefined, deviceName: string | undefined) {
-    this._output = new Output(browserName, launchOptions, contextOptions, output, outputFile, deviceName);
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: IOutput, deviceName: string | undefined) {
+    this._output = new CodeGenerator(browserName, launchOptions, contextOptions, output, deviceName);
 
     // Input actions that potentially lead to navigation are intercepted on the page and are
     // performed by the Playwright.

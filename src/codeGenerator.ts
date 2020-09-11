@@ -20,7 +20,7 @@ import { Frame } from 'playwright';
 import { quote, Formatter } from './formatter';
 import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal, DialogSignal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
-import {OutputMultiplexer, TerminalOutput, FileOutput} from './outputs'
+import { OutputMultiplexer, TerminalOutput, FileOutput, IOutput } from './outputs';
 
 export type ActionInContext = {
   pageAlias: string;
@@ -29,17 +29,14 @@ export type ActionInContext = {
   committed?: boolean;
 }
 
-export class Output {
+export class CodeGenerator {
   private _currentAction: ActionInContext | undefined;
   private _lastAction: ActionInContext | undefined;
   private _lastActionText: string | undefined;
-  private _outputs: OutputMultiplexer;
+  private _output: IOutput;
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, out: Writable, outputFile: string | undefined, deviceName: string | undefined) {
-    this._outputs = new OutputMultiplexer()
-    this._outputs.add(new TerminalOutput(out))
-    if (outputFile)
-      this._outputs.add(new FileOutput(outputFile))
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, output: IOutput, deviceName: string | undefined) {
+    this._output = output
     const formatter = new Formatter();
     launchOptions = { headless: false, ...launchOptions };
 
@@ -50,11 +47,11 @@ export class Output {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
         const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
       })();`);
-    this._outputs.write(formatter.format(), '\n');
+    this._output.write(formatter.format(), '\n');
   }
 
   flush() {
-    this._outputs.flush()
+    this._output.flush()
   }
 
   addAction(action: ActionInContext) {
@@ -107,12 +104,12 @@ export class Output {
       eraseLines += this._lastActionText.split('\n').length;
     // And we erase the last action too if augmenting.
     for (let i = 0; i < eraseLines; ++i)
-      this._outputs.popLine()
+      this._output.popLine()
     const performingAction = !!this._currentAction;
     this._currentAction = undefined;
     this._lastAction = actionInContext;
     this._lastActionText = this._generateAction(actionInContext, performingAction);
-    this._outputs.write(this._lastActionText, '\n})();\n');
+    this._output.write(this._lastActionText, '\n})();\n');
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {

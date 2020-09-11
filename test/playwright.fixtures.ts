@@ -1,6 +1,7 @@
 /**
  * Copyright Microsoft Corporation. All rights reserved.
  *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,12 +16,14 @@
  */
 
 import * as http from 'http'
+import { Writable } from 'stream';
 import * as path from 'path';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as playwright from 'playwright';
 import { fixtures as baseFixtures } from '@playwright/test-runner';
-import { ScriptController } from '../lib/scriptController';
+import { ScriptController } from '../src/scriptController';
 import { Page } from 'playwright';
+import { TerminalOutput } from '../src/outputs';
 
 type Parameters = {
   browserName: string;
@@ -100,7 +103,7 @@ fixtures.defineWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
 fixtures.defineTestFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
   const output = new WritableBuffer();
-  new ScriptController('chromium', {}, {}, context, output, true);
+  new ScriptController('chromium', {}, {}, context, new TerminalOutput(output as any as Writable), true);
   await runTest({ context, output });
   await context.close();
 });
