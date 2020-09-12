@@ -1,62 +1,69 @@
+/**
+ * Copyright (c) Microsoft Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import * as fs from 'fs'
 import * as querystring from 'querystring';
 import { Writable } from 'stream';
 import { highlight } from 'highlight.js';
+import { CodeGeneratorOutput } from './codeGenerator';
 
-export class OutputMultiplexer implements IOutput {
-  private _outputs: IOutput[]
-  constructor(outputs: IOutput[]) {
+export class OutputMultiplexer implements CodeGeneratorOutput {
+  private _outputs: CodeGeneratorOutput[]
+  constructor(outputs: CodeGeneratorOutput[]) {
     this._outputs = outputs;
   }
 
-  add(output: IOutput) {
-    this._outputs.push(output)
-  }
-
-  write(text: string, suffix?: string) {
+  write(text: string) {
     for (const output of this._outputs)
-      output.write(text, suffix)
+      output.write(text);
   }
 
   popLine() {
     for (const output of this._outputs)
-      output.popLine()
+      output.popLine();
   }
 
   flush() {
     for (const output of this._outputs)
-      output.flush()
+      output.flush();
   }
 }
 
-export interface IOutput {
-  write(text: string, suffix?: string): void
-  popLine(): void
-  flush(): void
-}
-
-export class FileOutput implements IOutput {
+export class FileOutput implements CodeGeneratorOutput {
   private _fileName: string;
   private _lines: string[];
   constructor(fileName: string) {
     this._fileName = fileName;
-    this._lines = []
+    this._lines = [];
   }
 
-  write(text: string, suffix: string) {
-    this._lines.push(...(text + suffix).trimEnd().split('\n'))
+  write(text: string) {
+    this._lines.push(...text.trimEnd().split('\n'));
   }
 
   popLine() {
-    this._lines.pop()
+    this._lines.pop();
   }
 
   flush() {
-    fs.writeFileSync(this._fileName, this._lines.join('\n'))
+    fs.writeFileSync(this._fileName, this._lines.join('\n'));
   }
 }
 
-export class TerminalOutput implements IOutput {
+export class TerminalOutput implements CodeGeneratorOutput {
   private _output: Writable
   constructor(output: Writable) {
     this._output = output;
@@ -82,12 +89,12 @@ export class TerminalOutput implements IOutput {
     return highlightedCode;
   }
 
-  write(text: string, suffix?: string) {
-    this._output.write(this._highlight(text) + suffix)
+  write(text: string) {
+    this._output.write(this._highlight(text));
   }
 
   popLine() {
-    this._output.write('\u001B[1A\u001B[2K')
+    this._output.write('\u001B[1A\u001B[2K');
   }
 
   flush() {}

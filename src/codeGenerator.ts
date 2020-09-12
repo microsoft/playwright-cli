@@ -15,12 +15,10 @@
  */
 
 import * as playwright from 'playwright';
-import { Writable } from 'stream';
 import { Frame } from 'playwright';
 import { quote, Formatter } from './formatter';
 import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal, DialogSignal } from './recorderActions';
 import { MouseClickOptions, toModifiers } from './utils';
-import { OutputMultiplexer, TerminalOutput, FileOutput, IOutput } from './outputs';
 
 export type ActionInContext = {
   pageAlias: string;
@@ -29,13 +27,19 @@ export type ActionInContext = {
   committed?: boolean;
 }
 
+export interface CodeGeneratorOutput {
+  write(text: string): void
+  popLine(): void
+  flush(): void
+}
+
 export class CodeGenerator {
   private _currentAction: ActionInContext | undefined;
   private _lastAction: ActionInContext | undefined;
   private _lastActionText: string | undefined;
-  private _output: IOutput;
+  private _output: CodeGeneratorOutput;
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, output: IOutput, deviceName: string | undefined) {
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, output: CodeGeneratorOutput, deviceName: string | undefined) {
     this._output = output
     const formatter = new Formatter();
     launchOptions = { headless: false, ...launchOptions };
@@ -47,11 +51,14 @@ export class CodeGenerator {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
         const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
       })();`);
-    this._output.write(formatter.format(), '\n');
+    this._output.write(formatter.format() + '\n');
   }
 
-  flush() {
-    this._output.flush()
+  exit() {
+    this._output.popLine();
+    this._output.write('  // Close browser\n');
+    this._output.write('  await browser.close();\n})();\n');
+    this._output.flush();
   }
 
   addAction(action: ActionInContext) {
@@ -109,7 +116,7 @@ export class CodeGenerator {
     this._currentAction = undefined;
     this._lastAction = actionInContext;
     this._lastActionText = this._generateAction(actionInContext, performingAction);
-    this._output.write(this._lastActionText, '\n})();\n');
+    this._output.write(this._lastActionText + '\n})();\n');
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {
