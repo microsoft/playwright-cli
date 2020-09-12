@@ -15,139 +15,34 @@
  */
 
 import * as playwright from 'playwright';
-import { Frame } from 'playwright';
-import { quote, Formatter } from './formatter';
-import { Action, actionTitle, NavigationSignal, PopupSignal, Signal, DownloadSignal, DialogSignal } from './recorderActions';
-import { MouseClickOptions, toModifiers } from './utils';
+import { LanguageGenerator } from '.';
+import { ActionInContext, CodeGeneratorOutput } from '../codeGenerator';
+import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
+import { MouseClickOptions, toModifiers } from '../../utils';
 
-export type ActionInContext = {
-  pageAlias: string;
-  frame: Frame;
-  action: Action;
-  committed?: boolean;
-}
-
-export interface CodeGeneratorOutput {
-  write(text: string): void
-  popLine(): void
-  flush(): void
-}
-
-export class CodeGenerator {
-  private _currentAction: ActionInContext | undefined;
-  private _lastAction: ActionInContext | undefined;
-  private _lastActionText: string | undefined;
-  private _output: CodeGeneratorOutput;
-
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, output: CodeGeneratorOutput, deviceName: string | undefined) {
-    this._output = output
-    const formatter = new Formatter();
-    launchOptions = { headless: false, ...launchOptions };
-
-    formatter.add(`
-      const { ${browserName}${deviceName ? ', devices' : ''} } = require('playwright');
-
-      (async () => {
-        const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
-        const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
-      })();`);
-    this._output.write(formatter.format() + '\n');
+export class JavaScriptLanguageGenerator implements LanguageGenerator {
+  private _output: CodeGeneratorOutput
+  constructor(output: CodeGeneratorOutput) {
+    this._output = output;
   }
 
-  exit() {
-    this._output.popLine();
-    this._output.write('  // Close browser\n');
-    this._output.write('  await browser.close();\n})();\n');
-    this._output.flush();
-  }
-
-  addAction(action: ActionInContext) {
-    this.willPerformAction(action);
-    this.didPerformAction(action);
-  }
-
-  willPerformAction(action: ActionInContext) {
-    this._currentAction = action;
-  }
-
-  didPerformAction(actionInContext: ActionInContext) {
-    const { action, pageAlias } = actionInContext;
-    let eraseLastAction = false;
-    if (this._lastAction && this._lastAction.pageAlias === pageAlias) {
-      const { action: lastAction } = this._lastAction;
-      // We augment last action based on the type.
-      if (this._lastAction && action.name === 'fill' && lastAction.name === 'fill') {
-        if (action.selector === lastAction.selector)
-          eraseLastAction = true;
-      }
-      if (lastAction && action.name === 'click' && lastAction.name === 'click') {
-        if (action.selector === lastAction.selector && action.clickCount > lastAction.clickCount)
-          eraseLastAction = true;
-      }
-      if (lastAction && action.name === 'navigate' && lastAction.name === 'navigate') {
-        if (action.url === lastAction.url)
-          return;
-      }
-      for (const name of ['check', 'uncheck']) {
-        if (lastAction && action.name === name && lastAction.name === 'click') {
-          if ((action as any).selector === (lastAction as any).selector)
-            eraseLastAction = true;
-        }
-      }
-    }
-    this._printAction(actionInContext, eraseLastAction);
-  }
-
-  commitLastAction() {
-    const action = this._lastAction;
-    if (action)
-      action.committed = true;
-  }
-
-  _printAction(actionInContext: ActionInContext, eraseLastAction: boolean) {
+  preWriteAction(eraseLastAction: boolean, lastActionText?: string): void {
     // We erase terminating `})();` at all times.
     let eraseLines = 1;
-    if (eraseLastAction && this._lastActionText)
-      eraseLines += this._lastActionText.split('\n').length;
+    if (eraseLastAction && lastActionText)
+      eraseLines += lastActionText.split('\n').length;
     // And we erase the last action too if augmenting.
     for (let i = 0; i < eraseLines; ++i)
       this._output.popLine()
-    const performingAction = !!this._currentAction;
-    this._currentAction = undefined;
-    this._lastAction = actionInContext;
-    this._lastActionText = this._generateAction(actionInContext, performingAction);
-    this._output.write(this._lastActionText + '\n})();\n');
   }
 
-  signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {
-    // Signal either arrives while action is being performed or shortly after.
-    if (this._currentAction) {
-      this._currentAction.action.signals.push(signal);
-      return;
-    }
-    if (this._lastAction && !this._lastAction.committed) {
-      this._lastAction.action.signals.push(signal);
-      this._printAction(this._lastAction, true);
-      return;
-    }
-
-    if (signal.name === 'navigation') {
-      this.addAction({
-        pageAlias,
-        frame,
-        committed: true,
-        action: {
-          name: 'navigate',
-          url: frame.url(),
-          signals: [],
-        }
-      });
-    }
+  postWriteAction(lastActionText: string): void {
+    this._output.write(lastActionText + '\n})();\n');
   }
 
-  private _generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
+  generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
     const { action, pageAlias, frame } = actionInContext;
-    const formatter = new Formatter(2);
+    const formatter = new JavaScriptFormatter(2);
     formatter.newLine();
     formatter.add('// ' + actionTitle(action));
 
@@ -223,7 +118,7 @@ export class CodeGenerator {
   }
 
   private _generateActionCall(action: Action): string {
-    switch (action.name)  {
+    switch (action.name) {
       case 'openPage':
         throw Error('Not reached');
       case 'closePage':
@@ -262,6 +157,24 @@ export class CodeGenerator {
         return `selectOption(${quote(action.selector)}, ${formatObject(action.options.length > 1 ? action.options : action.options[0])})`;
     }
   }
+
+  writeHeader(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, deviceName?: string): void {
+    const formatter = new JavaScriptFormatter();
+    formatter.add(`
+      const { ${browserName}${deviceName ? ', devices' : ''} } = require('playwright');
+
+      (async () => {
+        const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
+        const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
+      })();`);
+     this._output.write(formatter.format() + '\n');
+  }
+
+  writeFooter(): void {
+    this._output.popLine();
+    this._output.write('  // Close browser\n');
+    this._output.write('  await browser.close();\n})();\n');
+  }
 }
 
 function formatOptions(value: any): string {
@@ -299,7 +212,7 @@ function formatContextOptions(options: playwright.BrowserContextOptions, deviceN
     return formatObjectOrVoid(options);
   // Filter out all the properties from the device descriptor.
   const cleanedOptions: Record<string, any> = {}
-  for(const property in options)
+  for (const property in options)
     if ((device as any)[property] !== (options as any)[property])
       cleanedOptions[property] = (options as any)[property]
   let serializedObject = formatObjectOrVoid(cleanedOptions);
@@ -309,4 +222,56 @@ function formatContextOptions(options: playwright.BrowserContextOptions, deviceN
   const lines = serializedObject.split('\n');
   lines.splice(1, 0, `...devices['${deviceName}'],`);
   return lines.join('\n');
+}
+
+class JavaScriptFormatter {
+  private _baseIndent: string;
+  private _baseOffset: string;
+  private _lines: string[] = [];
+
+  constructor(offset = 0) {
+    this._baseIndent = ' '.repeat(2);
+    this._baseOffset = ' '.repeat(offset);
+  }
+
+  prepend(text: string) {
+    this._lines = text.trim().split('\n').map(line => line.trim()).concat(this._lines);
+  }
+
+  add(text: string) {
+    this._lines.push(...text.trim().split('\n').map(line => line.trim()));
+  }
+
+  newLine() {
+    this._lines.push('');
+  }
+
+  format(): string {
+    let spaces = '';
+    let previousLine = '';
+    return this._lines.map((line: string) => {
+      if (line === '')
+        return line;
+      if (line.startsWith('}') || line.startsWith(']'))
+        spaces = spaces.substring(this._baseIndent.length);
+
+      const extraSpaces = /^(for|while|if).*\(.*\)$/.test(previousLine) ? this._baseIndent : '';
+      previousLine = line;
+
+      line = spaces + extraSpaces + line;
+      if (line.endsWith('{') || line.endsWith('['))
+        spaces += this._baseIndent;
+      return this._baseOffset + line;
+    }).join('\n');
+  }
+}
+
+function quote(text: string, char: string = '\'') {
+  if (char === '\'')
+    return char + text.replace(/[']/g, '\\\'') + char;
+  if (char === '"')
+    return char + text.replace(/["]/g, '\\"') + char;
+  if (char === '`')
+    return char + text.replace(/[`]/g, '\\`') + char;
+  throw new Error('Invalid escape char');
 }
