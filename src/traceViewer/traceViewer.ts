@@ -19,15 +19,17 @@ import * as path from 'path';
 import * as playwright from 'playwright';
 import { Route } from 'playwright';
 import * as util from 'util';
-import { ContextEntry, PageEntry, TraceModel } from './traceModel';
+import { ActionEntry, ContextEntry, PageEntry, TraceModel } from './traceModel';
 import type { ActionTraceEvent, FrameSnapshot, NetworkResourceTraceEvent, PageSnapshot, TraceEvent } from './traceTypes';
 
 const fsReadFileAsync = util.promisify(fs.readFile.bind(fs));
+const fsWriteFileAsync = util.promisify(fs.writeFile.bind(fs));
 
 class TraceViewer {
   private _traceStorageDir: string;
   private _traceModel: TraceModel;
   private _snapshotRouter: SnapshotRouter;
+  private _screenshotGenerator: ScreenshotGenerator;
 
   constructor(traceStorageDir: string, fileName: string) {
     this._traceStorageDir = traceStorageDir;
@@ -36,6 +38,7 @@ class TraceViewer {
       fileName,
       contexts: []
     };
+    this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter);
   }
 
   async load() {
@@ -86,12 +89,19 @@ class TraceViewer {
           const action = actions[actions.length - 1];
           if (action)
             action.resources.push(event);
+          this._snapshotRouter.addResource(event);
           break;
         }
       }
     }
     this._traceModel.contexts = [...contextEntries.values()];
-    this._snapshotRouter.loadEvents(events);
+    await this._screenshotGenerator.init(this._traceModel);
+    for (const context of this._traceModel.contexts) {
+      for (const page of context.pages) {
+        for (const action of page.actions)
+          await this._screenshotGenerator.render(action);
+      }
+    }
   }
 
   async show() {
@@ -120,7 +130,13 @@ class TraceViewer {
       }
       const url = new URL(request.url());
       try {
-        const body = fs.readFileSync(path.join(__dirname, '../../out/web', url.pathname.substring(1)));
+        let filePath: string;
+        if (request.url().includes('trace-storage')) {
+          filePath = path.join(this._traceStorageDir, '..', url.pathname.substring(1));
+        } else {
+          filePath = path.join(__dirname, '../../out/web', url.pathname.substring(1));
+        }
+        const body = fs.readFileSync(filePath);
         route.fulfill({
           contentType: extensionToMime[path.extname(url.pathname).substring(1)] || 'text/plain',
           body
@@ -177,17 +193,13 @@ class SnapshotRouter {
     this._traceStorageDir = traceStorageDir;
   }
 
-  loadEvents(events: TraceEvent[]) {
-    for (const event of events) {
-      if (event.type !== 'resource')
-        continue;
-      let responseEvents = this._resourceEventsByUrl.get(event.url);
-      if (!responseEvents) {
-        responseEvents = [];
-        this._resourceEventsByUrl.set(event.url, responseEvents);
-      }
-      responseEvents.push(event);
+  addResource(event: NetworkResourceTraceEvent) {
+    let responseEvents = this._resourceEventsByUrl.get(event.url);
+    if (!responseEvents) {
+      responseEvents = [];
+      this._resourceEventsByUrl.set(event.url, responseEvents);
     }
+    responseEvents.push(event);
   }
 
   selectSnapshot(snapshot: PageSnapshot, contextId: string) {
@@ -266,5 +278,37 @@ class SnapshotRouter {
     } catch (e) {
       return undefined;
     }
+  }
+}
+
+class ScreenshotGenerator {
+  private _snapshotRouter: SnapshotRouter;
+  private _traceStorageDir: string;
+  private _browser: playwright.Browser | undefined;
+  private _page: playwright.Page | undefined;
+
+  constructor(traceStorageDir: string, snapshotRouter: SnapshotRouter) {
+    this._traceStorageDir = traceStorageDir;
+    this._snapshotRouter = snapshotRouter;
+  }
+
+  async init(model: TraceModel) {
+    this._browser = await playwright['chromium'].launch();
+    // TODO: fixture out multiple contexts.
+    this._page = await this._browser.newPage({ viewport: model.contexts[0].created.viewportSize });
+  }
+
+  async render(actionEntry: ActionEntry) {
+    const imageFileName = path.join(this._traceStorageDir, actionEntry.action.snapshot!.sha1 + '-image.png');
+    if (fs.existsSync(imageFileName))
+      return;
+    const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, actionEntry.action.snapshot!.sha1), 'utf8');
+    const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
+    this._snapshotRouter.selectSnapshot(snapshotObject, actionEntry.action.contextId);
+    const url = snapshotObject.frames[0].url;
+    console.log('Generating screenshot for ' + actionEntry.action.action);
+    await this._page!.goto(url);
+    const imageData = await this._page!.screenshot();
+    await fsWriteFileAsync(imageFileName, imageData);
   }
 }

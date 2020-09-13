@@ -28,6 +28,7 @@ export class PropertiesTabbedPane {
   private _snapshotTab: SnapshotTab;
   private _sourceTab: SourceTab;
   private _networkTab: NetworkTab;
+  private _screenshotTab: ScreenshotTab;
 
   constructor(size: Size) {
     this._tabbedPane = new TabbedPane();
@@ -35,9 +36,11 @@ export class PropertiesTabbedPane {
     this._snapshotTab = new SnapshotTab(size);
     this._sourceTab = new SourceTab();
     this._networkTab = new NetworkTab();
+    this._screenshotTab = new ScreenshotTab(size);
     this._tabbedPane.appendTab(this._snapshotTab);
     this._tabbedPane.appendTab(this._sourceTab);
     this._tabbedPane.appendTab(this._networkTab);
+    this._tabbedPane.appendTab(this._screenshotTab);
     this._tabbedPane.onSelected(tab => {
       if (tab === this._sourceTab)
         this._sourceTab.resize();
@@ -48,6 +51,7 @@ export class PropertiesTabbedPane {
     this._snapshotTab.setAction(action);
     this._sourceTab.setAction(action);
     this._networkTab.setAction(action);
+    this._screenshotTab.setAction(action);
   }
 }
 
@@ -161,5 +165,33 @@ class NetworkTab {
 
   content(): HTMLElement {
     return this._listView.element;
+  }
+}
+
+class ScreenshotTab {
+  label = 'Image';
+  private _element: Element$;
+  private _imageElement: HTMLImageElement;
+
+  constructor(size: Size) {
+    this._element = dom`
+    <vbox style="align-items: center;">
+      <img width=${size.width} height=${size.height}>
+    </vbox>`
+    this._imageElement = this._element.$('img') as HTMLImageElement;
+  }
+
+  render(resource: NetworkResourceTraceEvent, element: HTMLElement): HTMLElement {
+    if (element)
+      return element;
+    return dom`<span>${resource.url}</span>`
+  }
+
+  setAction(action: ActionEntry) {
+    this._imageElement.src = 'trace-storage/' + action.action.snapshot!.sha1 + '-image.png';
+  }
+
+  content(): HTMLElement {
+    return this._element;
   }
 }
