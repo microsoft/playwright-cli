@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@playwright/test-runner": "^0.3.7",
-    "chokidar-cli": "^2.1.0",
     "css-loader": "^4.3.0",
     "file-loader": "^6.1.0",
     "html-webpack-plugin": "^4.4.1",

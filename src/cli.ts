@@ -122,7 +122,7 @@ if (process.env.PWTRACE) {
     .description('Show trace viewer')
     .option('--resources <dir>', 'Directory with the shared trace artifacts')
     .action(function(trace, command) {
-      showTraceViewer(resolveHome(command.resources), [resolveHome(trace)]);
+      showTraceViewer(resolveHome(command.resources), resolveHome(trace));
     }).on('--help', function() {
       console.log('');
       console.log('Examples:');

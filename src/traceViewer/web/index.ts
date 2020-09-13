@@ -1,4 +1,4 @@
-/**
+1/**
  * Copyright (c) Microsoft Corporation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-import { ContextCreatedTraceEvent } from '../traceTypes';
-import type { Trace } from '../traceViewer';
-import { dom } from './components/dom';
-import { ActionListView } from './ui/actionListView';
-import { PropertiesTabbedPane } from './ui/propertiesTabbedPane';
-
+import { TraceModel } from '../traceModel';
 import './common.css';
 import './components/dialog.css';
+import { dom } from './components/dom';
 import './components/dropTarget.css';
 import './components/listView.css';
 import './components/splitView.css';
 import './components/tabbedPane.css';
 import './components/toolbarView.css';
+import { ActionListView } from './ui/actionListView';
 import './ui/actionListView.css';
+import { PropertiesTabbedPane } from './ui/propertiesTabbedPane';
 
-function renderTrace(trace: Trace) {
-  const contextCreated = trace.events.find(e => e.type === 'context-created')! as ContextCreatedTraceEvent;
-  const size = contextCreated.viewportSize!;
+
+function renderTraceModel(trace: TraceModel) {
+	const context = trace.contexts[0];
+  const size = context.created.viewportSize!;
   const tabbedPane = new PropertiesTabbedPane(size);
 
-  const actionListView = new ActionListView(trace.events, tabbedPane);
+  const actionListView = new ActionListView(context, tabbedPane);
   document.body.appendChild(dom`
     <hbox>
       ${actionListView.element}
@@ -61,7 +60,7 @@ function platformName(): string {
   document!.defaultView!.addEventListener('blur', event => {
     document.body.classList.add('inactive');
   }, false);
-  document.body.classList.add(platformName());
-  for (const trace of await (window as any).getTraces())
-    renderTrace(trace);
+	document.body.classList.add(platformName());
+	const traceModel = await (window as any).getTraceModel() as TraceModel;
+  renderTraceModel(traceModel);
 })();

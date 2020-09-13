@@ -19,56 +19,85 @@ import * as path from 'path';
 import * as playwright from 'playwright';
 import { Route } from 'playwright';
 import * as util from 'util';
-import type { ActionTraceEvent, ContextCreatedTraceEvent, ContextDestroyedTraceEvent, FrameSnapshot, NetworkResourceTraceEvent, PageCreatedTraceEvent, PageDestroyedTraceEvent, PageSnapshot } from './traceTypes';
+import { ContextEntry, PageEntry, TraceModel } from './traceModel';
+import type { ActionTraceEvent, FrameSnapshot, NetworkResourceTraceEvent, PageSnapshot, TraceEvent } from './traceTypes';
 
 const fsReadFileAsync = util.promisify(fs.readFile.bind(fs));
 
-export type TraceEvent =
-    ContextCreatedTraceEvent |
-    ContextDestroyedTraceEvent |
-    PageCreatedTraceEvent |
-    PageDestroyedTraceEvent |
-    NetworkResourceTraceEvent |
-    ActionTraceEvent;
-
-export type Trace = {
-  traceFile: string;
-  events: TraceEvent[];
-};
-
 class TraceViewer {
   private _traceStorageDir: string;
-  private _traces: Trace[] = [];
-  private _browserNames = new Set<string>();
-  private _contextEventById = new Map<string, ContextCreatedTraceEvent>();
+  private _traceModel: TraceModel;
   private _snapshotRouter: SnapshotRouter;
 
-  constructor(traceStorageDir: string) {
+  constructor(traceStorageDir: string, fileName: string) {
     this._traceStorageDir = traceStorageDir;
     this._snapshotRouter = new SnapshotRouter(traceStorageDir);
+    this._traceModel = {
+      fileName,
+      contexts: []
+    };
   }
 
-  async load(traceFile: string) {
+  async load() {
     // TODO: validate trace?
-    const traceContent = await fsReadFileAsync(traceFile, 'utf8');
-    const events = traceContent.split('\n').map(line => line.trim()).filter(line => !!line).map(line => JSON.parse(line));
+    const traceContent = await fsReadFileAsync(this._traceModel.fileName, 'utf8');
+    const events = traceContent.split('\n').map(line => line.trim()).filter(line => !!line).map(line => JSON.parse(line)) as TraceEvent[];
+    const contextEntries = new Map<string, ContextEntry>();
+    const pageEntries = new Map<string, PageEntry>();
     for (const event of events) {
-      if (event.type === 'context-created')
-        this._browserNames.add(event.browserName);
-      if (event.type === 'context-created')
-        this._contextEventById.set(event.contextId, event);
+      switch (event.type) {
+        case 'context-created': {
+          contextEntries.set(event.contextId, {
+            created: event,
+            pages: []
+          } as any);
+          break;
+        }
+        case 'context-destroyed': {
+          contextEntries.get(event.contextId)!.destroyed = event;
+          break;
+        }
+        case 'page-created': {
+          const pageEntry: any = {
+            created: event,
+            actions: []
+          };
+          pageEntries.set(event.pageId, pageEntry);
+          contextEntries.get(event.contextId)!.pages.push(pageEntry);
+          break;
+        }
+        case 'page-destroyed': {
+          pageEntries.get(event.pageId)!.destroyed = event;
+          break;
+        }
+        case 'page-destroyed': {
+          pageEntries.get(event.pageId)!.destroyed = event;
+          break;
+        }
+        case 'action': {
+          pageEntries.get(event.pageId!)!.actions.push({
+            action: event,
+            resources: []
+          });
+          break;
+        }
+        case 'resource': {
+          const actions = pageEntries.get(event.pageId!)!.actions;
+          const action = actions[actions.length - 1];
+          if (action)
+            action.resources.push(event);
+          break;
+        }
+      }
     }
-    this._traces.push({ traceFile, events });
+    this._traceModel.contexts = [...contextEntries.values()];
     this._snapshotRouter.loadEvents(events);
   }
 
-  browserNames(): Set<string> {
-    return this._browserNames;
-  }
-
-  async show(browserName: string) {
-    const browser = await playwright[browserName as ('chromium' | 'firefox' | 'webkit')].launch({ headless: false });
+  async show() {
+    const browser = await playwright['chromium'].launch({ headless: false });
     const uiPage = await browser.newPage({ viewport: null });
+    uiPage.on('close', () => process.exit(0));
     await uiPage.exposeBinding('readFile', async (_: any, path: string) => {
       return fs.readFileSync(path).toString();
     });
@@ -83,7 +112,7 @@ class TraceViewer {
         return 'about:blank';
       }
     });
-    await uiPage.exposeBinding('getTraces', () => this._traces);
+    await uiPage.exposeBinding('getTraceModel', () => this._traceModel);
     await uiPage.route('**/*', (route, request) => {
       if (request.frame().parentFrame()) {
         this._snapshotRouter.route(route);
@@ -107,12 +136,10 @@ class TraceViewer {
   }
 }
 
-export async function showTraceViewer(traceStorageDir: string, traceFiles: string[]) {
-  const traceViewer = new TraceViewer(traceStorageDir);
-  for (const traceFile of traceFiles)
-    await traceViewer.load(traceFile);
-  for (const browserName of traceViewer.browserNames())
-    await traceViewer.show(browserName);
+export async function showTraceViewer(traceStorageDir: string, traceFile: string) {
+  const traceViewer = new TraceViewer(traceStorageDir, traceFile);
+  await traceViewer.load();
+  await traceViewer.show();
 }
 
 function removeHash(url: string) {

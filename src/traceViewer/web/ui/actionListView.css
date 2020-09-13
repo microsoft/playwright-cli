@@ -10,6 +10,7 @@ action-list {
   overflow: hidden;
   position: relative;
   contain: size;
+  margin-top: 34px;
 }
 
 action-list > list-view {

@@ -14,34 +14,40 @@
  * limitations under the License.
  */
 
-import { ActionTraceEvent } from "../../traceTypes";
+import * as monaco from 'monaco-editor';
+import { ActionEntry } from "../../traceModel";
+import { NetworkResourceTraceEvent } from "../../traceTypes";
 import { dom, Element$ } from '../components/dom';
 import { Size } from "../components/geometry";
+import { ListView } from "../components/listView";
 import { TabbedPane } from "../components/tabbedPane";
-import * as monaco from 'monaco-editor';
 
 export class PropertiesTabbedPane {
   element: HTMLElement;
   private _tabbedPane: TabbedPane<any>;
   private _snapshotTab: SnapshotTab;
   private _sourceTab: SourceTab;
+  private _networkTab: NetworkTab;
 
   constructor(size: Size) {
     this._tabbedPane = new TabbedPane();
     this.element = this._tabbedPane.element;
     this._snapshotTab = new SnapshotTab(size);
     this._sourceTab = new SourceTab();
+    this._networkTab = new NetworkTab();
     this._tabbedPane.appendTab(this._snapshotTab);
     this._tabbedPane.appendTab(this._sourceTab);
+    this._tabbedPane.appendTab(this._networkTab);
     this._tabbedPane.onSelected(tab => {
       if (tab === this._sourceTab)
         this._sourceTab.resize();
     });
   }
 
-  async setAction(action: ActionTraceEvent) {
+  async setAction(action: ActionEntry) {
     this._snapshotTab.setAction(action);
     this._sourceTab.setAction(action);
+    this._networkTab.setAction(action);
   }
 }
 
@@ -66,8 +72,8 @@ class SnapshotTab {
     this._iframe = this._element.$('iframe') as HTMLIFrameElement;
   }
 
-  async setAction(action: ActionTraceEvent) {
-    const url = await (window as any).renderSnapshot(action);
+  async setAction(action: ActionEntry) {
+    const url = await (window as any).renderSnapshot(action.action);
     this._iframe.src = url;
   }
 
@@ -95,7 +101,8 @@ class SourceTab {
     window.addEventListener('resize', () => this.resize());
   }
 
-  async setAction(action: ActionTraceEvent) {
+  async setAction(actionEntry: ActionEntry) {
+    const { action } = actionEntry;
     const frames = action.stack!.split('\n').slice(1);
     const frame = frames.filter(frame => !frame.includes('playwright/lib/client/'))[0];
     if (!frame) {
@@ -130,5 +137,29 @@ class SourceTab {
 
   resize() {
     this._editor.layout();
+  }
+}
+
+class NetworkTab {
+  label = 'Network';
+  private _listView: ListView<NetworkResourceTraceEvent>;
+
+  constructor() {
+    this._listView = new ListView<NetworkResourceTraceEvent>(this);
+  }
+
+  render(resource: NetworkResourceTraceEvent, element: HTMLElement): HTMLElement {
+    if (element)
+      return element;
+    return dom`<span>${resource.url}</span>`
+  }
+
+  setAction(action: ActionEntry) {
+    this._listView.clear();
+    this._listView.appendAll(action.resources);
+  }
+
+  content(): HTMLElement {
+    return this._listView.element;
   }
 }

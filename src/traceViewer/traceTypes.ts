@@ -31,6 +31,7 @@ export type ContextDestroyedTraceEvent = {
 export type NetworkResourceTraceEvent = {
   type: 'resource',
   contextId: string,
+  pageId: string,
   frameId: string,
   url: string,
   contentType: string,
@@ -69,7 +70,7 @@ export type ActionTraceEvent = {
   error?: string,
 };
 
-export type SanpshotterResource = {
+export type SnapshotterResource = {
   frameId: string,
   url: string,
   contentType: string,
@@ -88,8 +89,17 @@ export type FrameSnapshot = {
   html: string,
   resourceOverrides: { url: string, sha1: string }[],
 };
+
 export type PageSnapshot = {
   viewportSize?: { width: number, height: number },
   // First frame is the main frame.
   frames: FrameSnapshot[],
 };
+
+export type TraceEvent =
+    ContextCreatedTraceEvent |
+    ContextDestroyedTraceEvent |
+    PageCreatedTraceEvent |
+    PageDestroyedTraceEvent |
+    NetworkResourceTraceEvent |
+    ActionTraceEvent;
