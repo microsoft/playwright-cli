@@ -36,6 +36,11 @@ export function buildSelector(injectedScript: InjectedScript, targetElement: Ele
       path.unshift(selector);
     }
   }
+  if (document.documentElement === targetElement)
+    return {
+      selector: '/html',
+      elements: [document.documentElement]
+    };
   const xpathSelector = XPathEngine.create(document.documentElement, targetElement, 'default')!;
   const parsedSelector = injectedScript.parseSelector(xpathSelector);
   return {
