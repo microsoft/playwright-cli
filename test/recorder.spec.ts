@@ -340,6 +340,19 @@ it('should contain close page', async ({ contextWrapper, recorder }) => {
   await recorder.waitForOutput('page.close();');
 });
 
+it('should not lead to an error if /html gets clicked', async ({ contextWrapper, recorder }) => {
+  await recorder.setContentAndWait('');
+  await contextWrapper.context.newPage();
+  const errors = [];
+  recorder.page.on('pageerror', e => errors.push(e));
+  await recorder.page.evaluate(() => document.querySelector('body').remove());
+  const selector = await recorder.hoverOverElement('html');
+  expect(selector).toBe('/html');
+  await recorder.page.close();
+  await recorder.waitForOutput('page.close();');
+  expect(errors.length).toBe(0);
+});
+
 it('should upload a single file', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`
   <form>
