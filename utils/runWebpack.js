@@ -19,6 +19,7 @@ const path = require('path');
 
 const files = [
   path.join('src', 'injected', 'script.webpack.config.js'),
+  path.join('src', 'traceViewer', 'web', 'web.webpack.config.js'),
 ];
 
 function runOne(runner, file) {

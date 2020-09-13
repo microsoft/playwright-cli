@@ -1,0 +1,79 @@
+/**
+  Copyright (c) Microsoft Corporation.
+  Licensed under the MIT license.
+*/
+
+action-list {
+  flex: none;
+  width: var(--sidebar-width);
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  contain: size;
+}
+
+action-list > list-view {
+  overflow: auto;
+  padding: 0 var(--layout-gap);
+}
+
+action-entry {
+  --action-color: transparent;
+  position: relative;
+}
+
+action-list action-entry {
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  overflow: hidden;
+  background: var(--active-background);
+  border: 1px solid var(--background);
+  margin-top: var(--layout-gap);
+  user-select: none;
+  border-left-color: var(--action-color);
+  padding: 10px;
+}
+
+action-list > list-view {
+  border: 1px solid transparent;
+}
+
+action-list > list-view:focus {
+  border: 1px solid var(--focus-ring);
+}
+
+action-list > list-view > list-item {
+  cursor: pointer;
+}
+
+action-list > list-view > list-item:hover action-entry {
+  border-color: var(--inactive-focus-ring);
+}
+
+action-list > list-view > list-item.selected action-entry {
+  border-color: var(--inactive-focus-ring);
+  background-color: var(--selection);
+}
+
+action-list > list-view > list-item.selected:focus action-entry {
+  border-color: var(--focus-ring);
+}
+
+action-list action-title {
+  white-space: nowrap;
+}
+
+action-entry action-header {
+  display: flex;
+  align-items: center;
+}
+
+action-entry action-selector {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 5px;
+  color: var(--yellow);
+  white-space: nowrap;
+}

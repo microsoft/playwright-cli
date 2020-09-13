@@ -1,0 +1,113 @@
+/*
+  Copyright (c) Microsoft Corporation.
+ 
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+ 
+      http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+:root {
+  --background: #252526;
+  --active-background: #333333;
+  --color: #cccccc;
+  --red: #F44336;
+  --green: #4CAF50;
+  --purple: #9C27B0;
+  --yellow: #FFC107;
+  --blue: #2196F3;
+  --black: #1E1E1E;
+  --gray: #888888;
+  --separator: #80808059;
+  --focus-ring: #0E639CCC;
+  --inactive-focus-ring: #80808059;
+  --layout-gap: 5px;
+  --selection: #074771;
+  --control-background: #3C3C3C;
+  --settings: #E7E7E7;
+  --sidebar-width: 200px;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  background: var(--background);
+  overscroll-behavior-x: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+*[hidden] {
+  display: none !important;
+}
+
+.codicon {
+  color: #C5C5C5;
+}
+
+svg {
+  fill: currentColor;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--color);
+  font-size: 14px;
+}
+
+.platform-windows {
+  font-family: Segoe WPC,Segoe UI,sans-serif;
+  --monospace-font: Consolas, Inconsolata, "Courier New", monospace;
+}
+
+.platform-linux {
+  font-family: Ubuntu, Droid Sans, sans-serif;
+  --monospace-font:"Droid Sans Mono", Inconsolata, "Courier New", monospace, "Droid Sans Fallback";
+}
+
+.platform-mac {
+  font-family: -apple-system,BlinkMacSystemFont,sans-serif;
+  --monospace-font: "SF Mono",Monaco,Menlo,Inconsolata,"Courier New",monospace;
+}
+
+vbox {
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  position: relative;
+}
+
+hbox {
+  display: flex;
+  flex: auto;
+  position: relative;
+}
+
+:not(.platform-mac) ::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+:not(.platform-mac) ::-webkit-scrollbar-thumb {
+  border: 3px solid var(--background);
+  border-radius: 10px;
+  background-color: var(--active-background);
+  box-shadow: inset 0 0 1px #FFFFFF7F;
+}
+
+:not(.platform-mac) ::-webkit-scrollbar-corner {
+  background-color: var(--background);
+}

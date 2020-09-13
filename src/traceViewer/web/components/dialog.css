@@ -1,0 +1,121 @@
+/*
+  Copyright (c) Microsoft Corporation.
+ 
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+ 
+      http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+dialog-view {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+dialog-view dialog-view-content {
+  max-width: 600px;
+  min-width: 300px;
+  background-color: var(--background);
+  box-shadow: black 0px 5px 8px;
+  color: #ccc;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+dialog-view dialog-prompt {
+  margin: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+dialog-view dialog-prompt > message {
+  margin: 5px;
+  flex: 0 0 20px;
+}
+
+dialog-view input {
+  color: #ccc;
+  width: 100%;
+  background-color: var(--control-background);
+  padding: 4px;
+  font-size: 14px;
+  border: none;
+  outline: 1px solid rgba(14, 99, 156, 0.8);
+  flex: none;
+}
+
+dialog-view input:focus {
+  outline-offset: 0;
+}
+
+dialog-view button {
+  -webkit-appearance: none;
+  background: var(--control-background);
+  border: 1px solid transparent;
+  color: var(--color);
+}
+
+dialog-view button:hover:not(:focus) {
+  border-color: var(--gray);
+}
+
+dialog-view button:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+
+dialog-view dialog-alert {
+  margin: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+dialog-view dialog-alert > message {
+  margin: 5px;
+  flex: none;
+  white-space: normal;
+  overflow: hidden;
+}
+
+dialog-view dialog-confirm {
+  margin: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+dialog-view dialog-confirm > message {
+  margin: 5px;
+  flex: none;
+  white-space: normal;
+  overflow: hidden;
+}
+
+dialog-view dialog-confirm > button-row {
+  flex: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+dialog-view dialog-confirm button {
+  margin-left: 10px;
+}
