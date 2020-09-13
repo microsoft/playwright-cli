@@ -69,6 +69,9 @@ class TraceViewer {
   async show(browserName: string) {
     const browser = await playwright[browserName as ('chromium' | 'firefox' | 'webkit')].launch({ headless: false });
     const uiPage = await browser.newPage({ viewport: null });
+    await uiPage.exposeBinding('readFile', async (_: any, path: string) => {
+      return fs.readFileSync(path).toString();
+    });
     await uiPage.exposeBinding('renderSnapshot', async (_: any, action: ActionTraceEvent) => {
       try {
         const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');

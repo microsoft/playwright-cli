@@ -16,10 +16,18 @@
 
 import { ContextCreatedTraceEvent } from '../traceTypes';
 import type { Trace } from '../traceViewer';
-import * as components from './components/components';
 import { dom } from './components/dom';
 import { ActionListView } from './ui/actionListView';
 import { PropertiesTabbedPane } from './ui/propertiesTabbedPane';
+
+import './common.css';
+import './components/dialog.css';
+import './components/dropTarget.css';
+import './components/listView.css';
+import './components/splitView.css';
+import './components/tabbedPane.css';
+import './components/toolbarView.css';
+import './ui/actionListView.css';
 
 function renderTrace(trace: Trace) {
   const contextCreated = trace.events.find(e => e.type === 'context-created')! as ContextCreatedTraceEvent;
@@ -54,7 +62,6 @@ function platformName(): string {
     document.body.classList.add('inactive');
   }, false);
   document.body.classList.add(platformName());
-  await components.initialize();
   for (const trace of await (window as any).getTraces())
     renderTrace(trace);
 })();

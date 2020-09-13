@@ -14,22 +14,10 @@
   limitations under the License.
 */
 
-import { dom } from './dom';
 import { PwCheckboxElement } from './pwCheckbox';
 import { PwComboElement } from './pwCombo';
 import { PwExpandableElement } from './pwExpandable';
 import { PwSmallButtonElement } from './pwSmallButton';
-
-const globalStyles = [
-  'common.css',
-  'components/dialog.css',
-  'components/dropTarget.css',
-  'components/listView.css',
-  'components/splitView.css',
-  'components/tabbedPane.css',
-  'components/toolbarView.css',
-  'ui/actionListView.css',
-];
 
 const components = [ PwCheckboxElement, PwComboElement, PwExpandableElement, PwSmallButtonElement ];
 
@@ -42,14 +30,12 @@ export async function initialize() {
     componentStyles.push(...factory.styles);
   }
 
-  const styles = [...globalStyles, ...componentStyles];
+  // TODO: figure out shadow styles injection.
+  const styles = [...componentStyles];
   await Promise.all(styles.map(async name => {
     const response = await fetch(name);
     loadedStyles.set(name, `${await response.text()}\n/*# sourceURL=${name}*/`);
   }));
-
-  for (const name of globalStyles)
-    document.head.appendChild(dom`<style>${loadedStyles.get(name)}</style>`);
 
   for (const factory of components) {
     factory.stylesFragment = () => {
