@@ -7,9 +7,7 @@
   "scripts": {
     "test": "test-runner test/",
     "build": "node utils/runWebpack.js --mode='development' && tsc -p .",
-    "watch": "node utils/runWebpack.js --mode='development' --watch --silent | npm run watch-web-files |  tsc -w -p .",
-    "copy-web-files": "copyfiles -u 2 \"src/traceViewer/web/**/*.css\" \"src/traceViewer/web/*.html\" \"src/traceViewer/web/*.ttf\"  out",
-    "watch-web-files": "npm run copy-web-files && chokidar \"src/traceViewer/web/**/*.css\" \"src/traceViewer/web/**/*.html\" -c \"npm run copy-web-files\""
+    "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p ."
   },
   "bin": {
     "playwright-cli": "./index.js"
@@ -26,10 +24,15 @@
   "devDependencies": {
     "@playwright/test-runner": "^0.3.7",
     "chokidar-cli": "^2.1.0",
-    "copyfiles": "^2.3.0",
+    "css-loader": "^4.3.0",
+    "file-loader": "^6.1.0",
+    "html-webpack-plugin": "^4.4.1",
+    "monaco-editor": "^0.20.0",
+    "style-loader": "^1.2.1",
     "ts-loader": "^8.0.3",
     "typescript": "^4.0.2",
     "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
   }
 }
