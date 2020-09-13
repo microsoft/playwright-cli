@@ -16,6 +16,7 @@
 
 /* eslint-disable no-console */
 
+import * as path from 'path';
 import * as program from 'commander';
 import * as os from 'os';
 import * as playwright from 'playwright';
@@ -24,6 +25,7 @@ import { ScriptController } from './scriptController';
 import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs'
 import { CodeGeneratorOutput } from './codegen/codeGenerator';
 import { JavaScriptLanguageGenerator } from './codegen/languages';
+import { showTraceViewer } from './traceViewer/traceViewer';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -113,6 +115,21 @@ program
       console.log('');
       console.log('  $ pdf https://example.com example.png');
     });
+
+if (process.env.PWTRACE) {
+  program
+    .command('show-trace <trace>')
+    .description('Show trace viewer')
+    .option('--resources <dir>', 'Directory with the shared trace artifacts')
+    .action(function(trace, command) {
+      showTraceViewer(resolveHome(command.resources), [resolveHome(trace)]);
+    }).on('--help', function() {
+      console.log('');
+      console.log('Examples:');
+      console.log('');
+      console.log('  $ show-trace --resources=resources trace.trace');
+    });
+}
 
 program.parse(process.argv);
 
@@ -328,4 +345,10 @@ function validateOptions(options: Options) {
     console.log('Invalid color scheme, should be one of "light", "dark"');
     process.exit(0);
   }
+}
+
+function resolveHome(filepath: string) {
+  if (filepath[0] === '~')
+    return path.join(os.homedir(), filepath.slice(1));
+  return filepath;
 }

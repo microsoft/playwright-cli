@@ -3,3 +3,4 @@
 /lib/
 *.swp
 .vscode
+/out/
