@@ -15,7 +15,7 @@
  */
 
 import * as playwright from 'playwright';
-import * as actions from './recorderActions';
+import * as actions from './codegen/recorderActions';
 
 let __dummy: { page: playwright.Page };
 export type MouseClickOptions = Parameters<typeof __dummy.page.click>[1];

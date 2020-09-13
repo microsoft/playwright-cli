@@ -1,4 +1,4 @@
-import { ConsoleAPI, InjectedScript } from './consoleApi';
+import { InjectedScript } from './consoleApi';
 /**
  * Copyright (c) Microsoft Corporation.
  *

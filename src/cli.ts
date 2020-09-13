@@ -21,8 +21,9 @@ import * as os from 'os';
 import * as playwright from 'playwright';
 import { Browser, BrowserContext, Page } from 'playwright';
 import { ScriptController } from './scriptController';
-import { OutputMultiplexer, TerminalOutput, FileOutput } from './outputs'
-import { CodeGeneratorOutput } from './codeGenerator';
+import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs'
+import { CodeGeneratorOutput } from './codegen/codeGenerator';
+import { JavaScriptLanguageGenerator } from './codegen/languages';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -252,7 +253,9 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
   const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout)];
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
-  new ScriptController(browserName, launchOptions, contextOptions, context, new OutputMultiplexer(outputs), enableRecorder, options.device);
+  const output = new OutputMultiplexer(outputs)
+  const languageGenerator = new JavaScriptLanguageGenerator(output)
+  new ScriptController(browserName, launchOptions, contextOptions, context, output, languageGenerator, enableRecorder, options.device);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)
     await Promise.all(context.pages().map(p => p.close()))

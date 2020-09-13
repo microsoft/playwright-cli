@@ -23,7 +23,8 @@ import * as playwright from 'playwright';
 import { fixtures as baseFixtures } from '@playwright/test-runner';
 import { ScriptController } from '../src/scriptController';
 import { Page } from 'playwright';
-import { TerminalOutput } from '../src/outputs';
+import { TerminalOutput } from '../src/codegen/outputs';
+import { JavaScriptLanguageGenerator } from '../src/codegen/languages';
 
 type Parameters = {
   browserName: string;
@@ -102,9 +103,11 @@ fixtures.defineWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
 
 fixtures.defineTestFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
-  const output = new WritableBuffer();
-  new ScriptController('chromium', {}, {}, context, new TerminalOutput(output as any as Writable), true);
-  await runTest({ context, output });
+  const outputBuffer = new WritableBuffer();
+  const output = new TerminalOutput(outputBuffer as any as Writable)
+  const languageGenerator = new JavaScriptLanguageGenerator(output)
+  new ScriptController('chromium', {}, {}, context, output, languageGenerator, true);
+  await runTest({ context, output: outputBuffer });
   await context.close();
 });
 

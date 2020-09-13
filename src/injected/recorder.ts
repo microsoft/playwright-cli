@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type * as actions from '../recorderActions';
+import type * as actions from '../codegen/recorderActions';
 import { ConsoleAPI, InjectedScript } from './consoleApi';
 import { html } from './html';
 import { addEventListener, RegisteredListener, removeEventListeners } from './util';

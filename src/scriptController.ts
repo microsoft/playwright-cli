@@ -16,15 +16,16 @@
 
 import * as playwright from 'playwright';
 import * as injectedScriptSource from './generated/scriptSource';
-import { RecorderController } from './recorderController';
-import { CodeGeneratorOutput } from './codeGenerator';
+import { RecorderController } from './codegen/recorderController';
+import { CodeGeneratorOutput } from './codegen/codeGenerator';
+import { LanguageGenerator } from './codegen/languages';
 
 export class ScriptController {
   private _recorder: RecorderController | undefined;
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: CodeGeneratorOutput, enableRecorder: boolean, deviceName?: string) {
+  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: CodeGeneratorOutput, languageGenerator: LanguageGenerator, enableRecorder: boolean, deviceName?: string) {
     if (enableRecorder)
-      this._recorder = new RecorderController(browserName, launchOptions, contextOptions, context, output, deviceName);
+      this._recorder = new RecorderController(browserName, launchOptions, contextOptions, context, output, languageGenerator, deviceName);
     context.on('page', page => this._onPage(page));
     for (const page of context.pages())
       this._onPage(page);
