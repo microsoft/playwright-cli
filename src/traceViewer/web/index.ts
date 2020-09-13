@@ -19,24 +19,18 @@ import type { Trace } from '../traceViewer';
 import * as components from './components/components';
 import { dom } from './components/dom';
 import { ActionListView } from './ui/actionListView';
+import { PropertiesTabbedPane } from './ui/propertiesTabbedPane';
 
 function renderTrace(trace: Trace) {
   const contextCreated = trace.events.find(e => e.type === 'context-created')! as ContextCreatedTraceEvent;
-  const { width, height } = contextCreated.viewportSize!;
-  const centerElement = dom`
-  <vbox style="overflow: auto">
-    <div style="width: ${width}px; height: ${height}px; display: block;">
-      <iframe style="width: 100%; height: 100%; border: none"></iframe>
-    </div>
-  <vbox>`;
-  const iframeElement = centerElement.$('iframe') as HTMLIFrameElement;
-  const actionListView = new ActionListView(trace.events, iframeElement);
+  const size = contextCreated.viewportSize!;
+  const tabbedPane = new PropertiesTabbedPane(size);
+
+  const actionListView = new ActionListView(trace.events, tabbedPane);
   document.body.appendChild(dom`
     <hbox>
       ${actionListView.element}
-      <vbox></vbox>
-      ${centerElement}
-      <vbox></vbox>
+      ${tabbedPane.element}
     </hbox>
   `);
 }

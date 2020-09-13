@@ -46,7 +46,6 @@ tabbed-pane tab-element {
   justify-content: center;
   user-select: none;
   border-bottom: 1px solid transparent;
-  text-transform: uppercase;
   margin-bottom: -1px;
 }
 
