@@ -116,7 +116,18 @@ class TraceViewer {
         const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');
         const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
         this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
-        return snapshotObject.frames[0].url;
+
+        // TODO: fix Playwright bug where frame.name is lost (empty).
+        const snapshotFrame = uiPage.frames()[1];
+        await snapshotFrame.goto(snapshotObject.frames[0].url);
+        if (action.target) {
+          const element = await snapshotFrame.$(action.target);
+          if (element) {
+            await element.evaluate(e => {
+              e.style.backgroundColor = '#ff69b460';
+            });
+          }
+        }
       } catch(e) {
         console.log(e);
         return 'about:blank';
@@ -317,8 +328,7 @@ class ScreenshotGenerator {
       const element = await this._page!.$(action.target);
       if (element) {
         await element.evaluate(e => {
-          e.style.border = "1.5px solid #ff69b4";
-          e.style.backgroundColor = "#ff69b460";
+          e.style.backgroundColor = '#ff69b460';
         });
 
         clip = await element.boundingBox();

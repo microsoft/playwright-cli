@@ -20,18 +20,19 @@ import { NetworkResourceTraceEvent } from "../../traceTypes";
 import { dom, Element$ } from '../components/dom';
 import { Size } from "../components/geometry";
 import { ListView } from "../components/listView";
-import { TabbedPane } from "../components/tabbedPane";
+import { TabbedPane, TabOptions } from "../components/tabbedPane";
 
 export class PropertiesTabbedPane {
   element: HTMLElement;
-  private _tabbedPane: TabbedPane<any>;
+  private _tabbedPane: TabbedPane<Tab>;
   private _snapshotTab: SnapshotTab;
   private _sourceTab: SourceTab;
   private _networkTab: NetworkTab;
   private _screenshotTab: ScreenshotTab;
+  private _actionEntry: ActionEntry | undefined;
 
   constructor(size: Size) {
-    this._tabbedPane = new TabbedPane();
+    this._tabbedPane = new TabbedPane<Tab>();
     this.element = this._tabbedPane.element;
     this._snapshotTab = new SnapshotTab(size);
     this._sourceTab = new SourceTab();
@@ -44,22 +45,27 @@ export class PropertiesTabbedPane {
     this._tabbedPane.onSelected(tab => {
       if (tab === this._sourceTab)
         this._sourceTab.resize();
+      if (tab)
+        tab.setAction(this._actionEntry);
     });
   }
 
-  async setAction(action: ActionEntry) {
-    this._snapshotTab.setAction(action);
-    this._sourceTab.setAction(action);
-    this._networkTab.setAction(action);
-    this._screenshotTab.setAction(action);
+  async setAction(actionEntry: ActionEntry) {
+    this._actionEntry = actionEntry;
+    const selectedTab = this._tabbedPane.selectedTab();
+    if (selectedTab)
+      selectedTab.setAction(actionEntry);
   }
 }
 
-class SnapshotTab {
+interface Tab extends TabOptions {
+  setAction(action: ActionEntry | undefined): Promise<void>;
+}
+
+class SnapshotTab implements Tab {
   label = 'Snapshot';
 
   private _element: Element$;
-  private _iframe: HTMLIFrameElement;
 
   constructor(size: Size) {
     this._element = dom`
@@ -67,18 +73,20 @@ class SnapshotTab {
       <vbox></vbox>
       <vbox style="overflow: auto">
         <div style="width: ${size.width}px; height: ${size.height}px; display: block; background: white">
-          <iframe style="width: 100%; height: 100%; border: none"></iframe>
+          <iframe id=snapshot name=snapshot style="width: 100%; height: 100%; border: none"></iframe>
         </div>
       <vbox>
       <vbox></vbox>
     </hbox>
     `;
-    this._iframe = this._element.$('iframe') as HTMLIFrameElement;
   }
 
-  async setAction(action: ActionEntry) {
-    const url = await (window as any).renderSnapshot(action.action);
-    this._iframe.src = url;
+  async setAction(actionEntry: ActionEntry | undefined) {
+    if (!actionEntry) {
+      (this._element.$('iframe') as HTMLIFrameElement).src = 'about:blank';
+      return;
+    }
+    await (window as any).renderSnapshot(actionEntry.action);
   }
 
   content(): HTMLElement {
@@ -86,7 +94,7 @@ class SnapshotTab {
   }
 }
 
-class SourceTab {
+class SourceTab implements Tab {
   label = 'Source';
 
   readonly _element: Element$;
@@ -105,7 +113,11 @@ class SourceTab {
     window.addEventListener('resize', () => this.resize());
   }
 
-  async setAction(actionEntry: ActionEntry) {
+  async setAction(actionEntry: ActionEntry | undefined) {
+    if (!actionEntry) {
+      this._editor.setValue('');
+      return;
+    }
     const { action } = actionEntry;
     const frames = action.stack!.split('\n').slice(1);
     const frame = frames.filter(frame => !frame.includes('playwright/lib/client/'))[0];
@@ -144,7 +156,7 @@ class SourceTab {
   }
 }
 
-class NetworkTab {
+class NetworkTab implements Tab {
   label = 'Network';
   private _listView: ListView<NetworkResourceTraceEvent>;
 
@@ -158,9 +170,10 @@ class NetworkTab {
     return dom`<span>${resource.url}</span>`
   }
 
-  setAction(action: ActionEntry) {
+  async setAction(actionEntry: ActionEntry | undefined) {
     this._listView.clear();
-    this._listView.appendAll(action.resources);
+    if (actionEntry)
+      this._listView.appendAll(actionEntry.resources);
   }
 
   content(): HTMLElement {
@@ -168,7 +181,7 @@ class NetworkTab {
   }
 }
 
-class ScreenshotTab {
+class ScreenshotTab implements Tab {
   label = 'Image';
   private _element: Element$;
   private _imageElement: HTMLImageElement;
@@ -187,8 +200,12 @@ class ScreenshotTab {
     return dom`<span>${resource.url}</span>`
   }
 
-  setAction(action: ActionEntry) {
-    this._imageElement.src = 'trace-storage/' + action.action.snapshot!.sha1 + '-image.png';
+  async setAction(actionEntry: ActionEntry | undefined) {
+    if (!actionEntry) {
+      this._imageElement.src = '';
+      return;
+    }
+    this._imageElement.src = 'trace-storage/' + actionEntry.action.snapshot!.sha1 + '-image.png';
   }
 
   content(): HTMLElement {
