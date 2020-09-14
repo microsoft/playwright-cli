@@ -306,21 +306,23 @@ class ScreenshotGenerator {
   async init(model: TraceModel) {
     this._browser = await playwright['chromium'].launch();
     // TODO: fixture out multiple contexts.
-    this._page = await this._browser.newPage({ viewport: model.contexts[0].created.viewportSize });
+    this._page = await this._browser.newPage({
+      viewport: model.contexts[0].created.viewportSize,
+      deviceScaleFactor: model.contexts[0].created.deviceScaleFactor
+    });
   }
 
   async render(actionEntry: ActionEntry) {
     const { action } = actionEntry;
-    const imageFileName = path.join(this._traceStorageDir, action.snapshot!.sha1 + '-image.png');
-    const targetImageFileName = path.join(this._traceStorageDir, action.snapshot!.sha1 + '-target-image.png');
-    if (fs.existsSync(imageFileName) && (!action.target || fs.existsSync(targetImageFileName)))
+    const imageFileName = path.join(this._traceStorageDir, action.snapshot!.sha1 + '-thumbnail.png');
+    if (fs.existsSync(imageFileName))
       return;
 
     const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');
     const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
     this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
     const url = snapshotObject.frames[0].url;
-    console.log('Generating screenshots for ' + action.action);
+    console.log('Generating screenshot for ' + action.action);
     await this._page!.goto(url);
 
     let clip: any = undefined;
@@ -334,8 +336,8 @@ class ScreenshotGenerator {
         clip = await element.boundingBox();
         if (clip) {
           const thumbnailSize = {
-            width: 450,
-            height: 150
+            width: 400,
+            height: 200
           };
           const insets = {
             width: 60,
@@ -361,12 +363,7 @@ class ScreenshotGenerator {
       }
     }
 
-    const imageData = await this._page!.screenshot();
+    const imageData = await this._page!.screenshot({ clip });
     await fsWriteFileAsync(imageFileName, imageData);
-
-    if (action.target) {
-      const targetImageData = await this._page!.screenshot({ clip });
-      await fsWriteFileAsync(targetImageFileName, targetImageData);
-    }
   }
 }

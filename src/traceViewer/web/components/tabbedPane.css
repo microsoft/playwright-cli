@@ -31,22 +31,23 @@ tabbed-pane tab-strip {
   display: flex;
   flex-direction: row;
   align-items: center;
+  box-shadow: rgba(0, 0, 0, 0.133) 0px 1.6px 3.6px 0px, rgba(0, 0, 0, 0.11) 0px 0.3px 0.9px 0px;
 }
 
 tabbed-pane tab-strip > list-view {
-  height: 24px;
+  height: 34px;
 }
 
 tabbed-pane tab-element {
-  padding: 0 6px;
+  padding: 2px 6px 0 6px;
   margin-right: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
-  border-bottom: 1px solid transparent;
-  margin-bottom: -1px;
+  border-bottom: 3px solid transparent;
+  width: 80px;
 }
 
 tabbed-pane tab-label {
@@ -58,7 +59,7 @@ tabbed-pane tab-label {
 }
 
 tabbed-pane list-item.selected tab-element {
-  border-bottom: 1px solid var(--tab-color);
+  border-bottom-color: var(--color);
 }
 
 tabbed-pane tab-close {
@@ -70,7 +71,7 @@ tabbed-pane tab-close {
 }
 
 tabbed-pane tab-element:hover {
-  color: white;
+  font-weight: 600;
 }
 
 tabbed-pane tab-element:hover tab-close {

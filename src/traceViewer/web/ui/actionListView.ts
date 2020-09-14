@@ -1,10 +1,24 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*
+  Copyright (c) Microsoft Corporation.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
 
 import { ActionEntry, ContextEntry } from '../../traceModel';
 import { dom, Element$ } from '../components/dom';
 import { ListView } from '../components/listView';
 import { PropertiesTabbedPane } from './propertiesTabbedPane';
+import './actionListView.css';
 
 export class ActionListView {
   readonly element: Element$;
@@ -26,19 +40,14 @@ export class ActionListView {
     if (element) {
       return element;
     }
-    let icon = '';
-    if (action.action === 'click' || action.action === 'dblclick')
-      icon = '🖱️ ';
-    if (action.action === 'fill' || action.action === 'press')
-      icon = '⌨️ ';
     return dom`
       <action-entry>
         <action-header>
-          <action-title>${icon}${action.action}</action-title>
+          <action-title>${action.action}</action-title>
           <action-selector title="${action.target}">${action.target}</action-selector>
         </action-header>
         <action-thumbnail>
-          <img src="trace-storage/${action.snapshot!.sha1}-target-image.png">
+          <img src="trace-storage/${action.snapshot!.sha1}-thumbnail.png">
         </action-thumbnail>
       </action-entry>`;
   }

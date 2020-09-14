@@ -17,30 +17,12 @@
 import { TraceModel } from '../traceModel';
 import './common.css';
 import './components/dialog.css';
-import { dom } from './components/dom';
 import './components/dropTarget.css';
 import './components/listView.css';
 import './components/splitView.css';
 import './components/tabbedPane.css';
 import './components/toolbarView.css';
-import { ActionListView } from './ui/actionListView';
-import './ui/actionListView.css';
-import { PropertiesTabbedPane } from './ui/propertiesTabbedPane';
-
-
-function renderTraceModel(trace: TraceModel) {
-	const context = trace.contexts[0];
-  const size = context.created.viewportSize!;
-  const tabbedPane = new PropertiesTabbedPane(size);
-
-  const actionListView = new ActionListView(context, tabbedPane);
-  document.body.appendChild(dom`
-    <hbox>
-      ${actionListView.element}
-      ${tabbedPane.element}
-    </hbox>
-  `);
-}
+import { Workbench } from './ui/workbench';
 
 function platformName(): string {
   if (window.navigator.userAgent.includes('Linux'))
@@ -60,7 +42,8 @@ function platformName(): string {
   document!.defaultView!.addEventListener('blur', event => {
     document.body.classList.add('inactive');
   }, false);
-	document.body.classList.add(platformName());
-	const traceModel = await (window as any).getTraceModel() as TraceModel;
-  renderTraceModel(traceModel);
+  document.documentElement.classList.add(platformName());
+  const traceModel = await (window as any).getTraceModel() as TraceModel;
+  const workbench = new Workbench(traceModel);
+  document.body.appendChild(workbench.element);
 })();

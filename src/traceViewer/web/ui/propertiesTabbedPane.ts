@@ -28,7 +28,6 @@ export class PropertiesTabbedPane {
   private _snapshotTab: SnapshotTab;
   private _sourceTab: SourceTab;
   private _networkTab: NetworkTab;
-  private _screenshotTab: ScreenshotTab;
   private _actionEntry: ActionEntry | undefined;
 
   constructor(size: Size) {
@@ -37,11 +36,9 @@ export class PropertiesTabbedPane {
     this._snapshotTab = new SnapshotTab(size);
     this._sourceTab = new SourceTab();
     this._networkTab = new NetworkTab();
-    this._screenshotTab = new ScreenshotTab(size);
     this._tabbedPane.appendTab(this._snapshotTab);
     this._tabbedPane.appendTab(this._sourceTab);
     this._tabbedPane.appendTab(this._networkTab);
-    this._tabbedPane.appendTab(this._screenshotTab);
     this._tabbedPane.onSelected(tab => {
       if (tab === this._sourceTab)
         this._sourceTab.resize();
@@ -104,7 +101,7 @@ class SourceTab implements Tab {
 
   constructor() {
     this._element = dom`<vbox></vbox>`;
-    monaco.editor.setTheme('vs-dark');
+    monaco.editor.setTheme('vs-light');
     this._editor = monaco.editor.create(this._element, {
       value: '',
       language: 'javascript',
@@ -178,37 +175,5 @@ class NetworkTab implements Tab {
 
   content(): HTMLElement {
     return this._listView.element;
-  }
-}
-
-class ScreenshotTab implements Tab {
-  label = 'Image';
-  private _element: Element$;
-  private _imageElement: HTMLImageElement;
-
-  constructor(size: Size) {
-    this._element = dom`
-    <vbox style="align-items: center;">
-      <img width=${size.width} height=${size.height}>
-    </vbox>`
-    this._imageElement = this._element.$('img') as HTMLImageElement;
-  }
-
-  render(resource: NetworkResourceTraceEvent, element: HTMLElement): HTMLElement {
-    if (element)
-      return element;
-    return dom`<span>${resource.url}</span>`
-  }
-
-  async setAction(actionEntry: ActionEntry | undefined) {
-    if (!actionEntry) {
-      this._imageElement.src = '';
-      return;
-    }
-    this._imageElement.src = 'trace-storage/' + actionEntry.action.snapshot!.sha1 + '-image.png';
-  }
-
-  content(): HTMLElement {
-    return this._element;
   }
 }

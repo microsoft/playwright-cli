@@ -1,6 +1,17 @@
-/**
+/*
   Copyright (c) Microsoft Corporation.
-  Licensed under the MIT license.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
 
 action-list {
@@ -10,7 +21,6 @@ action-list {
   overflow: hidden;
   position: relative;
   contain: size;
-  margin-top: 34px;
 }
 
 action-list > list-view {
@@ -28,20 +38,11 @@ action-list action-entry {
   flex-direction: column;
   flex: auto;
   overflow: hidden;
-  background: var(--active-background);
-  border: 1px solid var(--background);
+  border: 3px solid var(--background);
   margin-top: var(--layout-gap);
   user-select: none;
   border-left-color: var(--action-color);
-  padding: 10px;
-}
-
-action-list > list-view {
-  border: 1px solid transparent;
-}
-
-action-list > list-view:focus {
-  border: 1px solid var(--focus-ring);
+  padding: 0 5px 5px 5px;
 }
 
 action-list > list-view > list-item {
@@ -54,30 +55,30 @@ action-list > list-view > list-item:hover action-entry {
 
 action-list > list-view > list-item.selected action-entry {
   border-color: var(--inactive-focus-ring);
-  background-color: var(--selection);
 }
 
 action-list > list-view > list-item.selected:focus action-entry {
-  border-color: var(--focus-ring);
+  border-color: var(--orange);
 }
 
 action-list action-title {
+  display: inline;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 action-list action-entry action-header {
-  display: flex;
+  display: block;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 action-list action-entry action-selector {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: inline;
   padding-left: 5px;
-  color: var(--yellow);
-  white-space: nowrap;
 }
 
 action-list action-thumbnail {
@@ -85,11 +86,11 @@ action-list action-thumbnail {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 300px;
+  width: 200px;
   height: 100px;
 }
 
 action-list action-thumbnail img {
-  max-width: 300px;
+  max-width: 200px;
   max-height: 100px;
 }

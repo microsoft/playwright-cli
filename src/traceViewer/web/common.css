@@ -15,24 +15,26 @@
 */
 
 :root {
-  --background: #252526;
+  --light-background: #f3f2f1;
+  --background: #edebe9;
   --active-background: #333333;
-  --color: #cccccc;
+  --color: #252423;
   --red: #F44336;
   --green: #4CAF50;
   --purple: #9C27B0;
   --yellow: #FFC107;
   --blue: #2196F3;
+  --orange: #d24726;
   --black: #1E1E1E;
   --gray: #888888;
   --separator: #80808059;
   --focus-ring: #0E639CCC;
   --inactive-focus-ring: #80808059;
-  --layout-gap: 5px;
+  --layout-gap: 10px;
   --selection: #074771;
   --control-background: #3C3C3C;
   --settings: #E7E7E7;
-  --sidebar-width: 350px;
+  --sidebar-width: 250px;
 }
 
 html, body {
@@ -65,21 +67,20 @@ svg {
 body {
   background-color: var(--background);
   color: var(--color);
-  font-size: 16px;
+  font-size: 14px;
+  font-family: SegoeUI-SemiBold-final,Segoe UI Semibold,SegoeUI-Regular-final,Segoe UI,"Segoe UI Web (West European)",Segoe,-apple-system,BlinkMacSystemFont,Roboto,Helvetica Neue,Tahoma,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .platform-windows {
-  font-family: Segoe WPC,Segoe UI,sans-serif;
   --monospace-font: Consolas, Inconsolata, "Courier New", monospace;
 }
 
 .platform-linux {
-  font-family: Ubuntu, Droid Sans, sans-serif;
   --monospace-font:"Droid Sans Mono", Inconsolata, "Courier New", monospace, "Droid Sans Fallback";
 }
 
 .platform-mac {
-  font-family: -apple-system,BlinkMacSystemFont,sans-serif;
   --monospace-font: "SF Mono",Monaco,Menlo,Inconsolata,"Courier New",monospace;
 }
 
@@ -96,22 +97,16 @@ hbox {
   position: relative;
 }
 
-:not(.platform-mac) ::-webkit-scrollbar {
+::-webkit-scrollbar {
   width: 14px;
   height: 14px;
 }
 
-:not(.platform-mac) ::-webkit-scrollbar-thumb {
-  border: 3px solid var(--background);
-  border-radius: 10px;
-  background-color: var(--active-background);
-  box-shadow: inset 0 0 1px #FFFFFF7F;
+::-webkit-scrollbar-thumb {
+  border: 1px solid #ccc;
+  background-color: var(--light-background);
 }
 
-:not(.platform-mac) ::-webkit-scrollbar-corner {
+::-webkit-scrollbar-corner {
   background-color: var(--background);
-}
-
-.monaco-execution-line {
-  background-color: rgba(255, 255, 0, 0.2);
 }
