@@ -38,7 +38,7 @@ class TraceViewer {
       fileName,
       contexts: []
     };
-    this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter);
+    this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter, this._traceModel);
   }
 
   async load() {
@@ -95,7 +95,6 @@ class TraceViewer {
       }
     }
     this._traceModel.contexts = [...contextEntries.values()];
-    await this._screenshotGenerator.init(this._traceModel);
     for (const context of this._traceModel.contexts) {
       for (const page of context.pages) {
         for (const action of page.actions)
@@ -297,19 +296,12 @@ class ScreenshotGenerator {
   private _traceStorageDir: string;
   private _browser: playwright.Browser | undefined;
   private _page: playwright.Page | undefined;
+  private _traceModel: TraceModel;
 
-  constructor(traceStorageDir: string, snapshotRouter: SnapshotRouter) {
+  constructor(traceStorageDir: string, snapshotRouter: SnapshotRouter, traceModel: TraceModel) {
     this._traceStorageDir = traceStorageDir;
     this._snapshotRouter = snapshotRouter;
-  }
-
-  async init(model: TraceModel) {
-    this._browser = await playwright['chromium'].launch();
-    // TODO: fixture out multiple contexts.
-    this._page = await this._browser.newPage({
-      viewport: model.contexts[0].created.viewportSize,
-      deviceScaleFactor: model.contexts[0].created.deviceScaleFactor
-    });
+    this._traceModel = traceModel
   }
 
   async render(actionEntry: ActionEntry) {
@@ -318,11 +310,22 @@ class ScreenshotGenerator {
     if (fs.existsSync(imageFileName))
       return;
 
+    if (!this._page) {
+      this._browser = await playwright['chromium'].launch();
+      // TODO: figure out multiple contexts.
+      this._page = await this._browser.newPage({
+        viewport: this._traceModel.contexts[0].created.viewportSize,
+        deviceScaleFactor: this._traceModel.contexts[0].created.deviceScaleFactor
+      });
+      this._page.route('**/*', route => {
+        this._snapshotRouter.route(route);
+      });
+    }
     const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');
     const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
     this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
     const url = snapshotObject.frames[0].url;
-    console.log('Generating screenshot for ' + action.action);
+    console.log('Generating screenshot for ' + action.action, snapshotObject.frames[0].url);
     await this._page!.goto(url);
 
     let clip: any = undefined;
