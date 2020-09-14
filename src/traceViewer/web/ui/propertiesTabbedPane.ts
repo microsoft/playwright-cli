@@ -16,11 +16,11 @@
 
 import * as monaco from 'monaco-editor';
 import { ActionEntry } from "../../traceModel";
-import { NetworkResourceTraceEvent } from "../../traceTypes";
 import { dom, Element$ } from '../components/dom';
 import { Size } from "../components/geometry";
-import { ListView } from "../components/listView";
 import { TabbedPane, TabOptions } from "../components/tabbedPane";
+import { NetworkTab } from './networkTab';
+import { SourceTab } from './sourceTab';
 
 export class PropertiesTabbedPane {
   element: HTMLElement;
@@ -55,7 +55,7 @@ export class PropertiesTabbedPane {
   }
 }
 
-interface Tab extends TabOptions {
+export interface Tab extends TabOptions {
   setAction(action: ActionEntry | undefined): Promise<void>;
 }
 
@@ -88,92 +88,5 @@ class SnapshotTab implements Tab {
 
   content(): HTMLElement {
     return this._element;
-  }
-}
-
-class SourceTab implements Tab {
-  label = 'Source';
-
-  readonly _element: Element$;
-  private _editor: monaco.editor.IStandaloneCodeEditor;
-  private _fileName: string | undefined;
-  private _decorations: string[] = [];
-
-  constructor() {
-    this._element = dom`<vbox></vbox>`;
-    monaco.editor.setTheme('vs-light');
-    this._editor = monaco.editor.create(this._element, {
-      value: '',
-      language: 'javascript',
-      readOnly: true
-    });
-    window.addEventListener('resize', () => this.resize());
-  }
-
-  async setAction(actionEntry: ActionEntry | undefined) {
-    if (!actionEntry) {
-      this._editor.setValue('');
-      return;
-    }
-    const { action } = actionEntry;
-    const frames = action.stack!.split('\n').slice(1);
-    const frame = frames.filter(frame => !frame.includes('playwright/lib/client/'))[0];
-    if (!frame) {
-      this._editor.setValue(action.stack!);
-      return;
-    }
-    const match = frame.match(/at ([^:]+):(\d+):\d+/);
-    if (!match) {
-      this._editor.setValue(action.stack!);
-      return;
-    }
-    const fileName = match[1];
-    if (this._fileName !== fileName) {
-      this._fileName = fileName;
-      const content = await (window as any).readFile(fileName);
-      this._editor.setValue(content);
-    }
-
-    const lineNumber = parseInt(match[2],10);
-    this._decorations = this._editor.deltaDecorations(this._decorations, [
-      { range: new monaco.Range(lineNumber, 1, lineNumber, 1), options: {
-        isWholeLine: true,
-        className: 'monaco-execution-line'
-      }},
-    ]);
-    this._editor.revealLine(lineNumber, 1);
-  }
-
-  content(): HTMLElement {
-    return this._element;
-  }
-
-  resize() {
-    this._editor.layout();
-  }
-}
-
-class NetworkTab implements Tab {
-  label = 'Network';
-  private _listView: ListView<NetworkResourceTraceEvent>;
-
-  constructor() {
-    this._listView = new ListView<NetworkResourceTraceEvent>(this);
-  }
-
-  render(resource: NetworkResourceTraceEvent, element: HTMLElement): HTMLElement {
-    if (element)
-      return element;
-    return dom`<span>${resource.url}</span>`
-  }
-
-  async setAction(actionEntry: ActionEntry | undefined) {
-    this._listView.clear();
-    if (actionEntry)
-      this._listView.appendAll(actionEntry.resources);
-  }
-
-  content(): HTMLElement {
-    return this._listView.element;
   }
 }

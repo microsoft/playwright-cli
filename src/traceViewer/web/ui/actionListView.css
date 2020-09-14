@@ -29,7 +29,6 @@ action-list > list-view {
 }
 
 action-entry {
-  --action-color: transparent;
   position: relative;
 }
 
@@ -41,7 +40,6 @@ action-list action-entry {
   border: 3px solid var(--background);
   margin-top: var(--layout-gap);
   user-select: none;
-  border-left-color: var(--action-color);
   padding: 0 5px 5px 5px;
 }
 
@@ -70,7 +68,7 @@ action-list action-title {
 action-list action-entry action-header {
   display: block;
   align-items: center;
-  margin-bottom: 5px;
+  margin: 5px 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -88,6 +86,7 @@ action-list action-thumbnail {
   justify-content: center;
   width: 200px;
   height: 100px;
+  box-shadow: var(--box-shadow);
 }
 
 action-list action-thumbnail img {
