@@ -16,10 +16,11 @@
 
 import { ActionEntry } from "../../traceModel";
 import { NetworkResourceTraceEvent } from "../../traceTypes";
-import { dom } from '../components/dom';
+import { dom, Element$ } from '../components/dom';
 import { ListView } from "../components/listView";
 import { Tab } from './propertiesTabbedPane';
 import './networkTab.css';
+import { PwExpandableElement } from "../components/pwExpandable";
 
 export class NetworkTab implements Tab {
   label = 'Network';
@@ -33,18 +34,31 @@ export class NetworkTab implements Tab {
         ${this._listView.element}
       </network-tab>
     `;
+    this._listView.element.addEventListener('keydown', e => {
+      const selected = this._listView.selection()[0];
+      if (!selected)
+        return;
+      const expandable = (this._listView.renderedElement(selected) as Element$).$('pw-expandable') as PwExpandableElement;
+      if (e.key === 'ArrowLeft')
+        expandable.setExpanded(false);
+      if (e.key === 'ArrowRight')
+        expandable.setExpanded(true);
+    });
   }
 
   render(resource: NetworkResourceTraceEvent, element: HTMLElement): HTMLElement {
     if (element)
       return element;
-    return dom`
+    const resourceElement = dom`
       <network-request slot="title">
-        <pw-expandable>
-          <request-title slot="title">${resource.url}</request-title>
+        <pw-expandable style="width: 100%;">
+          <request-title slot="title"><div>${resource.url}</div></request-title>
           <request-details slot="body">${resource.responseHeaders.map(pair => `${pair.name}: ${pair.value}`).join('\n')}</request-details>
         </pw-expandable>
     </network-request>`;
+    const expandable = resourceElement.$('pw-expandable') as PwExpandableElement;
+    resourceElement.$('request-title').addEventListener('click', () => expandable.setExpanded(!expandable.expanded()));
+    return resourceElement;
   }
 
   async setAction(actionEntry: ActionEntry | undefined) {

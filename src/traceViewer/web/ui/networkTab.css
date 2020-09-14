@@ -35,14 +35,17 @@ network-tab request-title {
   height: 36px;
   display: flex;
   align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 network-tab request-details {
   font-family: var(--monospace-font);
   white-space: pre;
+  overflow: hidden;
 }
 
-network-tab network-request > div {
+network-tab request-title > div {
   overflow: hidden;
   text-overflow: ellipsis;
 }

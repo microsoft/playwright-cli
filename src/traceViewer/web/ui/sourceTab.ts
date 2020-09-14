@@ -62,7 +62,7 @@ export class SourceTab implements Tab {
       this._editor.setValue(content);
     }
 
-    const lineNumber = parseInt(match[2],10);
+    const lineNumber = parseInt(match[2], 10);
     this._decorations = this._editor.deltaDecorations(this._decorations, [
       { range: new monaco.Range(lineNumber, 1, lineNumber, 1), options: {
         isWholeLine: true,
