@@ -35,8 +35,11 @@ export class ActionListView {
       <action-entry>
         <action-header>
           <action-title>${icon}${action.action}</action-title>
-          <action-selector>${action.target}</action-selector>
+          <action-selector title="${action.target}">${action.target}</action-selector>
         </action-header>
+        <action-thumbnail>
+          <img src="trace-storage/${action.snapshot!.sha1}-target-image.png">
+        </action-thumbnail>
       </action-entry>`;
   }
 }

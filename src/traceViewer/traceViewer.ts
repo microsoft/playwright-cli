@@ -299,16 +299,64 @@ class ScreenshotGenerator {
   }
 
   async render(actionEntry: ActionEntry) {
-    const imageFileName = path.join(this._traceStorageDir, actionEntry.action.snapshot!.sha1 + '-image.png');
-    if (fs.existsSync(imageFileName))
+    const { action } = actionEntry;
+    const imageFileName = path.join(this._traceStorageDir, action.snapshot!.sha1 + '-image.png');
+    const targetImageFileName = path.join(this._traceStorageDir, action.snapshot!.sha1 + '-target-image.png');
+    if (fs.existsSync(imageFileName) && (!action.target || fs.existsSync(targetImageFileName)))
       return;
-    const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, actionEntry.action.snapshot!.sha1), 'utf8');
+
+    const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');
     const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
-    this._snapshotRouter.selectSnapshot(snapshotObject, actionEntry.action.contextId);
+    this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
     const url = snapshotObject.frames[0].url;
-    console.log('Generating screenshot for ' + actionEntry.action.action);
+    console.log('Generating screenshots for ' + action.action);
     await this._page!.goto(url);
+
+    let clip: any = undefined;
+    if (action.target) {
+      const element = await this._page!.$(action.target);
+      if (element) {
+        await element.evaluate(e => {
+          e.style.border = "1.5px solid #ff69b4";
+          e.style.backgroundColor = "#ff69b460";
+        });
+
+        clip = await element.boundingBox();
+        if (clip) {
+          const thumbnailSize = {
+            width: 450,
+            height: 150
+          };
+          const insets = {
+            width: 60,
+            height: 30
+          };
+          clip.width = Math.min(thumbnailSize.width, clip.width);
+          clip.height = Math.min(thumbnailSize.height, clip.height);
+          if (clip.width < thumbnailSize.width) {
+            clip.x -= (thumbnailSize.width - clip.width) / 2;
+            clip.x = Math.max(0, clip.x);
+            clip.width = thumbnailSize.width;
+          } else {
+            clip.x = Math.max(0, clip.x - insets.width);
+          }
+          if (clip.height < thumbnailSize.height) {
+            clip.y -= (thumbnailSize.height - clip.height) / 2;
+            clip.y = Math.max(0, clip.y);
+            clip.height = thumbnailSize.height;
+          } else {
+            clip.y = Math.max(0, clip.y - insets.height);
+          }
+        }
+      }
+    }
+
     const imageData = await this._page!.screenshot();
     await fsWriteFileAsync(imageFileName, imageData);
+
+    if (action.target) {
+      const targetImageData = await this._page!.screenshot({ clip });
+      await fsWriteFileAsync(targetImageFileName, targetImageData);
+    }
   }
 }
