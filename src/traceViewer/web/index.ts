@@ -22,7 +22,9 @@ import './components/listView.css';
 import './components/splitView.css';
 import './components/tabbedPane.css';
 import './components/toolbarView.css';
+import './third_party/vscode/codicon.css';
 import { Workbench } from './ui/workbench';
+import * as components from './components/components';
 
 function platformName(): string {
   if (window.navigator.userAgent.includes('Linux'))
@@ -44,6 +46,7 @@ function platformName(): string {
   }, false);
   document.documentElement.classList.add(platformName());
   const traceModel = await (window as any).getTraceModel() as TraceModel;
+  await components.initialize();
   const workbench = new Workbench(traceModel);
   document.body.appendChild(workbench.element);
 })();

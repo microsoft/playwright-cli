@@ -23,17 +23,28 @@ import './networkTab.css';
 
 export class NetworkTab implements Tab {
   label = 'Network';
+  element: HTMLElement;
   private _listView: ListView<NetworkResourceTraceEvent>;
 
   constructor() {
-		this._listView = new ListView<NetworkResourceTraceEvent>(this);
-		this._listView.element.classList.add('network-tab');
+    this._listView = new ListView<NetworkResourceTraceEvent>(this);
+    this.element = dom`
+      <network-tab>
+        ${this._listView.element}
+      </network-tab>
+    `;
   }
 
   render(resource: NetworkResourceTraceEvent, element: HTMLElement): HTMLElement {
     if (element)
       return element;
-    return dom`<network-request>${resource.url}</network-request>`
+    return dom`
+      <network-request slot="title">
+        <pw-expandable>
+          <request-title slot="title">${resource.url}</request-title>
+          <request-details slot="body">${resource.responseHeaders.map(pair => `${pair.name}: ${pair.value}`).join('\n')}</request-details>
+        </pw-expandable>
+    </network-request>`;
   }
 
   async setAction(actionEntry: ActionEntry | undefined) {
@@ -43,6 +54,6 @@ export class NetworkTab implements Tab {
   }
 
   content(): HTMLElement {
-    return this._listView.element;
+    return this.element;
   }
 }

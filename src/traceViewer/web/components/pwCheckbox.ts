@@ -17,6 +17,11 @@
 import { EventEmitter } from './events';
 import { dom } from './dom';
 
+// @ts-ignore
+import codiconCss from '!css-loader!../third_party/vscode/codicon.css';
+// @ts-ignore
+import pwCheckboxCss from '!css-loader!./pwCheckbox.css';
+
 export class PwCheckboxElement extends HTMLElement {
   private _shadowRoot: ShadowRoot;
   private _checkboxElement: HTMLElement;
@@ -24,7 +29,7 @@ export class PwCheckboxElement extends HTMLElement {
   readonly onChecked = this._onCheckedEmitter.event;
 
   static readonly tagName = 'pw-checkbox';
-  static readonly styles = ['third_party/vscode/codicon.css', 'components/pwCheckbox.css'];
+  static readonly styles = [codiconCss, pwCheckboxCss];
   static stylesFragment: () => DocumentFragment;
 
   constructor() {

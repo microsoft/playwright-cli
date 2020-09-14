@@ -14,14 +14,44 @@
   limitations under the License.
 */
 
-.network-tab network-request {
-	box-shadow: var(--box-shadow);
-	overflow: hidden;
-	white-space: nowrap;
-	height: 36px;
-	display: flex;
-	align-items: center;
-	padding: 0 10px;
-	margin-bottom: 10px;
-	background: #fdfcfc;
+network-tab {
+  flex: auto;
+  overflow: auto;
+}
+
+network-tab network-request {
+  box-shadow: var(--box-shadow);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  margin-bottom: 10px;
+  background: #fdfcfc;
+  width: 100%;
+  border: 3px solid transparent;
+}
+
+network-tab request-title {
+  height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+network-tab request-details {
+  font-family: var(--monospace-font);
+  white-space: pre;
+}
+
+network-tab network-request > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+network-tab list-view > list-item.selected network-request,
+network-tab list-view > list-item:hover network-request {
+  border-color: var(--inactive-focus-ring);
+}
+
+network-tab list-view > list-item.selected:focus network-request {
+  border-color: var(--orange);
 }

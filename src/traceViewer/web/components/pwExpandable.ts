@@ -17,6 +17,11 @@
 import { EventEmitter } from './events';
 import { dom } from './dom';
 
+// @ts-ignore
+import codiconCss from '!css-loader!../third_party/vscode/codicon.css';
+// @ts-ignore
+import psExpandableCss from '!css-loader!./pwExpandable.css';
+
 export class PwExpandableElement extends HTMLElement {
   private _shadowRoot: ShadowRoot;
 
@@ -24,7 +29,7 @@ export class PwExpandableElement extends HTMLElement {
   readonly onExpanded = this._onExpandedEmitter.event;
 
   static readonly tagName = 'pw-expandable';
-  static readonly styles = ['third_party/vscode/codicon.css', 'components/pwExpandable.css'];
+  static readonly styles = [codiconCss, psExpandableCss];
   static stylesFragment: () => DocumentFragment;
 
   constructor() {

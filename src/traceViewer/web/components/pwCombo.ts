@@ -18,6 +18,13 @@ import { EventEmitter } from './events';
 import { dom, Element$ } from './dom';
 import { ListView } from './listView';
 
+// @ts-ignore
+import codiconCss from '!css-loader!../third_party/vscode/codicon.css';
+// @ts-ignore
+import pwComboCss from '!css-loader!./pwCombo.css';
+// @ts-ignore
+import listViewCss from '!css-loader!./listView.css';
+
 type PwComboOption = { value: string, subtitle?: string, label?: string };
 type ChangeSource = 'option' | 'input';
 
@@ -30,7 +37,7 @@ export class PwComboElement extends HTMLElement {
   private _glassPane: HTMLElement;
 
   static readonly tagName = 'pw-combo';
-  static readonly styles = ['third_party/vscode/codicon.css', 'components/pwCombo.css', 'components/listView.css'];
+  static readonly styles = [codiconCss, pwComboCss, listViewCss];
   static stylesFragment: () => DocumentFragment;
 
   private _onChangedEmitter = new EventEmitter<ChangeSource>();

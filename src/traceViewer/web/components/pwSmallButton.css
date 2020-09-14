@@ -18,7 +18,3 @@
   cursor: pointer;
   color: var(--color);
 }
-
-:host(:hover) {
-  color: white;
-}

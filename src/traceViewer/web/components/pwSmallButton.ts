@@ -16,11 +16,16 @@
 
 import { dom } from './dom';
 
+// @ts-ignore
+import codiconCss from '!css-loader!../third_party/vscode/codicon.css';
+// @ts-ignore
+import pwSmallButtonCss from '!css-loader!./pwSmallButton.css';
+
 export class PwSmallButtonElement extends HTMLElement {
   private _shadowRoot: ShadowRoot;
 
   static readonly tagName = 'pw-small-button';
-  static readonly styles = ['third_party/vscode/codicon.css', 'components/pwSmallButton.css'];
+  static readonly styles = [codiconCss, pwSmallButtonCss];
   static stylesFragment: () => DocumentFragment;
 
   constructor() {

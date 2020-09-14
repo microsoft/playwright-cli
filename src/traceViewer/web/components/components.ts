@@ -22,27 +22,15 @@ import { PwSmallButtonElement } from './pwSmallButton';
 const components = [ PwCheckboxElement, PwComboElement, PwExpandableElement, PwSmallButtonElement ];
 
 export async function initialize() {
-  const loadedStyles = new Map<string, string>();
-
-  const componentStyles = [];
-  for (const factory of components) {
+  for (const factory of components)
     customElements.define(factory.tagName, factory);
-    componentStyles.push(...factory.styles);
-  }
-
-  // TODO: figure out shadow styles injection.
-  const styles = [...componentStyles];
-  await Promise.all(styles.map(async name => {
-    const response = await fetch(name);
-    loadedStyles.set(name, `${await response.text()}\n/*# sourceURL=${name}*/`);
-  }));
 
   for (const factory of components) {
     factory.stylesFragment = () => {
       const fragment = new DocumentFragment();
-      for (const name of factory.styles) {
+      for (const styleText of factory.styles) {
         const style = document.createElement('style');
-        style.textContent = loadedStyles.get(name) || '';
+        style.textContent = styleText.toString();
         fragment.appendChild(style);
       }
       return fragment;

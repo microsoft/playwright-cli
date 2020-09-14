@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import * as monaco from 'monaco-editor';
 import { ActionEntry } from "../../traceModel";
 import { dom, Element$ } from '../components/dom';
 import { Size } from "../components/geometry";
