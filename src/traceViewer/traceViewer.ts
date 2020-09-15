@@ -73,10 +73,6 @@ class TraceViewer {
           pageEntries.get(event.pageId)!.destroyed = event;
           break;
         }
-        case 'page-destroyed': {
-          pageEntries.get(event.pageId)!.destroyed = event;
-          break;
-        }
         case 'action': {
           pageEntries.get(event.pageId!)!.actions.push({
             action: event,
@@ -112,13 +108,25 @@ class TraceViewer {
     });
     await uiPage.exposeBinding('renderSnapshot', async (_: any, action: ActionTraceEvent) => {
       try {
+        if (!action.snapshot) {
+          const snapshotFrame = uiPage.frames()[1];
+          await snapshotFrame.goto('data:text/html,No snapshot available');
+          return;
+        }
+
         const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');
         const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
         this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
 
         // TODO: fix Playwright bug where frame.name is lost (empty).
         const snapshotFrame = uiPage.frames()[1];
-        await snapshotFrame.goto(snapshotObject.frames[0].url);
+        try {
+          await snapshotFrame.goto(snapshotObject.frames[0].url);
+        } catch (e) {
+          if (!e.message.includes('frame was detached'))
+            console.error(e);
+          return;
+        }
         if (action.target) {
           const element = await snapshotFrame.$(action.target);
           if (element) {
@@ -129,7 +137,6 @@ class TraceViewer {
         }
       } catch(e) {
         console.log(e);
-        return 'about:blank';
       }
     });
     await uiPage.exposeBinding('getTraceModel', () => this._traceModel);
@@ -306,7 +313,9 @@ class ScreenshotGenerator {
 
   async render(actionEntry: ActionEntry) {
     const { action } = actionEntry;
-    const imageFileName = path.join(this._traceStorageDir, action.snapshot!.sha1 + '-thumbnail.png');
+    if (!action.snapshot)
+      return;
+    const imageFileName = path.join(this._traceStorageDir, action.snapshot.sha1 + '-thumbnail.png');
     if (fs.existsSync(imageFileName))
       return;
 
@@ -321,7 +330,7 @@ class ScreenshotGenerator {
         this._snapshotRouter.route(route);
       });
     }
-    const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot!.sha1), 'utf8');
+    const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot.sha1), 'utf8');
     const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
     this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
     const url = snapshotObject.frames[0].url;

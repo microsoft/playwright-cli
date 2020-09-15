@@ -79,6 +79,11 @@ action-list action-entry action-selector {
   padding-left: 5px;
 }
 
+action-list action-entry action-url {
+  display: inline;
+  padding-left: 5px;
+}
+
 action-list action-thumbnail {
   flex: none;
   display: flex;
