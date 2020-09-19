@@ -30,6 +30,7 @@ export type ContextEntry = {
 export type PageEntry = {
   created: trace.PageCreatedTraceEvent;
   destroyed: trace.PageDestroyedTraceEvent;
+  video?: trace.PageVideoTraceEvent;
   actions: ActionEntry[];
 }
 

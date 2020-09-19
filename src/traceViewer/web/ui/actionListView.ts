@@ -44,7 +44,7 @@ export class ActionListView {
       <action-entry>
         <action-header>
           <action-title>${action.action}</action-title>
-          ${action.target && dom`<action-selector title="${action.target}">${action.target}</action-selector>`}
+          ${action.selector && dom`<action-selector title="${action.selector}">${action.selector}</action-selector>`}
           ${action.action === 'goto' && action.value && dom`<action-url title="${action.value}">${action.value}</action-url>`}
         </action-header>
         <action-thumbnail>
