@@ -73,6 +73,10 @@ class TraceViewer {
           pageEntries.get(event.pageId)!.destroyed = event;
           break;
         }
+        case 'page-video': {
+          pageEntries.get(event.pageId)!.video = event;
+          break;
+        }
         case 'action': {
           pageEntries.get(event.pageId!)!.actions.push({
             action: event,
@@ -127,13 +131,11 @@ class TraceViewer {
             console.error(e);
           return;
         }
-        if (action.target) {
-          const element = await snapshotFrame.$(action.target);
-          if (element) {
-            await element.evaluate(e => {
-              e.style.backgroundColor = '#ff69b460';
-            });
-          }
+        const element = await snapshotFrame.$(action.selector || '*[__playwright_target__]');
+        if (element) {
+          await element.evaluate(e => {
+            e.style.backgroundColor = '#ff69b460';
+          });
         }
       } catch(e) {
         console.log(e);
@@ -149,7 +151,12 @@ class TraceViewer {
       try {
         let filePath: string;
         if (request.url().includes('trace-storage')) {
-          filePath = path.join(this._traceStorageDir, '..', url.pathname.substring(1));
+          filePath = path.join(this._traceStorageDir, url.pathname.substring('/trace-storage/'.length));
+        } else if (request.url().includes('context-artifact')) {
+          const fullPath = url.pathname.substring('/context-artifact/'.length);
+          const [contextId] = fullPath.split('/');
+          const fileName = fullPath.substring(contextId.length + 1);
+          filePath = path.join(path.dirname(this._traceModel.fileName), fileName);
         } else {
           filePath = path.join(__dirname, '../../out/web', url.pathname.substring(1));
         }
@@ -338,39 +345,37 @@ class ScreenshotGenerator {
     await this._page!.goto(url);
 
     let clip: any = undefined;
-    if (action.target) {
-      const element = await this._page!.$(action.target);
-      if (element) {
-        await element.evaluate(e => {
-          e.style.backgroundColor = '#ff69b460';
-        });
+    const element = await this._page!.$(action.selector || '*[__playwright_target__]');
+    if (element) {
+      await element.evaluate(e => {
+        e.style.backgroundColor = '#ff69b460';
+      });
 
-        clip = await element.boundingBox();
-        if (clip) {
-          const thumbnailSize = {
-            width: 400,
-            height: 200
-          };
-          const insets = {
-            width: 60,
-            height: 30
-          };
-          clip.width = Math.min(thumbnailSize.width, clip.width);
-          clip.height = Math.min(thumbnailSize.height, clip.height);
-          if (clip.width < thumbnailSize.width) {
-            clip.x -= (thumbnailSize.width - clip.width) / 2;
-            clip.x = Math.max(0, clip.x);
-            clip.width = thumbnailSize.width;
-          } else {
-            clip.x = Math.max(0, clip.x - insets.width);
-          }
-          if (clip.height < thumbnailSize.height) {
-            clip.y -= (thumbnailSize.height - clip.height) / 2;
-            clip.y = Math.max(0, clip.y);
-            clip.height = thumbnailSize.height;
-          } else {
-            clip.y = Math.max(0, clip.y - insets.height);
-          }
+      clip = await element.boundingBox();
+      if (clip) {
+        const thumbnailSize = {
+          width: 400,
+          height: 200
+        };
+        const insets = {
+          width: 60,
+          height: 30
+        };
+        clip.width = Math.min(thumbnailSize.width, clip.width);
+        clip.height = Math.min(thumbnailSize.height, clip.height);
+        if (clip.width < thumbnailSize.width) {
+          clip.x -= (thumbnailSize.width - clip.width) / 2;
+          clip.x = Math.max(0, clip.x);
+          clip.width = thumbnailSize.width;
+        } else {
+          clip.x = Math.max(0, clip.x - insets.width);
+        }
+        if (clip.height < thumbnailSize.height) {
+          clip.y -= (thumbnailSize.height - clip.height) / 2;
+          clip.y = Math.max(0, clip.y);
+          clip.height = thumbnailSize.height;
+        } else {
+          clip.y = Math.max(0, clip.y - insets.height);
         }
       }
     }
