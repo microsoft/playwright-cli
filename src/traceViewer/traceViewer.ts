@@ -20,7 +20,8 @@ import * as playwright from 'playwright';
 import { Route } from 'playwright';
 import * as util from 'util';
 import { ActionEntry, ContextEntry, PageEntry, TraceModel } from './traceModel';
-import type { ActionTraceEvent, FrameSnapshot, NetworkResourceTraceEvent, PageSnapshot, TraceEvent } from './traceTypes';
+import type { ActionTraceEvent, FrameSnapshot, NetworkResourceTraceEvent, PageSnapshot, PageVideoTraceEvent, TraceEvent } from './traceTypes';
+import { VideoTileGenerator } from './videoTileGenerator';
 
 const fsReadFileAsync = util.promisify(fs.readFile.bind(fs));
 const fsWriteFileAsync = util.promisify(fs.writeFile.bind(fs));
@@ -30,6 +31,7 @@ class TraceViewer {
   private _traceModel: TraceModel;
   private _snapshotRouter: SnapshotRouter;
   private _screenshotGenerator: ScreenshotGenerator;
+  private _videoTileGenerator: VideoTileGenerator;
 
   constructor(traceStorageDir: string, fileName: string) {
     this._traceStorageDir = traceStorageDir;
@@ -39,6 +41,7 @@ class TraceViewer {
       contexts: []
     };
     this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter, this._traceModel);
+    this._videoTileGenerator = new VideoTileGenerator(path.dirname(fileName));
   }
 
   async load() {
@@ -47,6 +50,8 @@ class TraceViewer {
     const events = traceContent.split('\n').map(line => line.trim()).filter(line => !!line).map(line => JSON.parse(line)) as TraceEvent[];
     const contextEntries = new Map<string, ContextEntry>();
     const pageEntries = new Map<string, PageEntry>();
+    const videoEvents: PageVideoTraceEvent[] = [];
+
     for (const event of events) {
       switch (event.type) {
         case 'context-created': {
@@ -75,6 +80,7 @@ class TraceViewer {
         }
         case 'page-video': {
           pageEntries.get(event.pageId)!.video = event;
+          videoEvents.push(event);
           break;
         }
         case 'action': {
@@ -101,6 +107,8 @@ class TraceViewer {
           await this._screenshotGenerator.render(action);
       }
     }
+
+    await this._videoTileGenerator.render(videoEvents);
   }
 
   async show() {
