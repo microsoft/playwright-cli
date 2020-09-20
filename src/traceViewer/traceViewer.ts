@@ -171,7 +171,7 @@ class TraceViewer {
         const body = fs.readFileSync(filePath);
         route.fulfill({
           contentType: extensionToMime[path.extname(url.pathname).substring(1)] || 'text/plain',
-          body
+          body,
         });
       } catch (e) {
         console.log(e);

@@ -24,6 +24,8 @@ export type Size = {
   height: number;
 };
 
+export type Rectangle = Point & Size;
+
 export type Vector = Point;
 
 export function intersectQuadWithViewport(quad: Point[], width: number, height: number): Point[] {

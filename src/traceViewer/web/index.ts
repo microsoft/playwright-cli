@@ -49,4 +49,5 @@ function platformName(): string {
   await components.initialize();
   const workbench = new Workbench(traceModel);
   document.body.appendChild(workbench.element);
+  workbench.pack();
 })();
