@@ -4,3 +4,4 @@
 *.swp
 .vscode
 /out/
+.trace

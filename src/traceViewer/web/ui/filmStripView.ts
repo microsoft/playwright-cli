@@ -17,75 +17,100 @@
 import { dom, Element$ } from '../components/dom';
 import { ContextEntry } from '../../traceModel';
 import './filmStripView.css';
+import { PageVideoTraceEvent } from '../../traceTypes';
+import { Boundaries } from '../components/geometry';
 
 type MetaInfo = {
   frames: number;
   width: number;
   height: number;
   fps: number;
+  startTime: number;
+  endTime: number;
 };
 
 const frameWidth = 80;
+const frameMargin = 5; // align with css
 
 export class FilmStripView {
   readonly element: Element$;
   private _context: ContextEntry;
-  private _fileNames: string[] = [];
-  private _metainfo = new Map<string, MetaInfo>();
-  private _stripElements = new Map<string, HTMLElement>();
+  private _videos: PageVideoTraceEvent[] = [];
+  private _metainfo = new Map<PageVideoTraceEvent, MetaInfo>();
+  private _stripElements = new Map<PageVideoTraceEvent, HTMLElement>();
   private _frameStripWidth: number = 0;
-  private _hoverImageElement: any;
+  private _hoverImageElement: HTMLElement | null = null;
+  private _initialized = false;
+  private _boundaries: Boundaries;
 
-  constructor(context: ContextEntry) {
+  constructor(context: ContextEntry, boundaries: Boundaries) {
     this._context = context;
+    this._boundaries = boundaries;
     for (const page of context.pages) {
       const video = page.video;
       if (!video)
         continue;
-      this._fileNames.push(video.fileName);
+      this._videos.push(video);
     }
     this.element = dom`<film-strip></film-strip>`;
-    for (const fileName of this._fileNames) {
+    for (const video of this._videos) {
       const stripElement = dom`<film-strip-lane></film-strip-lane>`;
-      this._stripElements.set(fileName, stripElement);
-      stripElement.addEventListener('mousemove', event => this._onMouseMove(event, fileName));
-      stripElement.addEventListener('mouseenter', event => this._onMouseEnter(event, fileName));
-      stripElement.addEventListener('mouseleave', event => this._onMouseLeave(event));
+      this._stripElements.set(video, stripElement);
       this.element.appendChild(stripElement);
     }
     this._initialize();
   }
 
   private async _initialize() {
-    for (const fileName of this._fileNames) {
-      const metainfo = await fetch(`context-artifact/${this._context.created.contextId}/${fileName}-metainfo.txt`);
+    for (const video of this._videos) {
+      const metainfo = await fetch(`context-artifact/${this._context.created.contextId}/${video.fileName}-metainfo.txt`);
       const lines = (await metainfo.text()).split('\n');
       const framesMatch = lines.find(l => l.startsWith('frame='))!.match(/frame=\s+(\d+)/);
       const streamLine = lines.find(l => l.trim().startsWith('Stream #0:0'))!
       const fpsMatch = streamLine.match(/, (\d+) fps,/);
       const resolutionMatch = streamLine.match(/, (\d+)x(\d+),/);
-      this._metainfo.set(fileName, {
+      const durationMatch = lines.find(l => l.trim().startsWith('Duration'))!.match(/Duration: (\d+):(\d\d):(\d\d.\d\d)/);
+      const duration = (((parseInt(durationMatch![1], 10) * 60) + parseInt(durationMatch![2], 10)) * 60 + parseFloat(durationMatch![3])) * 1000;
+      this._metainfo.set(video, {
         frames: parseInt(framesMatch![1], 10),
         width: parseInt(resolutionMatch![1], 10),
         height: parseInt(resolutionMatch![2], 10),
         fps: parseInt(fpsMatch![1], 10),
+        startTime: (video as any).timestamp,
+        endTime: (video as any).timestamp + duration
       });
     }
-    this.pack();
+    this._initialized = true;
+    this.measure();
+    this.rebuild();
   }
 
-  pack() {
-    if (!document.body.contains(this.element))
+  measure() {
+    if (!this._initialized)
       return;
     this._frameStripWidth = this.element.clientWidth;
-    for (const fileName of this._fileNames) {
-      const metainfo = this._metainfo.get(fileName)!;
-      const frameCount = this._frameStripWidth / frameWidth | 0;
+  }
+
+  rebuild() {
+    if (!this._initialized)
+      return;
+    for (const video of this._videos) {
+      const metainfo = this._metainfo.get(video)!;
+
+      const filmStripElement = this._stripElements.get(video)!;
+
+      // Position clip on timeline.
+      const gapLeft = (metainfo.startTime - this._boundaries.minimum) / (this._boundaries.maximum - this._boundaries.minimum) * this._frameStripWidth;
+      const gapRight = (this._boundaries.maximum - metainfo.endTime) / (this._boundaries.maximum - this._boundaries.minimum) * this._frameStripWidth;
+      const effectiveWidth = (metainfo.endTime - metainfo.startTime) / (this._boundaries.maximum - this._boundaries.minimum) * this._frameStripWidth;
+      filmStripElement.style.marginLeft = 20 /* timeline zero */ + gapLeft + 'px';
+      filmStripElement.style.marginRight = gapRight + 'px';
+
+      const frameCount = effectiveWidth / (frameWidth + frameMargin) | 0;
       const frameStep = metainfo.frames / frameCount;
-      const filmStripElement = this._stripElements.get(fileName)!;
       const frameHeight = frameWidth / metainfo.width * metainfo.height | 0;
 
-      let frameElement: HTMLElement = filmStripElement.firstElementChild as HTMLElement;
+      let frameElement: HTMLElement = filmStripElement.querySelector('film-strip-frame') as HTMLElement;
       for (let i = 0; i < metainfo.frames; i += frameStep) {
         let index = i | 0;
         // Always show last frame.
@@ -96,13 +121,13 @@ export class FilmStripView {
             <film-strip-frame style="
                 width: ${frameWidth}px;
                 height: ${frameHeight}px;
-                background-image: url(${this._imageURL(fileName, index)});
+                background-image: url(${this._imageURL(video.fileName, index)});
                 background-size: ${frameWidth}px ${frameHeight}px;
                 ">
             </film-strip-frame>`;
           filmStripElement.appendChild(frameElement);
         } else {
-          frameElement.style.backgroundImage = `url(${this._imageURL(fileName, index)})`;
+          frameElement.style.backgroundImage = `url(${this._imageURL(video.fileName, index)})`;
         }
         frameElement = frameElement.nextElementSibling as HTMLElement;
       }
@@ -114,32 +139,34 @@ export class FilmStripView {
     }
   }
 
-  private _onMouseEnter(event: MouseEvent, fileName: string) {
-    const metainfo = this._metainfo.get(fileName)!;
-    this._hoverImageElement = dom`<film-strip-hover></film-strip-hover>`;
-    this._hoverImageElement.style.width = metainfo.width / 2 + 'px';
-    this._hoverImageElement.style.height = metainfo.height / 2 + 'px';
-    const rect = this.element.getBoundingClientRect();
-    this._hoverImageElement.style.top = rect.bottom + 5 + 'px';
-    this._hoverImageElement.style.left = (rect.width - metainfo.width / 2) / 2 + 'px';  
-    document.body.appendChild(this._hoverImageElement);
-    this._onMouseMove(event, fileName);
-  }
+  updatePreview(clientX: number, time: number) {
+    // TODO: pick file from the Y position.
+    const video = this._videos[0];
+    const metainfo = this._metainfo.get(video)!;
 
-  private _onMouseLeave(event: MouseEvent) {
-    this._hoverImageElement.remove();
-  }
-
-  private _onMouseMove(event: MouseEvent, fileName: string) {
-    if (!this._hoverImageElement)
-      return;
-
-    const metainfo = this._metainfo.get(fileName)!;
-    const index = (event.clientX / this._frameStripWidth * metainfo.frames | 0);
     const image = new Image(metainfo.width / 2 | 0, metainfo.height / 2 | 0);
-    image.src = this._imageURL(fileName, index);
+    const index = (time - metainfo.startTime) / (this._boundaries!.maximum - this._boundaries!.minimum) * metainfo.frames | 0;
+    if (index < 0 || index >= metainfo.frames) {
+      if (this._hoverImageElement) {
+        this._hoverImageElement.remove();
+        this._hoverImageElement = null;
+      }
+      return;
+    }
+
+    if (!this._hoverImageElement) {
+      this._hoverImageElement = dom`<film-strip-hover></film-strip-hover>`;
+      this._hoverImageElement.style.width = metainfo.width / 2 + 'px';
+      this._hoverImageElement.style.height = metainfo.height / 2 + 'px';
+      const rect = this.element.getBoundingClientRect();
+      this._hoverImageElement.style.top = rect.bottom + 5 + 'px';
+      document.body.appendChild(this._hoverImageElement);
+    }
+    this._hoverImageElement.style.left = Math.min(clientX, this._frameStripWidth - metainfo.width / 2 - 10) + 'px';
+
+    image.src = this._imageURL(video.fileName, index);
     image.onload = () => {
-      if (!this._hoverImageElement.parentElement)
+      if (!this._hoverImageElement || !this._hoverImageElement.parentElement)
         return;
       this._hoverImageElement.textContent = '';
       this._hoverImageElement.appendChild(image);

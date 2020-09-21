@@ -17,8 +17,10 @@
 import * as trace from "./traceTypes";
 
 export type TraceModel = {
-	fileName: string;
-	contexts: ContextEntry[];
+  fileName: string;
+  contexts: ContextEntry[];
+  startTime: number;
+  endTime: number;
 }
 
 export type ContextEntry = {

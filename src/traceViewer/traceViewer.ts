@@ -38,7 +38,9 @@ class TraceViewer {
     this._snapshotRouter = new SnapshotRouter(traceStorageDir);
     this._traceModel = {
       fileName,
-      contexts: []
+      contexts: [],
+      startTime: Number.MAX_VALUE,
+      endTime: Number.MIN_VALUE,
     };
     this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter, this._traceModel);
     this._videoTileGenerator = new VideoTileGenerator(path.dirname(fileName));
@@ -53,6 +55,9 @@ class TraceViewer {
     const videoEvents: PageVideoTraceEvent[] = [];
 
     for (const event of events) {
+      this._traceModel.startTime = Math.min(this._traceModel.startTime, (event as any).timestamp);
+      this._traceModel.endTime = Math.max(this._traceModel.endTime, (event as any).timestamp);
+
       switch (event.type) {
         case 'context-created': {
           contextEntries.set(event.contextId, {
@@ -359,7 +364,7 @@ class ScreenshotGenerator {
         e.style.backgroundColor = '#ff69b460';
       });
 
-      clip = await element.boundingBox();
+      clip = await element.boundingBox() || undefined;
       if (clip) {
         const thumbnailSize = {
           width: 400,

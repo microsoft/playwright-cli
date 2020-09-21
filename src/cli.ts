@@ -270,8 +270,13 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
   const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout)];
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
-  const output = new OutputMultiplexer(outputs)
-  const languageGenerator = new JavaScriptLanguageGenerator(output)
+  const output = new OutputMultiplexer(outputs);
+  const languageGenerator = new JavaScriptLanguageGenerator(output);
+  if (process.env.PWTRACE) {
+    launchOptions.artifactsPath = path.join(process.cwd(), '.trace');
+    contextOptions.recordTrace = true;
+    contextOptions.recordVideos = true;
+  }
   new ScriptController(browserName, launchOptions, contextOptions, context, output, languageGenerator, enableRecorder, options.device);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)
