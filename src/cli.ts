@@ -19,6 +19,7 @@
 import * as path from 'path';
 import * as program from 'commander';
 import * as os from 'os';
+import * as fs from 'fs';
 import * as playwright from 'playwright';
 import { Browser, BrowserContext, Page } from 'playwright';
 import { ScriptController } from './scriptController';
@@ -258,7 +259,9 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
 async function openPage(context: playwright.BrowserContext, url: string | undefined): Promise<Page> {
   const page = await context.newPage();
   if (url) {
-    if (!url.startsWith('http') && !url.startsWith("file://"))
+    if(fs.existsSync(url))
+      url = 'file://' + path.resolve(url);
+    else if (!url.startsWith('http') && !url.startsWith("file://"))
       url = 'http://' + url;
     await page.goto(url);
   }
