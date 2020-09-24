@@ -19,7 +19,10 @@ jobs:
     - uses: microsoft/playwright-github-action@v1
     - run: npm ci
     - run: npm run build
-    - run: npm version "$(node -e "console.log(require('./package.json').version + '-next.' + +new Date())")"
+    - run: |
+        git config user.email "devops@playwright.dev"
+        git config user.name "playwright-devops"
+        npm version "$(node -e "console.log(require('./package.json').version + '-next.' + +new Date())")"
     - run: npm publish --tag next
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
