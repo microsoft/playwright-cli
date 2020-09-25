@@ -155,7 +155,7 @@ export class Recorder {
       return;
     if ((event.target as Element).nodeName === 'INPUT') {
       // Check/uncheck are handled in input.
-      if (((event.target as HTMLInputElement).type || '').toLowerCase() === 'checkbox')
+      if (['checkbox', 'date'].includes(((event.target as HTMLInputElement).type || '').toLowerCase()))
         return;
     }
 
@@ -174,13 +174,26 @@ export class Recorder {
     });
   }
 
+  private _shouldIgnoreMouseEvent(event: MouseEvent): boolean {
+    const nodeName = (event.target as Element).nodeName;
+    if (nodeName === 'SELECT')
+      return true
+    if (nodeName === 'INPUT' && (event.target as HTMLInputElement).type.toLowerCase() === 'date')
+      return true
+    return false
+  }
+
   private _onMouseDown(event: MouseEvent) {
+    if (this._shouldIgnoreMouseEvent(event))
+      return
     if (!this._performingAction)
       consumeEvent(event);
     this._activeModel = this._hoveredModel;
   }
 
   private _onMouseUp(event: MouseEvent) {
+    if (this._shouldIgnoreMouseEvent(event))
+      return
     if (!this._performingAction)
       consumeEvent(event);
   }
@@ -195,7 +208,7 @@ export class Recorder {
 
   private _onMouseLeave(event: MouseEvent) {
     // Leaving iframe.
-    if ((event.target as Node).nodeType === Node.DOCUMENT_NODE)  {
+    if ((event.target as Node).nodeType === Node.DOCUMENT_NODE) {
       this._hoveredElement = null;
       this._commitActionAndUpdateModelForHoveredElement();
     }
