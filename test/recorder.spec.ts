@@ -36,6 +36,17 @@ it('should click', async ({ page, recorder }) => {
   expect(message.text()).toBe('click');
 });
 
+it('should escape slashes correctly for JavaScript', async ({ recorder, page }) => {
+  await recorder.setContentAndWait(`<button>username (first last) / Repositories</button>`);
+  const selector = await recorder.focusElement('button');
+  expect(selector).toBe('text=/.*username \\(first last\\) / Reposi.*/');
+  await page.click('text=username')
+  await recorder.waitForOutput('username')
+  expect(recorder.output()).toContain(`
+  // Click text=/.*username \\(first last\\) / Reposi.*/
+  await page.click('text=/.*username \\\\(first last\\\\) / Reposi.*/');`)
+});
+
 it('should not target selector preview by text regexp', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<span>dummy</span>`);
 
