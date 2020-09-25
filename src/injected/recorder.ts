@@ -151,13 +151,8 @@ export class Recorder {
   }
 
   private _onClick(event: MouseEvent) {
-    if ((event.target as Element).nodeName === 'SELECT')
+    if (this._shouldIgnoreMouseEvent(event))
       return;
-    if ((event.target as Element).nodeName === 'INPUT') {
-      // Check/uncheck are handled in input.
-      if (['checkbox', 'date'].includes(((event.target as HTMLInputElement).type || '').toLowerCase()))
-        return;
-    }
 
     if (this._actionInProgress(event))
       return;
@@ -178,7 +173,7 @@ export class Recorder {
     const nodeName = (event.target as Element).nodeName;
     if (nodeName === 'SELECT')
       return true
-    if (nodeName === 'INPUT' && (event.target as HTMLInputElement).type.toLowerCase() === 'date')
+    if (nodeName === 'INPUT' && ['date', 'checkbox'].includes((event.target as HTMLInputElement).type.toLowerCase()))
       return true
     return false
   }

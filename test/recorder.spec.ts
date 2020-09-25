@@ -206,7 +206,7 @@ it('should emit single keyup on ArrowDown', async ({ page, recorder }) => {
 it('should check', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="console.log(checkbox.checked)"></input>`);
 
-  const selector = await recorder.hoverOverElement('input');
+  const selector = await recorder.focusElement('input');
   expect(selector).toBe('input[name="accept"]');
 
   const [message] = await Promise.all([
@@ -242,7 +242,7 @@ it('should check with keyboard', async ({ page, recorder }) => {
 it('should uncheck', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<input id="checkbox" type="checkbox" checked name="accept" onchange="console.log(checkbox.checked)"></input>`);
 
-  const selector = await recorder.hoverOverElement('input');
+  const selector = await recorder.focusElement('input');
   expect(selector).toBe('input[name="accept"]');
 
   const [message] = await Promise.all([
