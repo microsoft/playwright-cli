@@ -53,7 +53,7 @@ export class Recorder {
         right: 0;
         bottom: 0;
         left: 0;
-        z-index: 1000000;
+        z-index: 2147483647;
         pointer-events: none;
         display: flex;
       ">
