@@ -82,7 +82,7 @@ export class Recorder {
                       rgba(0, 0, 0, 0.15) 0px -12.1px 24px,
                       rgba(0, 0, 0, 0.25) 0px 54px 55px;
           color: rgb(204, 204, 204);
-          display: flex;
+          display: none;
           font-family: 'Dank Mono', 'Operator Mono', Inconsolata, 'Fira Mono',
                        'SF Mono', Monaco, 'Droid Sans Mono', 'Source Code Pro', monospace;
           font-size: 12.8px;
