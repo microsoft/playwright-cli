@@ -167,7 +167,7 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
         const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
       })();`);
-    this._output.write(formatter.format() + '\n');
+     this._output.write(formatter.format() + '\n');
   }
 
   writeFooter(): void {
@@ -266,8 +266,12 @@ class JavaScriptFormatter {
   }
 }
 
-const quoteChar = '\'';
-function quote(text: string): string {
-  return quoteChar + text.replace(/[']/g, '\\\'')
-    .replace(/\\/g, '\\\\') + quoteChar;
+function quote(text: string, char: string = '\'') {
+  if (char === '\'')
+    return char + text.replace(/[']/g, '\\\'') + char;
+  if (char === '"')
+    return char + text.replace(/["]/g, '\\"') + char;
+  if (char === '`')
+    return char + text.replace(/[`]/g, '\\`') + char;
+  throw new Error('Invalid escape char');
 }
