@@ -65,7 +65,9 @@ export class FilmStripView {
     for (const video of this._videos) {
       const metainfo = await fetch(`context-artifact/${this._context.created.contextId}/${video.fileName}-metainfo.txt`);
       const lines = (await metainfo.text()).split('\n');
-      const framesMatch = lines.find(l => l.startsWith('frame='))!.match(/frame=\s+(\d+)/);
+      let framesLine = lines.find(l => l.startsWith('frame='))!;
+      framesLine = framesLine.substring(framesLine.lastIndexOf('frame='));
+      const framesMatch = framesLine.match(/frame=\s+(\d+)/);
       const streamLine = lines.find(l => l.trim().startsWith('Stream #0:0'))!
       const fpsMatch = streamLine.match(/, (\d+) fps,/);
       const resolutionMatch = streamLine.match(/, (\d+)x(\d+),/);

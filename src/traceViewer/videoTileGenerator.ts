@@ -30,13 +30,24 @@ export class VideoTileGenerator {
   }
 
   async render(events: PageVideoTraceEvent[]) {
+    let ffmpegName = '';
+    if (process.platform === 'win32') {
+      if (process.arch === 'ia32')
+        ffmpegName = 'ffmpeg-win32';
+      else
+        ffmpegName = 'ffmpeg-win64';
+    }
+    if (process.platform === 'darwin')
+      ffmpegName = 'ffmpeg-mac';
+    if (process.platform === 'linux')
+      ffmpegName = 'ffmpeg-linux';
+    const ffmpeg = path.join(path.dirname(require.resolve('playwright')), 'third_party', 'ffmpeg', ffmpegName);
     for (const event of events) {
       const fileName = path.join(this._traceStorageDir, event.fileName);
       if (fs.existsSync(fileName + '-metainfo.txt'))
         continue;
       console.log('Generating frames for ' + fileName);
-      let result = spawnSync(process.env.FFMPEG!, ['-i', fileName, `${fileName}-%03d.png`]);
-      result = spawnSync(process.env.FFMPEG!, ['-i', fileName, '-map', '0:v:0', '-c', 'copy', '-f', 'null', '-']);
+      let result = spawnSync(ffmpeg, ['-i', fileName, `${fileName}-%03d.png`]);
       await fsWriteFileAsync(fileName + '-metainfo.txt', result.stderr);
     }
   }

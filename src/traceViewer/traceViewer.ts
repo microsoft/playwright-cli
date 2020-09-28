@@ -393,7 +393,11 @@ class ScreenshotGenerator {
       }
     }
 
-    const imageData = await this._page!.screenshot({ clip });
-    await fsWriteFileAsync(imageFileName, imageData);
+    try {
+      const imageData = await this._page!.screenshot({ clip });
+      await fsWriteFileAsync(imageFileName, imageData);
+    } catch (e) {
+      console.log(clip);
+    }
   }
 }
