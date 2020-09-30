@@ -114,7 +114,7 @@ program
       console.log('');
       console.log('Examples:');
       console.log('');
-      console.log('  $ pdf https://example.com example.png');
+      console.log('  $ pdf https://example.com example.pdf');
     });
 
 if (process.env.PWTRACE) {
