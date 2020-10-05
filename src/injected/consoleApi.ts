@@ -27,6 +27,7 @@ export type ParsedSelector = {
 export interface InjectedScript {
   parseSelector(selector: string): ParsedSelector;
   engines: Set<string>;
+  querySelector(selector: ParsedSelector, document: Document): Element | undefined;
   querySelectorAll(selector: ParsedSelector, document: Document): Element[];
 };
 
