@@ -1,4 +1,3 @@
-import { InjectedScript } from './consoleApi';
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -16,12 +15,13 @@ import { InjectedScript } from './consoleApi';
  */
 
 import { XPathEngine } from './xpathSelectorEngine';
+import { InjectedScript } from './consoleApi';
 
 export function buildSelector(injectedScript: InjectedScript, targetElement: Element): { selector: string, elements: Element[] } {
   const path: SelectorToken[] = [];
   let numberOfMatchingElements = Number.MAX_SAFE_INTEGER;
-  for (let element: Element | null = targetElement; element && element !== document.documentElement; element = element.parentElement) {
-    const selector = buildSelectorCandidate(injectedScript, element);
+  for (let element: Element | null = targetElement; element && element !== document.documentElement; element = parentElementOrShadowHost(element)) {
+    const selector = buildSelectorCandidate(element);
     if (!selector)
       continue;
     const fullSelector = joinSelector([selector, ...path]);
@@ -41,15 +41,17 @@ export function buildSelector(injectedScript: InjectedScript, targetElement: Ele
       selector: '/html',
       elements: [document.documentElement]
     };
-  const xpathSelector = XPathEngine.create(document.documentElement, targetElement, 'default')!;
-  const parsedSelector = injectedScript.parseSelector(xpathSelector);
+  const selector =
+      XPathEngine.create(document.documentElement, targetElement, 'default') ||
+      cssSelectorForElement(injectedScript, targetElement);
+  const parsedSelector = injectedScript.parseSelector(selector);
   return {
-    selector: xpathSelector,
+    selector,
     elements: injectedScript.querySelectorAll(parsedSelector, targetElement.ownerDocument)
   };
 }
 
-function buildSelectorCandidate(injectedScript: InjectedScript, element: Element): SelectorToken | null {
+function buildSelectorCandidate(element: Element): SelectorToken | null {
   const nodeName = element.nodeName.toLowerCase();
   for (const attribute of ['data-testid', 'data-test-id', 'data-test']) {
     if (element.hasAttribute(attribute))
@@ -81,6 +83,78 @@ function buildSelectorCandidate(injectedScript: InjectedScript, element: Element
     return { engine: 'css', selector: `${nodeName}[id=${quoteString(idAttr!)}]` };
 
   return null;
+}
+
+function parentElementOrShadowHost(element: Element): Element | null {
+  if (element.parentElement)
+    return element.parentElement;
+  if (!element.parentNode)
+    return null;
+  if (element.parentNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE && (element.parentNode as ShadowRoot).host)
+    return (element.parentNode as ShadowRoot).host;
+  return null;
+}
+
+function cssSelectorForElement(injectedScript: InjectedScript, targetElement: Element): string {
+  const root: Node = targetElement.ownerDocument;
+  const tokens: string[] = [];
+
+  function uniqueCSSSelector(prefix?: string): string | undefined {
+    const path = tokens.slice();
+    if (prefix)
+      path.unshift(prefix);
+    const selector = path.join(' ');
+    const parsedSelector = injectedScript.parseSelector(selector);
+    const node = injectedScript.querySelector(parsedSelector, targetElement.ownerDocument);
+    return node === targetElement ? selector : undefined;
+  }
+
+  for (let element: Element | null = targetElement; element && element !== root; element = parentElementOrShadowHost(element)) {
+    const nodeName = element.nodeName.toLowerCase();
+
+    // Element ID is the strongest signal, use it.
+    let bestTokenForLevel: string = '';
+    if (element.id) {
+      const token = /^[a-zA-Z][a-zA-Z0-9\-\_]+$/.test(element.id) ? '#' + element.id : `[id="${element.id}"]`;
+      const selector = uniqueCSSSelector(token);
+      if (selector)
+        return selector;
+      bestTokenForLevel = token;
+    }
+
+    const parent = element.parentNode as (Element | ShadowRoot);
+
+    // Combine class names until unique.
+    const classes = Array.from(element.classList);
+    for (let i = 0; i < classes.length; ++i) {
+      const token = '.' + classes.slice(0, i + 1).join('.');
+      const selector = uniqueCSSSelector(token);
+      if (selector)
+        return selector;
+      // Even if not unique, does this subset of classes uniquely identify node as a child?
+      if (!bestTokenForLevel && parent) {
+        const sameClassSiblings = parent.querySelectorAll(token);
+        if (sameClassSiblings.length === 1)
+          bestTokenForLevel = token;
+      }
+    }
+
+    // Ordinal is the weakest signal.
+    if (parent) {
+      const siblings = Array.from(parent.children);
+      const sameTagSiblings = siblings.filter(sibling => (sibling).nodeName.toLowerCase() === nodeName);
+      const token = sameTagSiblings.indexOf(element) === 0 ? nodeName : `${nodeName}:nth-child(${1 + siblings.indexOf(element)})`;
+      const selector = uniqueCSSSelector(token);
+      if (selector)
+        return selector;
+      if (!bestTokenForLevel)
+        bestTokenForLevel = token;
+    } else if (!bestTokenForLevel) {
+      bestTokenForLevel = nodeName;
+    }
+    tokens.unshift(bestTokenForLevel);
+  }
+  return uniqueCSSSelector()!;
 }
 
 function textSelectorForElement(node: Node): string | null {

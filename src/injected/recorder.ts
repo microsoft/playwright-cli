@@ -144,7 +144,7 @@ export class Recorder {
   }
 
   private _consumedDueWrongTarget(event: Event): boolean {
-    if (this._activeModel && this._activeModel.elements[0] === event.target)
+    if (this._activeModel && this._activeModel.elements[0] === deepEventTarget(event))
       return false;
     consumeEvent(event);
     return true;
@@ -170,12 +170,13 @@ export class Recorder {
   }
 
   private _shouldIgnoreMouseEvent(event: MouseEvent): boolean {
-    const nodeName = (event.target as Element).nodeName;
+    const target = deepEventTarget(event);
+    const nodeName = target.nodeName;
     if (nodeName === 'SELECT')
-      return true
-    if (nodeName === 'INPUT' && ['date', 'checkbox'].includes((event.target as HTMLInputElement).type.toLowerCase()))
-      return true
-    return false
+      return true;
+    if (nodeName === 'INPUT' && ['date', 'checkbox'].includes((target as HTMLInputElement).type.toLowerCase()))
+      return true;
+    return false;
   }
 
   private _onMouseDown(event: MouseEvent) {
@@ -194,23 +195,25 @@ export class Recorder {
   }
 
   private _onMouseMove(event: MouseEvent) {
-    if (this._hoveredElement === event.target)
+    const target = deepEventTarget(event);
+    if (this._hoveredElement === target)
       return;
-    this._hoveredElement = event.target as HTMLElement | null;
+    this._hoveredElement = target;
     // Mouse moved -> mark last action as committed via committing a commit action.
     this._commitActionAndUpdateModelForHoveredElement();
   }
 
   private _onMouseLeave(event: MouseEvent) {
     // Leaving iframe.
-    if ((event.target as Node).nodeType === Node.DOCUMENT_NODE) {
+    if (deepEventTarget(event).nodeType === Node.DOCUMENT_NODE) {
       this._hoveredElement = null;
       this._commitActionAndUpdateModelForHoveredElement();
     }
   }
 
   private _onFocus(event: FocusEvent) {
-    const result = document.activeElement ? this._consoleAPI.buildSelector(document.activeElement) : null;
+    const activeElement = deepActiveElement(document);
+    const result = activeElement ? this._consoleAPI.buildSelector(activeElement) : null;
     this._activeModel = result && result.selector ? result : null;
     if ((window as any)._highlightUpdatedForTest)
       (window as any)._highlightUpdatedForTest(result ? result.selector : null);
@@ -309,8 +312,9 @@ export class Recorder {
   }
 
   private _onInput(event: Event) {
-    if (['INPUT', 'TEXTAREA'].includes((event.target as Element).nodeName)) {
-      const inputElement = event.target as HTMLInputElement;
+    const target = deepEventTarget(event);
+    if (['INPUT', 'TEXTAREA'].includes(target.nodeName)) {
+      const inputElement = target as HTMLInputElement;
       const elementType = (inputElement.type || '').toLowerCase()
       if (elementType === 'checkbox') {
         if (this._actionInProgress(event))
@@ -346,8 +350,8 @@ export class Recorder {
       });
     }
 
-    if ((event.target as Element).nodeName === 'SELECT') {
-      const selectElement = event.target as HTMLSelectElement;
+    if (target.nodeName === 'SELECT') {
+      const selectElement = target as HTMLSelectElement;
       if (this._actionInProgress(event))
         return;
       this._performAction({
@@ -422,6 +426,17 @@ export class Recorder {
       (window as any)._actionPerformedForTest();
   }
 }
+
+function deepEventTarget(event: Event): HTMLElement {
+  return event.composedPath()[0] as HTMLElement;
+}
+
+function deepActiveElement(document: Document): Element | null {
+  let activeElement = document.activeElement;
+  while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement)
+    activeElement = activeElement.shadowRoot.activeElement;
+  return activeElement;
+};
 
 function modifiersForEvent(event: MouseEvent | KeyboardEvent): number {
   return (event.altKey ? 1 : 0) | (event.ctrlKey ? 2 : 0) | (event.metaKey ? 4 : 0) | (event.shiftKey ? 8 : 0);
