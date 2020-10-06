@@ -159,6 +159,7 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
   const launchOptions: playwright.LaunchOptions = {
     headless,
   };
+
   const contextOptions: playwright.BrowserContextOptions =
     // Copy the device descriptor since we have to compare and modify the options.
     options.device ? { ...playwright.devices[options.device] } :
@@ -183,6 +184,12 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
     launchOptions.proxy = {
       server: options.proxyServer
     };
+  }
+
+  if (process.env.PWTRACE) {
+    launchOptions.artifactsPath = path.join(process.cwd(), '.trace');
+    contextOptions.recordTrace = true;
+    contextOptions.recordVideos = true;
   }
 
   const browser = await browserType.launch(launchOptions);
@@ -275,11 +282,7 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
   const languageGenerator = new JavaScriptLanguageGenerator(output);
-  if (process.env.PWTRACE) {
-    launchOptions.artifactsPath = path.join(process.cwd(), '.trace');
-    contextOptions.recordTrace = true;
-    contextOptions.recordVideos = true;
-  }
+
   new ScriptController(browserName, launchOptions, contextOptions, context, output, languageGenerator, enableRecorder, options.device);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)
