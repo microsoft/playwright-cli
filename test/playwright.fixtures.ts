@@ -263,7 +263,7 @@ class CLIMock {
       }
     });
     this.process.stdout.on('data', line => {
-      this.lines.push(removeAnsiColors(line.toString()))
+      this.lines.push(removeAnsiColors(line.toString()));
       if (this.waitForCallback && this.lines.join('\n').includes(this.waitForText))
         this.waitForCallback()
     })

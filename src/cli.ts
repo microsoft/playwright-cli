@@ -27,6 +27,7 @@ import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs
 import { CodeGeneratorOutput } from './codegen/codeGenerator';
 import { JavaScriptLanguageGenerator } from './codegen/languages';
 import { showTraceViewer } from './traceViewer/traceViewer';
+import { PythonLanguageGenerator } from './codegen/languages/python';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -77,15 +78,17 @@ for (const {alias, name, type} of browsers) {
 program
     .command('codegen [url]')
     .description('open page and generate code for user actions')
-    .option('-o --output <file name>', 'saves the generated script to a file')
+    .option('-o, --output <file name>', 'saves the generated script to a file')
+    .option('--target <language>', 'language to use, one of js, javascript, py, python, defaults to javascript', 'javascript')
     .action(function(url, command) {
-      codegen(command.parent, url, command.output);
+      codegen(command.parent, url, command.target, command.output);
     }).on('--help', function() {
       console.log('');
       console.log('Examples:');
       console.log('');
-      console.log('  $ record');
-      console.log('  $ -b webkit record https://example.com');
+      console.log('  $ codegen');
+      console.log('  $ codegen --target=python');
+      console.log('  $ -b webkit codegen https://example.com');
     });
 
 program
@@ -268,13 +271,13 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
   return page;
 }
 
-async function open(options: Options, url: string | undefined, enableRecorder: boolean, outputFile?: string) {
+async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: 'python' | 'javascript', outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
   const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout)];
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
-  const languageGenerator = new JavaScriptLanguageGenerator(output);
+  const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator(output) : new PythonLanguageGenerator(output);
   if (process.env.PWTRACE) {
     launchOptions.artifactsPath = path.join(process.cwd(), '.trace');
     contextOptions.recordTrace = true;
@@ -321,8 +324,16 @@ async function pdf(options: Options, captureOptions: CaptureOptions, url: string
   await browser.close();
 }
 
-async function codegen(options: Options, url: string | undefined, outputFile?: string) {
-  return open(options, url, true, outputFile);
+async function codegen(options: Options, url: string | undefined, target: string, outputFile?: string) {
+  let language: 'javascript' | 'python';
+  switch (target) {
+    case 'py': language = 'python'; break;
+    case 'python': language = 'python'; break;
+    case 'js': language = 'javascript'; break;
+    case 'javascript': language = 'javascript'; break;
+    default: program.help();
+  }
+  return open(options, url, true, language, outputFile);
 }
 
 function lookupBrowserType(options: Options): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {

@@ -257,7 +257,7 @@ it('should select', async ({ page, recorder }) => {
     page.selectOption('select', '2')
   ]);
   expect(recorder.output()).toContain(`
-  // Select select[id="age"]
+  // Select 2
   await page.selectOption('select[id="age"]', '2');`);
   expect(message.text()).toBe('2');
 });
@@ -485,7 +485,7 @@ it('should record open in a new tab with url', (test, parameters) => {
     expect(recorder.output()).toContain(`
   // Open new page
   const page1 = await context.newPage();
-  page1.load('about:blank?foo');`);
+  page1.goto('about:blank?foo');`);
   } else if (isFirefox(browserName)) {
     expect(recorder.output()).toContain(`
   // Click text="link"
