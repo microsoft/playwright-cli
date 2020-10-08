@@ -42,7 +42,7 @@ setuptools.setup(
         "root": "../..",
         "relative_to": __file__,
         "version_scheme": "post-release",
-        "write_to": "playwright-cli/_repo_version.py",
+        "write_to": "packages/python/playwright-cli/_repo_version.py",
         "write_to_template": 'version = "{version}"\n',
     },
     setup_requires=["setuptools_scm"],
