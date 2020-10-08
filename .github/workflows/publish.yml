@@ -42,7 +42,7 @@ jobs:
         pip install -r local-requirements.txt
         pip install -e .
     - name: install
-        run: npm ci
+      run: npm ci
     - name: build
       run: npm run build
     - name: bake-driver-all
