@@ -51,6 +51,7 @@ jobs:
       working-directory: packages/python
       run: python build_package.py
     - name: publish package
+      working-directory: packages/python
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
