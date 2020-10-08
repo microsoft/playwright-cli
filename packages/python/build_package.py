@@ -40,12 +40,12 @@ _egg_dir = _dirname / "playwright.egg-info"
 if _egg_dir.exists():
     shutil.rmtree(_egg_dir)
 
-subprocess.check_call("python setup.py sdist bdist_wheel", shell=True)
-
 shutil.copyfile(
     f"../../out/drivers/browsers.json",
     f"playwright-cli/browsers.json"
 )
+
+subprocess.check_call("python setup.py sdist bdist_wheel", shell=True)
 
 base_wheel_location = glob.glob("dist/*.whl")[0]
 without_platform = base_wheel_location[:-7]
