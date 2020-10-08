@@ -137,12 +137,12 @@ export function actionTitle(action: Action): string {
       if (action.files.length === 0)
         return `Clear selected files`;
       else
-        return `Upload ${action.files.length === 1 ? action.files[0] : action.files.join(", ")}`;
+        return `Upload ${action.files.join(', ')}`;
     case 'navigate':
       return `Go to ${action.url}`;
     case 'press':
       return `Press ${action.key}` + (action.modifiers ? ' with modifiers' : '');
     case 'select':
-      return `Select ${action.selector}`;
+      return `Select ${action.options.join(', ')}`;
   }
 }
