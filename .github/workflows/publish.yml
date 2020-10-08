@@ -22,7 +22,7 @@ jobs:
     #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-pypi-release:
-    name: "public to PyPI"
+    name: "publish to PyPI"
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
