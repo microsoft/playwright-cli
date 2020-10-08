@@ -7,7 +7,12 @@
   "scripts": {
     "test": "test-runner test/",
     "build": "node utils/runWebpack.js --mode='development' && tsc -p .",
-    "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p ."
+    "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p .",
+    "bake-darwin": "pkg --public --targets node12-macos-x64 --output=out/drivers/driver-darwin bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
+    "bake-win32": "pkg --public --targets node12-win-x86 --output=out/drivers/driver-win32.exe bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
+    "bake-win32-amd64": "pkg --public --targets node12-win-x64 --output=out/drivers/driver-win32-amd64.exe bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
+    "bake-linux": "pkg --public --targets node12-linux-x64 --output=out/drivers/driver-linux bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
+    "bake-all": "npm run bake-darwin && npm run bake-win32 && npm run bake-win32-amd64 && npm run bake-linux"
   },
   "bin": {
     "playwright-cli": "./index.js"
@@ -27,6 +32,7 @@
     "file-loader": "^6.1.0",
     "html-webpack-plugin": "^4.4.1",
     "monaco-editor": "^0.20.0",
+    "pkg": "^4.4.9",
     "style-loader": "^1.2.1",
     "ts-loader": "^8.0.3",
     "typescript": "^4.0.2",

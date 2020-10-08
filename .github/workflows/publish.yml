@@ -17,6 +17,6 @@ jobs:
     - uses: microsoft/playwright-github-action@v1
     - run: npm ci
     - run: npm run build
-    - run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # - run: npm publish
+    #   env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

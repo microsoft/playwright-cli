@@ -1,0 +1,6 @@
+playwright-cli/__init__.pyc
+playwright-cli/__pycache__/
+playwright-cli/browsers.json
+playwright_cli.egg-info/
+build/
+dist/
