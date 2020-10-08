@@ -39,6 +39,8 @@ setuptools.setup(
     ],
     python_requires=">=3.7",
     use_scm_version={
+        "root": "../..",
+        "relative_to": __file__,
         "version_scheme": "post-release",
         "write_to": "playwright-cli/_repo_version.py",
         "write_to_template": 'version = "{version}"\n',
