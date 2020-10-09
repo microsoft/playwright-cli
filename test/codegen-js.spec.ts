@@ -106,7 +106,7 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tmp
   // Close page
   await page.close();
 
-  //------------------------------------------------------------------------------
+  // ---------------------
   await browser.close();
 })();`)
 });
