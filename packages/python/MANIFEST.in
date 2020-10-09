@@ -1,5 +1,0 @@
-include playwright-cli/browsers.json
-include playwright-cli/*.py
-include README.md
-include SECURITY.md
-include LICENSE
