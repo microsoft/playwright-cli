@@ -1,9 +1,0 @@
-playwright-cli/__init__.pyc
-playwright-cli/__pycache__/
-playwright-cli/browsers.json
-playwright-cli/driver*
-playwright-cli/_repo_version.py
-playwright_cli.egg-info/
-build/
-dist/
-.eggs

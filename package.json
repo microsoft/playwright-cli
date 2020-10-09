@@ -8,12 +8,18 @@
     "test": "test-runner test/",
     "build": "node utils/runWebpack.js --mode='development' && tsc -p .",
     "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p .",
-    "bake-darwin": "pkg --public --targets node12-macos-x64 --output=out/drivers/driver-darwin bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
-    "bake-win32": "pkg --public --targets node12-win-x86 --output=out/drivers/driver-win32.exe bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
-    "bake-win32-amd64": "pkg --public --targets node12-win-x64 --output=out/drivers/driver-win32-amd64.exe bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
-    "bake-linux": "pkg --public --targets node12-linux-x64 --output=out/drivers/driver-linux bakeIndex.js && cp node_modules/playwright/browsers.json out/drivers",
-    "bake-all": "npm run bake-darwin && npm run bake-win32 && npm run bake-win32-amd64 && npm run bake-linux",
-    "python": "cp out/drivers/* packages/python/playwright-cli"
+    "bake-mac": "pkg --public --targets node12-macos-x64 --output=out/binary/mac/driver .",
+    "bake-win32": "pkg --public --targets node12-win-x86 --output=out/binary/win32/driver.exe .",
+    "bake-win64": "pkg --public --targets node12-win-x64 --output=out/binary/win64/driver.exe .",
+    "bake-linux": "pkg --public --targets node12-linux-x64 --output=out/binary/linux/driver .",
+    "bake": "npm run bake-mac && npm run bake-win32 && npm run bake-win64 && npm run bake-linux",
+    "copy-mac": "cp node_modules/playwright/browsers.json out/binary/mac && cp node_modules/playwright/third_party/ffmpeg/ffmpeg-mac out/binary/mac && cp node_modules/playwright/third_party/ffmpeg/COPYING.GPLv3 out/binary/mac/ffmpeg.COPYING.GPLv3",
+    "copy-win32": "cp node_modules/playwright/browsers.json out/binary/win32 && cp node_modules/playwright/bin/PrintDeps.exe out/binary/win32 && cp node_modules/playwright/third_party/ffmpeg/ffmpeg-win32.exe out/binary/win32 && cp node_modules/playwright/third_party/ffmpeg/COPYING.GPLv3 out/binary/win32/ffmpeg.COPYING.GPLv3",
+    "copy-win64": "cp node_modules/playwright/browsers.json out/binary/win64 && cp node_modules/playwright/bin/PrintDeps.exe out/binary/win64 && cp node_modules/playwright/third_party/ffmpeg/ffmpeg-win64.exe out/binary/win64 && cp node_modules/playwright/third_party/ffmpeg/COPYING.GPLv3 out/binary/win64/ffmpeg.COPYING.GPLv3",
+    "copy-linux": "cp node_modules/playwright/browsers.json out/binary/linux && cp node_modules/playwright/third_party/ffmpeg/ffmpeg-linux out/binary/linux && cp node_modules/playwright/third_party/ffmpeg/COPYING.GPLv3 out/binary/linux/ffmpeg.COPYING.GPLv3",
+    "copy": "npm run copy-mac && npm run copy-win32 && npm run copy-win64 && npm run copy-linux",
+    "zip": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/zip.ps1 $npm_package_version",
+    "upload": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/upload.ps1 $npm_package_version"
   },
   "bin": {
     "playwright-cli": "./index.js"

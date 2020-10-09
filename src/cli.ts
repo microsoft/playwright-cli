@@ -79,7 +79,7 @@ program
     .command('codegen [url]')
     .description('open page and generate code for user actions')
     .option('-o, --output <file name>', 'saves the generated script to a file')
-    .option('--target <language>', `language to use, one of js, javascript, py, python`, process.env.PLAYWRIGHT_CLI_TARGET_LANG || 'javascript')
+    .option('--target <language>', `language to use, one of js, javascript, py, python`, process.env.PW_CLI_TARGET_LANG || 'javascript')
     .action(function(url, command) {
       codegen(command.parent, url, command.target, command.output);
     }).on('--help', function() {
@@ -120,6 +120,14 @@ program
       console.log('  $ pdf https://example.com example.pdf');
     });
 
+program
+    .command('install')
+    .description('Ensure browsers necessary for this version of Playwright are installed')
+    .action(function(url, filename, command) {
+      require('playwright/lib/install/installer').installBrowsersWithProgressBar(
+          path.dirname(require.resolve('playwright')));
+    });
+
 if (process.env.PWTRACE) {
   program
     .command('show-trace <trace>')
@@ -135,7 +143,14 @@ if (process.env.PWTRACE) {
     });
 }
 
-program.parse(process.argv);
+// Implement driver command.
+if (process.argv[2] === 'driver') {
+  (async() => {
+    require('playwright/lib/server');
+  })();
+} else {
+  program.parse(process.argv);
+}
 
 type Options = {
   browser: string;
