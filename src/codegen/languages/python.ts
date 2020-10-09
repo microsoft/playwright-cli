@@ -144,7 +144,7 @@ async def run(playwright) {
   }
 
   generateFooter(): string {
-    return `    #--------------------------------------------------------------------------------
+    return `    # ---------------------
     await browser.close()
 
 async def main():

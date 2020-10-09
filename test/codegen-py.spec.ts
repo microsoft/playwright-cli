@@ -93,7 +93,7 @@ async def run(playwright):
     # Close page
     await page.close()
 
-    #--------------------------------------------------------------------------------
+    # ---------------------
     await browser.close()
 
 async def main():
