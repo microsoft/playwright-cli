@@ -273,11 +273,11 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
 
 async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: 'python' | 'javascript', outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout)];
+  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, language || 'javascript')];
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
-  const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator(output) : new PythonLanguageGenerator(output);
+  const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator() : new PythonLanguageGenerator();
   if (process.env.PWTRACE) {
     launchOptions.artifactsPath = path.join(process.cwd(), '.trace');
     contextOptions.recordTrace = true;

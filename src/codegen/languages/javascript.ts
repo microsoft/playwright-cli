@@ -16,30 +16,11 @@
 
 import * as playwright from 'playwright';
 import { LanguageGenerator } from '.';
-import { ActionInContext, CodeGeneratorOutput } from '../codeGenerator';
+import { ActionInContext } from '../codeGenerator';
 import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class JavaScriptLanguageGenerator implements LanguageGenerator {
-  private _output: CodeGeneratorOutput
-  constructor(output: CodeGeneratorOutput) {
-    this._output = output;
-  }
-
-  preWriteAction(eraseLastAction: boolean, lastActionText?: string): void {
-    // We erase terminating `})();` at all times.
-    let eraseLines = 1;
-    if (eraseLastAction && lastActionText)
-      eraseLines += lastActionText.split('\n').length;
-    // And we erase the last action too if augmenting.
-    for (let i = 0; i < eraseLines; ++i)
-      this._output.popLine()
-  }
-
-  postWriteAction(lastActionText: string): void {
-    this._output.write(lastActionText + '\n})();\n');
-  }
-
   generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
     const { action, pageAlias, frame } = actionInContext;
     const formatter = new JavaScriptFormatter(2);
@@ -158,22 +139,21 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
     }
   }
 
-  writeHeader(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, deviceName?: string): void {
+  generateHeader(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, deviceName?: string): string {
     const formatter = new JavaScriptFormatter();
     formatter.add(`
       const { ${browserName}${deviceName ? ', devices' : ''} } = require('playwright');
 
       (async () => {
         const browser = await ${browserName}.launch(${formatObjectOrVoid(launchOptions)});
-        const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});
-      })();`);
-     this._output.write(formatter.format() + '\n');
+        const context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)});`);
+    return formatter.format();
   }
 
-  writeFooter(): void {
-    this._output.popLine();
-    this._output.write('  // Close browser\n');
-    this._output.write('  await browser.close();\n})();\n');
+  generateFooter(): string {
+    return `  //------------------------------------------------------------------------------
+  await browser.close();
+})();`;
   }
 }
 

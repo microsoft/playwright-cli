@@ -29,8 +29,7 @@ it('should print the correct imports and context options', async ({ runCLI }) =>
   const expectedResult = `import asyncio
 from playwright import async_playwright
 
-async def main():
-  async with async_playwright() as playwright:
+async def run(playwright):
     browser = await playwright.chromium.launch(headless=False)
     context = await browser.newContext()`;
   await cli.waitFor(expectedResult);
@@ -42,8 +41,7 @@ it('should print the correct context options for custom settings', async ({ runC
   const expectedResult = `import asyncio
 from playwright import async_playwright
 
-async def main():
-  async with async_playwright() as playwright:
+async def run(playwright):
     browser = await playwright.chromium.launch(headless=False)
     context = await browser.newContext(colorScheme="light")`;
   await cli.waitFor(expectedResult);
@@ -55,8 +53,7 @@ it('should print the correct context options when using a device', async ({ runC
   const expectedResult = `import asyncio
 from playwright import async_playwright
 
-async def main():
-  async with async_playwright() as playwright:
+async def run(playwright):
     browser = await playwright.chromium.launch(headless=False)
     context = await browser.newContext(**playwright.devices["Pixel 2"])`;
   await cli.waitFor(expectedResult)
@@ -68,8 +65,7 @@ it('should print the correct context options when using a device and additional 
   const expectedResult = `import asyncio
 from playwright import async_playwright
 
-async def main():
-  async with async_playwright() as playwright:
+async def run(playwright):
     browser = await playwright.chromium.launch(headless=False)
     context = await browser.newContext(**playwright.devices["Pixel 2"], colorScheme="light")`;
   await cli.waitFor(expectedResult);
@@ -84,8 +80,7 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tmp
   expect(content.toString()).toBe(`import asyncio
 from playwright import async_playwright
 
-async def main():
-  async with async_playwright() as playwright:
+async def run(playwright):
     browser = await playwright.chromium.launch(headless=False)
     context = await browser.newContext()
 
@@ -97,8 +92,12 @@ async def main():
 
     # Close page
     await page.close()
-    # Close browser
+
+    #--------------------------------------------------------------------------------
     await browser.close()
 
-asyncio.get_event_loop().run_until_complete(main())`);
+async def main():
+    async with async_playwright() as playwright:
+        await run(playwright)
+asyncio.run(main())`);
 });

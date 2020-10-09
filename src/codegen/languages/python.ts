@@ -16,29 +16,11 @@
 
 import * as playwright from 'playwright';
 import { LanguageGenerator } from '.';
-import { ActionInContext, CodeGeneratorOutput } from '../codeGenerator';
+import { ActionInContext } from '../codeGenerator';
 import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class PythonLanguageGenerator implements LanguageGenerator {
-  private _output: CodeGeneratorOutput
-  constructor(output: CodeGeneratorOutput) {
-    this._output = output;
-  }
-
-  preWriteAction(eraseLastAction: boolean, lastActionText?: string): void {
-    if (eraseLastAction && lastActionText) {
-      const eraseLines = lastActionText.split('\n').length;
-      // We erase the last action too if augmenting.
-      for (let i = 0; i < eraseLines; ++i)
-        this._output.popLine();
-    }
-  }
-
-  postWriteAction(lastActionText: string): void {
-    this._output.write(lastActionText + '\n'); // + '\n})();\n');
-  }
-
   generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
     const { action, pageAlias, frame } = actionInContext;
     const formatter = new PythonFormatter(4);
@@ -149,24 +131,26 @@ export class PythonLanguageGenerator implements LanguageGenerator {
     }
   }
 
-  writeHeader(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, deviceName?: string): void {
+  generateHeader(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, deviceName?: string): string {
     const formatter = new PythonFormatter();
     formatter.add(`
-      import asyncio
-      from playwright import async_playwright
+import asyncio
+from playwright import async_playwright
 
-      async def main() {
-        async with async_playwright() as playwright {
-          browser = await playwright.${browserName}.launch(${formatOptions(launchOptions, false)})
-          context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)})
-    `);
-    this._output.write(formatter.format() + '\n');
+async def run(playwright) {
+    browser = await playwright.${browserName}.launch(${formatOptions(launchOptions, false)})
+    context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)})`);
+    return formatter.format();
   }
 
-  writeFooter(): void {
-    this._output.write('    # Close browser');
-    this._output.write('    await browser.close()');
-    this._output.write('\nasyncio.run(main())\n');
+  generateFooter(): string {
+    return `    #--------------------------------------------------------------------------------
+    await browser.close()
+
+async def main():
+    async with async_playwright() as playwright:
+        await run(playwright)
+asyncio.run(main())`;
   }
 }
 
@@ -210,7 +194,7 @@ class PythonFormatter {
   private _lines: string[] = [];
 
   constructor(offset = 0) {
-    this._baseIndent = ' '.repeat(2);
+    this._baseIndent = ' '.repeat(4);
     this._baseOffset = ' '.repeat(offset);
   }
 
