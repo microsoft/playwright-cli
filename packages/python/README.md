@@ -11,6 +11,9 @@ Playwright CLI is utility tool for [Playwright](https://github.com/Microsoft/pla
 ## Install
 
 ```sh
+# make sure you have wheel installed
+$ pip install wheel
+# install Playwright CLI
 $ pip install playwright-cli
 ```
 

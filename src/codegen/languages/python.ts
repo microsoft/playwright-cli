@@ -166,7 +166,7 @@ export class PythonLanguageGenerator implements LanguageGenerator {
   writeFooter(): void {
     this._output.write('    # Close browser');
     this._output.write('    await browser.close()');
-    this._output.write('\nasyncio.get_event_loop().run_until_complete(main())\n');
+    this._output.write('\nasyncio.run(main())\n');
   }
 }
 

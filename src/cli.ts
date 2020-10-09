@@ -38,7 +38,7 @@ program
     .option('--lang <language>', 'specify language / locale, for example "en-GB"')
     .option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"')
     .option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"')
-    .option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds, defaults to 10000', "10000")
+    .option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', "10000")
     .option('--user-agent <ua string>', 'specify user agent string')
     .option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280, 720"');
 
@@ -79,7 +79,7 @@ program
     .command('codegen [url]')
     .description('open page and generate code for user actions')
     .option('-o, --output <file name>', 'saves the generated script to a file')
-    .option('--target <language>', 'language to use, one of js, javascript, py, python, defaults to javascript', 'javascript')
+    .option('--target <language>', `language to use, one of js, javascript, py, python`, process.env.PLAYWRIGHT_CLI_TARGET_LANG || 'javascript')
     .action(function(url, command) {
       codegen(command.parent, url, command.target, command.output);
     }).on('--help', function() {

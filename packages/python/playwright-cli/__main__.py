@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+import os
 import stat
 import subprocess
 import sys
@@ -50,4 +51,6 @@ def compute_driver_executable() -> Path:
     return make_file_executable(path)
 
 driver_executable = compute_driver_executable()
-subprocess.run([driver_executable, *sys.argv[1:]])
+my_env = os.environ.copy()
+my_env["PLAYWRIGHT_CLI_TARGET_LANG"] = "python"
+subprocess.run([driver_executable, *sys.argv[1:]], env=my_env)
