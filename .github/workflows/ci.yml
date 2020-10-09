@@ -33,9 +33,9 @@ jobs:
     - name: bake-driver-linux
       if: matrix.os == 'ubuntu-latest'
       run: npm run bake-linux
-    - name: bake-driver-darwin
+    - name: bake-driver-mac
       if: matrix.os == 'macos-latest'
-      run: npm run bake-darwin
+      run: npm run bake-mac
     - name: bake-driver-all
       if: matrix.os == 'windows-latest'
-      run: npm run bake-all
+      run: npm run bake

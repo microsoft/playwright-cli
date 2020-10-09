@@ -17,42 +17,26 @@ jobs:
     - uses: microsoft/playwright-github-action@v1
     - run: npm ci
     - run: npm run build
-    - run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # - run: npm publish
+    #   env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  publish-pypi-release:
-    name: "publish to PyPI"
+  publish-cdn-archives:
+    name: "publish to CDN"
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: microsoft/playwright-github-action@v1
-    - name: Set up Node.js
-      uses: actions/setup-node@v1
+    - uses: actions/setup-node@v1
       with:
         node-version: 12.x
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      working-directory: packages/python
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r local-requirements.txt
-        pip install -e .
-    - name: install
-      run: npm ci
-    - name: build
-      run: npm run build
-    - name: bake-driver-all
-      run: npm run bake-all
-    - name: build Python package
-      working-directory: packages/python
-      run: python build_package.py
-    - name: publish package
-      working-directory: packages/python
+        registry-url: 'https://registry.npmjs.org'
+    - uses: microsoft/playwright-github-action@v1
+    - run: npm ci
+    - run: npm run build
+    - run: npm run bake
+    - run: npm run copy
+    - run: npm run zip
+    - run: npm run upload
       env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: twine upload dist/*
+        AZ_ACCOUNT_KEY: ${{ secrets.AZ_ACCOUNT_KEY }}
+        AZ_ACCOUNT_NAME: ${{ secrets.AZ_ACCOUNT_NAME }}
