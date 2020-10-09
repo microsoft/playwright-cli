@@ -104,8 +104,8 @@ fixtures.defineWorkerFixture('httpServer', async ({parallelIndex}, runTest) => {
 fixtures.defineTestFixture('contextWrapper', async ({ browser }, runTest, info) => {
   const context = await browser.newContext();
   const outputBuffer = new WritableBuffer();
-  const output = new TerminalOutput(outputBuffer as any as Writable)
-  const languageGenerator = new JavaScriptLanguageGenerator(output)
+  const output = new TerminalOutput(outputBuffer as any as Writable, 'javascript')
+  const languageGenerator = new JavaScriptLanguageGenerator()
   new ScriptController('chromium', {}, {}, context, output, languageGenerator, true);
   await runTest({ context, output: outputBuffer });
   await context.close();
@@ -132,33 +132,36 @@ function removeAnsiColors(input: string): string {
 }
 
 class WritableBuffer {
-  lines: string[];
+  _data: string;
   private _callback: () => void;
   _text: string;
 
   constructor() {
-    this.lines = [];
+    this._data = '';
   }
 
   write(chunk: string) {
+    if (!chunk)
+      return;
     if (chunk === '\u001B[F\u001B[2K') {
-      this.lines.pop();
+      const index = this._data.lastIndexOf('\n');
+      this._data = this._data.substring(0, index);
       return;
     }
-    this.lines.push(...chunk.split('\n'));
+    this._data += chunk;
     if (this._callback && chunk.includes(this._text))
       this._callback();
   }
 
   _waitFor(text: string): Promise<void> {
-    if (this.lines.join('\n').includes(text))
+    if (this._data.includes(text))
       return Promise.resolve();
     this._text = text;
     return new Promise(f => this._callback = f);
   }
 
   data() {
-    return this.lines.join('\n');
+    return this._data;
   }
 
   text() {
@@ -247,12 +250,13 @@ fixtures.defineTestFixture('runCLI', async ({  }, runTest, info) => {
 
 class CLIMock {
   private process: ChildProcessWithoutNullStreams
-  private lines: string[]
+  private data: string;
   private waitForText: string
   private waitForCallback: () => void;
   exited: Promise<number>
+
   constructor(args: string[]) {
-    this.lines = []
+    this.data = ''
     this.process = spawn('node', [
       path.join(__dirname, '..', 'lib', 'cli.js'),
       ...args
@@ -263,22 +267,25 @@ class CLIMock {
       }
     });
     this.process.stdout.on('data', line => {
-      this.lines.push(removeAnsiColors(line.toString()));
-      if (this.waitForCallback && this.lines.join('\n').includes(this.waitForText))
+      this.data += removeAnsiColors(line.toString());
+      if (this.waitForCallback && this.data.includes(this.waitForText))
         this.waitForCallback()
     })
     this.exited = new Promise(r => this.process.on('exit', r))
   }
+
   async waitFor(text: string): Promise<void> {
-    if (this.lines.join('\n').includes(text))
+    if (this.data.includes(text))
       return Promise.resolve();
     this.waitForText = text;
     return new Promise(f => this.waitForCallback = f);
   }
+
   text() {
-    return removeAnsiColors(this.lines.join('\n'))
+    return removeAnsiColors(this.data);
   }
+
   kill() {
-    this.process.kill()
+    this.process.kill();
   }
 }

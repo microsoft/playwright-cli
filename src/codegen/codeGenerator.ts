@@ -27,7 +27,7 @@ export type ActionInContext = {
 }
 
 export interface CodeGeneratorOutput {
-  write(text: string): void
+  writeLn(text: string): void
   popLine(): void
   flush(): void
 }
@@ -38,17 +38,22 @@ export class CodeGenerator {
   private _lastActionText: string | undefined;
   private _languageGenerator: LanguageGenerator;
   private _output: CodeGeneratorOutput;
+  private _footerText: string;
+  private _footerLineCount: number;
 
   constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, output: CodeGeneratorOutput, languageGenerator: LanguageGenerator, deviceName: string | undefined) {
     this._output = output
     this._languageGenerator = languageGenerator
 
     launchOptions = { headless: false, ...launchOptions };
-    this._languageGenerator.writeHeader(browserName, launchOptions, contextOptions, deviceName)
+    const header = this._languageGenerator.generateHeader(browserName, launchOptions, contextOptions, deviceName);
+    this._output.writeLn(header);
+    this._footerText = '\n' + this._languageGenerator.generateFooter();
+    this._output.writeLn(this._footerText);
+    this._footerLineCount = this._footerText.split('\n').length;
   }
 
   exit() {
-    this._languageGenerator.writeFooter()
     this._output.flush();
   }
 
@@ -96,12 +101,17 @@ export class CodeGenerator {
   }
 
   _printAction(actionInContext: ActionInContext, eraseLastAction: boolean) {
-    this._languageGenerator.preWriteAction(eraseLastAction, this._lastActionText)
+    let linesToErase = this._footerLineCount;
+    if (eraseLastAction && this._lastActionText)
+      linesToErase += this._lastActionText.split('\n').length;
+    for (let i = 0; i < linesToErase; ++i)
+      this._output.popLine();
     const performingAction = !!this._currentAction;
     this._currentAction = undefined;
     this._lastAction = actionInContext;
-    this._lastActionText = this._languageGenerator.generateAction(actionInContext, performingAction)
-    this._languageGenerator.postWriteAction(this._lastActionText)
+    this._lastActionText = this._languageGenerator.generateAction(actionInContext, performingAction);
+    this._output.writeLn(this._lastActionText);
+    this._output.writeLn(this._footerText);
   }
 
   signal(pageAlias: string, frame: playwright.Frame, signal: Signal) {

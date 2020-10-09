@@ -26,9 +26,9 @@ export class OutputMultiplexer implements CodeGeneratorOutput {
     this._outputs = outputs;
   }
 
-  write(text: string) {
+  writeLn(text: string) {
     for (const output of this._outputs)
-      output.write(text);
+      output.writeLn(text);
   }
 
   popLine() {
@@ -50,7 +50,7 @@ export class FileOutput implements CodeGeneratorOutput {
     this._lines = [];
   }
 
-  write(text: string) {
+  writeLn(text: string) {
     this._lines.push(...text.trimEnd().split('\n'));
   }
 
@@ -65,15 +65,20 @@ export class FileOutput implements CodeGeneratorOutput {
 
 export class TerminalOutput implements CodeGeneratorOutput {
   private _output: Writable
-  constructor(output: Writable) {
+  private _language: string;
+
+  constructor(output: Writable, language: string) {
     this._output = output;
+    this._language = language;
   }
+
   private _highlight(text: string) {
-    let highlightedCode = highlight('typescript', text).value;
+    let highlightedCode = highlight(this._language, text).value;
     highlightedCode = querystring.unescape(highlightedCode);
     highlightedCode = highlightedCode.replace(/<span class="hljs-keyword">/g, '\x1b[38;5;205m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-built_in">/g, '\x1b[38;5;220m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-literal">/g, '\x1b[38;5;159m');
+    highlightedCode = highlightedCode.replace(/<span class="hljs-title">/g, '');
     highlightedCode = highlightedCode.replace(/<span class="hljs-number">/g, '\x1b[38;5;78m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-string">/g, '\x1b[38;5;130m');
     highlightedCode = highlightedCode.replace(/<span class="hljs-comment">/g, '\x1b[38;5;23m');
@@ -89,8 +94,10 @@ export class TerminalOutput implements CodeGeneratorOutput {
     return highlightedCode;
   }
 
-  write(text: string) {
-    this._output.write(this._highlight(text));
+  writeLn(text: string) {
+    // Split into lines for highlighter to not fail.
+    for (const line of text.split('\n'))
+      this._output.write(this._highlight(line) + '\n');
   }
 
   popLine() {

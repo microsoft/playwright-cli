@@ -32,8 +32,7 @@ it('should print the correct imports and context options', async ({ runCLI }) =>
   const browser = await chromium.launch({
     headless: false
   });
-  const context = await browser.newContext();
-})();`;
+  const context = await browser.newContext();`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
 });
@@ -48,8 +47,7 @@ it('should print the correct context options for custom settings', async ({ runC
   });
   const context = await browser.newContext({
     colorScheme: 'light'
-  });
-})();`;
+  });`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
 });
@@ -65,8 +63,7 @@ it('should print the correct context options when using a device', async ({ runC
   });
   const context = await browser.newContext({
     ...devices['Pixel 2'],
-  });
-})();`
+  });`
   await cli.waitFor(expectedResult)
   expect(cli.text()).toContain(expectedResult)
 });
@@ -82,8 +79,7 @@ it('should print the correct context options when using a device and additional 
   const context = await browser.newContext({
     ...devices['Pixel 2'],
     colorScheme: 'light'
-  });
-})();`;
+  });`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
 });
@@ -109,7 +105,8 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tmp
 
   // Close page
   await page.close();
-  // Close browser
+
+  //------------------------------------------------------------------------------
   await browser.close();
 })();`)
 });
