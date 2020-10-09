@@ -12,10 +12,14 @@
     "bake-win32": "pkg --public --targets node12-win-x86 --output=out/binary/win32/driver.exe .",
     "bake-win32_x64": "pkg --public --targets node12-win-x64 --output=out/binary/win32_x64/driver.exe .",
     "bake-linux": "pkg --public --targets node12-linux-x64 --output=out/binary/linux/driver .",
-    "bake": "npm run bake-mac && npm run bake-win32 && npm run bake-win32_x64 && npm run bake-linux",
-    "copy": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/copy.ps1",
-    "zip": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/zip.ps1",
-    "upload": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/upload.ps1"
+    "bake-64": "npm run bake-mac && npm run bake-win32_x64 && npm run bake-linux",
+    "bake-32": "npm run bake-win32",
+    "copy-64": "./utils/copy.sh",
+    "copy-32": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/copy.ps1",
+    "zip-64": "./utils/zip.sh",
+    "zip-32": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/zip.ps1",
+    "upload-64": "./utils/upload.sh",
+    "upload-32": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/upload.ps1"
   },
   "bin": {
     "playwright-cli": "./index.js"
@@ -27,7 +31,7 @@
   "dependencies": {
     "commander": "^6.1.0",
     "highlight.js": "^10.1.2",
-    "playwright": "1.4.0-next.1601161680085"
+    "playwright": "1.4.0-next.1602284292050"
   },
   "devDependencies": {
     "@playwright/test-runner": "^0.3.7",

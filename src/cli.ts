@@ -294,9 +294,8 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
   const output = new OutputMultiplexer(outputs);
   const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator() : new PythonLanguageGenerator();
   if (process.env.PWTRACE) {
-    launchOptions.artifactsPath = path.join(process.cwd(), '.trace');
-    contextOptions.recordTrace = true;
-    contextOptions.recordVideos = true;
+    contextOptions.videosPath = path.join(process.cwd(), '.trace');
+    (contextOptions as any)._traceResourcesPath = path.join(process.cwd(), '.trace');
   }
   new ScriptController(browserName, launchOptions, contextOptions, context, output, languageGenerator, enableRecorder, options.device);
   await openPage(context, url);
