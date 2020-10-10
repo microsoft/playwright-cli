@@ -28,6 +28,7 @@ import { CodeGeneratorOutput } from './codegen/codeGenerator';
 import { JavaScriptLanguageGenerator } from './codegen/languages';
 import { showTraceViewer } from './traceViewer/traceViewer';
 import { PythonLanguageGenerator } from './codegen/languages/python';
+import { printApiJson, runServer } from './driver';
 
 program
     .version('Version ' + require('../package.json').version)
@@ -144,10 +145,10 @@ if (process.env.PWTRACE) {
 }
 
 // Implement driver command.
-if (process.argv[2] === 'driver') {
-  (async() => {
-    require('playwright/lib/server');
-  })();
+if (process.argv[2] === 'run-driver') {
+  runServer();
+} else if (process.argv[2] === 'print-api-json') {
+  printApiJson();
 } else {
   program.parse(process.argv);
 }
