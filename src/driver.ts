@@ -48,7 +48,6 @@ export function runServer() {
   transport.onmessage = (message: string) => dispatcherConnection.dispatch(JSON.parse(message));
   dispatcherConnection.onmessage = (message: string) => transport.send(JSON.stringify(message));
 
-  console.log(require('playwright/browsers.json')['browsers']);
   const playwright = new Playwright(__dirname, require('playwright/browsers.json')['browsers']);
   (playwright as any).electron = new Electron();
   new PlaywrightDispatcher(dispatcherConnection.rootDispatcher(), playwright);
