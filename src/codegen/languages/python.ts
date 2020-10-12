@@ -21,6 +21,16 @@ import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSigna
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class PythonLanguageGenerator implements LanguageGenerator {
+  private _awaitPrefix: '' | 'await ';
+  private _asyncPrefix: '' | 'async ';
+  private _isAsync: boolean;
+
+  constructor(isAsync: boolean) {
+    this._isAsync = isAsync;
+    this._awaitPrefix = isAsync ? 'await ' : '';
+    this._asyncPrefix = isAsync ? 'async ' : '';
+  }
+
   generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
     const { action, pageAlias, frame } = actionInContext;
     const formatter = new PythonFormatter(4);
@@ -28,7 +38,7 @@ export class PythonLanguageGenerator implements LanguageGenerator {
     formatter.add('# ' + actionTitle(action));
 
     if (action.name === 'openPage') {
-      formatter.add(`${pageAlias} = await context.newPage()`);
+      formatter.add(`${pageAlias} = ${this._awaitPrefix}context.newPage()`);
       if (action.url && action.url !== 'about:blank' && action.url !== 'chrome://newtab/')
         formatter.add(`${pageAlias}.goto('${action.url}')`);
       return formatter.format();
@@ -59,17 +69,17 @@ export class PythonLanguageGenerator implements LanguageGenerator {
     const assertNavigation = navigationSignal && performingAction;
 
     const actionCall = this._generateActionCall(action);
-    let code = `await ${subject}.${actionCall}`;
+    let code = `${this._awaitPrefix}${subject}.${actionCall}`;
 
     if (popupSignal) {
-      code = `async with ${pageAlias}.expect_popup() as popup_info {
+      code = `${this._asyncPrefix}with ${pageAlias}.expect_popup() as popup_info {
         ${code}
       }
       ${popupSignal.popupAlias} = popup_info.value`;
     }
 
     if (downloadSignal) {
-      code = `async with ${pageAlias}.expect_download() as download_info {
+      code = `${this._asyncPrefix}with ${pageAlias}.expect_download() as download_info {
         ${code}
       }
       download = download_info.value`;
@@ -77,8 +87,8 @@ export class PythonLanguageGenerator implements LanguageGenerator {
 
     if (waitForNavigation) {
       code = `
-      # async with ${pageAlias}.expect_navigation(url=${quote(navigationSignal!.url)}):
-      async with ${pageAlias}.expect_navigation() {
+      # ${this._asyncPrefix}with ${pageAlias}.expect_navigation(url=${quote(navigationSignal!.url)}):
+      ${this._asyncPrefix}with ${pageAlias}.expect_navigation() {
         ${code}
       }`;
     }
@@ -133,24 +143,41 @@ export class PythonLanguageGenerator implements LanguageGenerator {
 
   generateHeader(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, deviceName?: string): string {
     const formatter = new PythonFormatter();
-    formatter.add(`
+    if (this._isAsync) {
+      formatter.add(`
 import asyncio
 from playwright import async_playwright
 
 async def run(playwright) {
     browser = await playwright.${browserName}.launch(${formatOptions(launchOptions, false)})
     context = await browser.newContext(${formatContextOptions(contextOptions, deviceName)})`);
+    } else {
+      formatter.add(`
+from playwright import sync_playwright
+
+def run(playwright) {
+    browser = playwright.${browserName}.launch(${formatOptions(launchOptions, false)})
+    context = browser.newContext(${formatContextOptions(contextOptions, deviceName)})`);
+    }
     return formatter.format();
   }
 
   generateFooter(): string {
-    return `    # ---------------------
+    if (this._isAsync) {
+      return `    # ---------------------
     await browser.close()
 
 async def main():
     async with async_playwright() as playwright:
         await run(playwright)
 asyncio.run(main())`;
+    } else {
+      return `    # ---------------------
+    browser.close()
+
+with sync_playwright() as playwright:
+    run(playwright)`;
+    }
   }
 }
 

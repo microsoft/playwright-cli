@@ -16,58 +16,51 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import {promisify} from 'util';
 import { fixtures} from './playwright.fixtures';
 const { it, expect } = fixtures;
-
-const readFileAsync = promisify(fs.readFile)
 
 const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString()
 
 it('should print the correct imports and context options', async ({ runCLI }) => {
   const cli = runCLI(['codegen', '--target=python', emptyHTML]);
-  const expectedResult = `import asyncio
-from playwright import async_playwright
+  const expectedResult = `from playwright import sync_playwright
 
-async def run(playwright):
-    browser = await playwright.chromium.launch(headless=False)
-    context = await browser.newContext()`;
+def run(playwright):
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.newContext()`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
 });
 
 it('should print the correct context options for custom settings', async ({ runCLI }) => {
   const cli = runCLI(['--color-scheme=light', 'codegen', '--target=python', emptyHTML]);
-  const expectedResult = `import asyncio
-from playwright import async_playwright
+  const expectedResult = `from playwright import sync_playwright
 
-async def run(playwright):
-    browser = await playwright.chromium.launch(headless=False)
-    context = await browser.newContext(colorScheme="light")`;
+def run(playwright):
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.newContext(colorScheme="light")`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
 });
 
 it('should print the correct context options when using a device', async ({ runCLI }) => {
   const cli = runCLI(['--device=Pixel 2', 'codegen', '--target=python', emptyHTML])
-  const expectedResult = `import asyncio
-from playwright import async_playwright
+  const expectedResult = `from playwright import sync_playwright
 
-async def run(playwright):
-    browser = await playwright.chromium.launch(headless=False)
-    context = await browser.newContext(**playwright.devices["Pixel 2"])`;
+def run(playwright):
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.newContext(**playwright.devices["Pixel 2"])`;
   await cli.waitFor(expectedResult)
   expect(cli.text()).toContain(expectedResult)
 });
 
 it('should print the correct context options when using a device and additional options', async ({ runCLI }) => {
   const cli = runCLI(['--color-scheme=light', '--device=Pixel 2', 'codegen', '--target=python', emptyHTML]);
-  const expectedResult = `import asyncio
-from playwright import async_playwright
+  const expectedResult = `from playwright import sync_playwright
 
-async def run(playwright):
-    browser = await playwright.chromium.launch(headless=False)
-    context = await browser.newContext(**playwright.devices["Pixel 2"], colorScheme="light")`;
+def run(playwright):
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.newContext(**playwright.devices["Pixel 2"], colorScheme="light")`;
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
 });
@@ -76,28 +69,25 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tmp
   const tmpFile = path.join(tmpDir, 'script.js');
   const cli = runCLI(['codegen', '--target=python', '--output', tmpFile, emptyHTML]);
   await cli.exited;
-  const content = await readFileAsync(tmpFile);
-  expect(content.toString()).toBe(`import asyncio
-from playwright import async_playwright
+  const content = fs.readFileSync(tmpFile);
+  expect(content.toString()).toBe(`from playwright import sync_playwright
 
-async def run(playwright):
-    browser = await playwright.chromium.launch(headless=False)
-    context = await browser.newContext()
+def run(playwright):
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.newContext()
 
     # Open new page
-    page = await context.newPage()
+    page = context.newPage()
 
     # Go to ${emptyHTML}
-    await page.goto("${emptyHTML}")
+    page.goto("${emptyHTML}")
 
     # Close page
-    await page.close()
+    page.close()
 
     # ---------------------
-    await browser.close()
+    browser.close()
 
-async def main():
-    async with async_playwright() as playwright:
-        await run(playwright)
-asyncio.run(main())`);
+with sync_playwright() as playwright:
+    run(playwright)`);
 });
