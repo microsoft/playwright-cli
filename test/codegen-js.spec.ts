@@ -16,11 +16,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import {promisify} from 'util';
 import { fixtures} from './playwright.fixtures';
 const { it, expect } = fixtures;
-
-const readFileAsync = promisify(fs.readFile)
 
 const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString()
 
@@ -88,7 +85,7 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tmp
   const tmpFile = path.join(tmpDir, 'script.js')
   const cli = runCLI(['codegen', '--output', tmpFile, emptyHTML]);
   await cli.exited
-  const content = await readFileAsync(tmpFile)
+  const content = await fs.readFileSync(tmpFile)
   expect(content.toString()).toBe(`const { chromium } = require('playwright');
 
 (async () => {

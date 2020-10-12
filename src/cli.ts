@@ -80,7 +80,7 @@ program
     .command('codegen [url]')
     .description('open page and generate code for user actions')
     .option('-o, --output <file name>', 'saves the generated script to a file')
-    .option('--target <language>', `language to use, one of js, javascript, py, python`, process.env.PW_CLI_TARGET_LANG || 'javascript')
+    .option('--target <language>', `language to use, one of javascript, python, python-async`, process.env.PW_CLI_TARGET_LANG || 'javascript')
     .action(function(url, command) {
       codegen(command.parent, url, command.target, command.output);
     }).on('--help', function() {
@@ -287,13 +287,15 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
   return page;
 }
 
-async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: 'python' | 'javascript', outputFile?: string) {
+type Language = 'python' | 'python-async' | 'javascript';
+
+async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: Language, outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, language || 'javascript')];
+  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, language === 'javascript' ? 'javascript' : 'python')];
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
-  const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator() : new PythonLanguageGenerator();
+  const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator() : new PythonLanguageGenerator(language === 'python-async');
   if (process.env.PWTRACE) {
     contextOptions.videosPath = path.join(process.cwd(), '.trace');
     (contextOptions as any)._traceResourcesPath = path.join(process.cwd(), '.trace');
@@ -340,11 +342,10 @@ async function pdf(options: Options, captureOptions: CaptureOptions, url: string
 }
 
 async function codegen(options: Options, url: string | undefined, target: string, outputFile?: string) {
-  let language: 'javascript' | 'python';
+  let language: Language;
   switch (target) {
-    case 'py': language = 'python'; break;
     case 'python': language = 'python'; break;
-    case 'js': language = 'javascript'; break;
+    case 'python-async': language = 'python-async'; break;
     case 'javascript': language = 'javascript'; break;
     default: program.help();
   }
