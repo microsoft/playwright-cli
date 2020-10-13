@@ -103,6 +103,7 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tes
   await page.close();
 
   // ---------------------
+  await context.close();
   await browser.close();
 })();`)
 });

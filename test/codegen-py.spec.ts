@@ -85,6 +85,7 @@ def run(playwright):
     page.close()
 
     # ---------------------
+    context.close()
     browser.close()
 
 with sync_playwright() as playwright:

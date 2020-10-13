@@ -152,6 +152,7 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
 
   generateFooter(): string {
     return `  // ---------------------
+  await context.close();
   await browser.close();
 })();`;
   }

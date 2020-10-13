@@ -298,7 +298,6 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
   const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator() : new PythonLanguageGenerator(language === 'python-async');
   if (process.env.PWTRACE) {
     contextOptions.videosPath = path.join(process.cwd(), '.trace');
-    (contextOptions as any)._traceResourcesPath = path.join(process.cwd(), '.trace');
   }
   new ScriptController(browserName, launchOptions, contextOptions, context, output, languageGenerator, enableRecorder, options.device);
   await openPage(context, url);
