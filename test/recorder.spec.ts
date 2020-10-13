@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-import { fixtures, isChromium, isWebKit, isFirefox, isMac } from './playwright.fixtures';
+import { it, expect } from './fixtures';
 import * as http from 'http';
 import * as url from 'url';
-const { it, expect } = fixtures;
 
 it('should click', async ({ page, recorder }) => {
   await recorder.setContentAndWait(`<button onclick="console.log('click')">Submit</button>`);
@@ -471,35 +470,35 @@ it('should handle history.postData', async ({ page, recorder, httpServer }) => {
   }
 });
 
-it('should record open in a new tab with url', (test, parameters) => {
-  test.fixme(isWebKit(parameters), 'Ctrl+click does not open in new tab on WebKit');
-}, async ({ page, recorder, browserName }) => {
+it('should record open in a new tab with url', (test, { browserName }) => {
+  test.fixme(browserName === 'webkit', 'Ctrl+click does not open in new tab on WebKit');
+}, async ({ page, recorder, browserName, platform }) => {
   await recorder.setContentAndWait(`<a href="about:blank?foo">link</a>`);
 
   const selector = await recorder.hoverOverElement('a');
   expect(selector).toBe('text="link"');
 
-  await page.click('a', { modifiers: [ isMac() ? 'Meta' : 'Control'] });
+  await page.click('a', { modifiers: [ platform === 'darwin' ? 'Meta' : 'Control'] });
   await recorder.waitForOutput('page1');
-  if (isChromium(browserName)) {
+  if (browserName === 'chromium') {
     expect(recorder.output()).toContain(`
   // Open new page
   const page1 = await context.newPage();
   page1.goto('about:blank?foo');`);
-  } else if (isFirefox(browserName)) {
+  } else if (browserName === 'firefox') {
     expect(recorder.output()).toContain(`
   // Click text="link"
   const [page1] = await Promise.all([
     page.waitForEvent('popup'),
     page.click('text="link"', {
-      modifiers: ['${isMac() ? 'Meta' : 'Control'}']
+      modifiers: ['${platform === 'darwin' ? 'Meta' : 'Control'}']
     })
   ]);`);
   }
 });
 
-it('should not clash pages', (test, parameters) => {
-  test.fixme(isFirefox(parameters), 'Times out on Firefox, maybe the focus issue')
+it('should not clash pages', (test, { browserName }) => {
+  test.fixme(browserName === 'firefox', 'Times out on Firefox, maybe the focus issue')
 }, async ({ page, recorder }) => {
   const [popup1] = await Promise.all([
     page.context().waitForEvent('page'),

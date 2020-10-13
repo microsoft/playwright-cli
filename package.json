@@ -5,7 +5,7 @@
   "repository": "github:Microsoft/playwright-cli",
   "homepage": "https://playwright.dev",
   "scripts": {
-    "test": "test-runner test/",
+    "test": "folio test/",
     "build": "node utils/runWebpack.js --mode='development' && tsc -p .",
     "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p .",
     "bake-mac": "pkg --public --targets node12-macos-x64 --output=out/binary/mac/playwright-cli .",
@@ -31,10 +31,10 @@
   "dependencies": {
     "commander": "^6.1.0",
     "highlight.js": "^10.1.2",
-    "playwright": "1.4.0-next.1602284292050"
+    "playwright": "1.4.0-next.1602542830200"
   },
   "devDependencies": {
-    "@playwright/test-runner": "^0.3.7",
+    "folio": "^0.3.10",
     "css-loader": "^4.3.0",
     "file-loader": "^6.1.0",
     "html-webpack-plugin": "^4.4.1",
