@@ -17,9 +17,9 @@ jobs:
     - uses: microsoft/playwright-github-action@v1
     - run: npm ci
     - run: npm run build
-    # - run: npm publish
-    #   env:
-    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - run: npm publish --tag=rc
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-cdn-64-archives:
     name: "publish 64bit to CDN"
@@ -38,6 +38,7 @@ jobs:
     - run: npm run zip-64
     - run: npm run upload-64
       env:
+        AZ_UPLOAD_FOLDER: cli
         AZ_ACCOUNT_KEY: ${{ secrets.AZ_ACCOUNT_KEY }}
         AZ_ACCOUNT_NAME: ${{ secrets.AZ_ACCOUNT_NAME }}
 
@@ -58,5 +59,6 @@ jobs:
     - run: npm run zip-32
     - run: npm run upload-32
       env:
+        AZ_UPLOAD_FOLDER: cli
         AZ_ACCOUNT_KEY: ${{ secrets.AZ_ACCOUNT_KEY }}
         AZ_ACCOUNT_NAME: ${{ secrets.AZ_ACCOUNT_NAME }}
