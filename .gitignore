@@ -5,3 +5,4 @@
 .vscode
 /out/
 .trace
+test-results/
