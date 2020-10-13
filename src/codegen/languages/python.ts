@@ -165,6 +165,7 @@ def run(playwright) {
   generateFooter(): string {
     if (this._isAsync) {
       return `    # ---------------------
+    await context.close()
     await browser.close()
 
 async def main():
@@ -173,6 +174,7 @@ async def main():
 asyncio.run(main())`;
     } else {
       return `    # ---------------------
+    context.close()
     browser.close()
 
 with sync_playwright() as playwright:
