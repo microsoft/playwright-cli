@@ -125,8 +125,11 @@ program
     .command('install')
     .description('Ensure browsers necessary for this version of Playwright are installed')
     .action(function(url, filename, command) {
-      require('playwright/lib/install/installer').installBrowsersWithProgressBar(
-        process.execPath.endsWith('playwright-cli') ? path.dirname(process.execPath) : path.dirname(require.resolve('playwright')));
+      let browsersJsonDir = path.dirname(process.execPath);
+      if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json'))) {
+          browsersJsonDir = path.dirname(require.resolve('playwright'));
+      }
+      require('playwright/lib/install/installer').installBrowsersWithProgressBar(browsersJsonDir);
     });
 
 if (process.env.PWTRACE) {
