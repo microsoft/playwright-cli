@@ -127,7 +127,10 @@ program
     .action(function(url, filename, command) {
       let browsersJsonDir = path.dirname(process.execPath);
       if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json'))) {
-          browsersJsonDir = path.dirname(require.resolve('playwright'));
+        browsersJsonDir = path.dirname(require.resolve('playwright'));
+        if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json'))) {
+          throw new Error('Failed to find browsers.json in ' + browsersJsonDir);
+        }
       }
       require('playwright/lib/install/installer').installBrowsersWithProgressBar(browsersJsonDir);
     });
