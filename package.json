@@ -31,7 +31,7 @@
   "dependencies": {
     "commander": "^6.1.0",
     "highlight.js": "^10.1.2",
-    "playwright": "=1.5.2"
+    "playwright": "=1.6.0-next.1604018890865"
   },
   "devDependencies": {
     "folio": "^0.3.10",
