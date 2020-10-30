@@ -26,14 +26,14 @@ export class OutputMultiplexer implements CodeGeneratorOutput {
     this._outputs = outputs;
   }
 
-  writeLn(text: string) {
+  printLn(text: string) {
     for (const output of this._outputs)
-      output.writeLn(text);
+      output.printLn(text);
   }
 
-  popLine() {
+  popLn(text: string) {
     for (const output of this._outputs)
-      output.popLine();
+      output.popLn(text);
   }
 
   flush() {
@@ -50,12 +50,12 @@ export class FileOutput implements CodeGeneratorOutput {
     this._lines = [];
   }
 
-  writeLn(text: string) {
+  printLn(text: string) {
     this._lines.push(...text.trimEnd().split('\n'));
   }
 
-  popLine() {
-    this._lines.pop();
+  popLn(text: string) {
+    this._lines.length -= text.trimEnd().split('\n').length;
   }
 
   flush() {
@@ -94,14 +94,19 @@ export class TerminalOutput implements CodeGeneratorOutput {
     return highlightedCode;
   }
 
-  writeLn(text: string) {
+  printLn(text: string) {
     // Split into lines for highlighter to not fail.
     for (const line of text.split('\n'))
       this._output.write(this._highlight(line) + '\n');
   }
 
-  popLine() {
-    this._output.write('\u001B[1A\u001B[2K');
+  popLn(text: string) {
+    const terminalWidth = process.stdout.columns;
+    for (const line of text.split('\n')) {
+      const terminalLines = ((line.length - 1) / terminalWidth | 0) + 1;
+      for (let i = 0; i < terminalLines; ++i)
+        this._output.write('\u001B[1A\u001B[2K');
+    }
   }
 
   flush() {}
