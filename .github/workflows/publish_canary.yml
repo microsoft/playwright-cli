@@ -22,7 +22,7 @@ jobs:
     - run: |
         git config user.email "devops@playwright.dev"
         git config user.name "playwright-devops"
-        npm version "$(node -e "console.log(require('./package.json').version + '-next.' + +new Date())")"
+        npm version "$(node -e "console.log(require('./package.json').version + '.' + +new Date())")"
     - run: npm publish --tag next
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -42,7 +42,7 @@ jobs:
     - run: |
         git config user.email "devops@playwright.dev"
         git config user.name "playwright-devops"
-        npm version "$(node -e "console.log(require('./package.json').version + '-next.' + +new Date())")"
+        npm version "$(node -e "console.log(require('./package.json').version + '.' + +new Date())")"
     - run: npm run bake-64
     - run: npm run copy-64
     - run: npm run zip-64
@@ -67,7 +67,7 @@ jobs:
     - run: |
         git config user.email "devops@playwright.dev"
         git config user.name "playwright-devops"
-        npm version "$(node -e "console.log(require('./package.json').version + '-next.' + +new Date())")"
+        npm version "$(node -e "console.log(require('./package.json').version + '.' + +new Date())")"
     - run: npm run bake-32
     - run: npm run copy-32
     - run: npm run zip-32
