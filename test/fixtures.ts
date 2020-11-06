@@ -227,7 +227,7 @@ class CLIMock {
       if (this.waitForCallback) {
         this.waitForCallback();
       }
-      return r;
+      return r();
     }))
   }
 
