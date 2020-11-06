@@ -25,9 +25,10 @@ import { Browser, BrowserContext, Page } from 'playwright';
 import { ScriptController } from './scriptController';
 import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs'
 import { CodeGeneratorOutput } from './codegen/codeGenerator';
-import { JavaScriptLanguageGenerator } from './codegen/languages';
+import { JavaScriptLanguageGenerator, LanguageGenerator } from './codegen/languages';
 import { showTraceViewer } from './traceViewer/traceViewer';
 import { PythonLanguageGenerator } from './codegen/languages/python';
+import { CSharpLanguageGenerator } from './codegen/languages/csharp';
 import { printApiJson, runServer } from './driver';
 
 program
@@ -80,7 +81,7 @@ program
     .command('codegen [url]')
     .description('open page and generate code for user actions')
     .option('-o, --output <file name>', 'saves the generated script to a file')
-    .option('--target <language>', `language to use, one of javascript, python, python-async`, process.env.PW_CLI_TARGET_LANG || 'javascript')
+    .option('--target <language>', `language to use, one of javascript, python, python-async, csharp`, process.env.PW_CLI_TARGET_LANG || 'javascript')
     .action(function(url, command) {
       codegen(command.parent, url, command.target, command.output);
     }).on('--help', function() {
@@ -293,15 +294,32 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
   return page;
 }
 
-type Language = 'python' | 'python-async' | 'javascript';
+type Language = 'python' | 'python-async' | 'javascript' | 'csharp';
 
 async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: Language, outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, language === 'javascript' ? 'javascript' : 'python')];
+  let terminalLanguage: string;
+  let languageGenerator: LanguageGenerator;
+
+  switch (language) {
+    case 'javascript': 
+      terminalLanguage = 'javascript'; 
+      languageGenerator = new JavaScriptLanguageGenerator();
+      break;
+    case 'csharp': 
+      terminalLanguage = 'csharp'; 
+      languageGenerator = new CSharpLanguageGenerator();
+      break;
+    default: 
+      terminalLanguage = 'python'
+      languageGenerator = new PythonLanguageGenerator(language === 'python-async');
+  }
+
+  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, terminalLanguage)];
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
-  const languageGenerator = language === 'javascript' ? new JavaScriptLanguageGenerator() : new PythonLanguageGenerator(language === 'python-async');
+  
   if (process.env.PWTRACE) {
     contextOptions.videosPath = path.join(process.cwd(), '.trace');
   }
@@ -351,6 +369,7 @@ async function codegen(options: Options, url: string | undefined, target: string
   switch (target) {
     case 'python': language = 'python'; break;
     case 'python-async': language = 'python-async'; break;
+    case 'csharp': language = 'csharp'; break;
     case 'javascript': language = 'javascript'; break;
     default: program.help();
   }

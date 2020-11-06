@@ -24,6 +24,7 @@ export class RecorderController {
   private _generator: CodeGenerator;
   private _pageAliases = new Map<playwright.Page, string>();
   private _lastPopupOrdinal = 0;
+  private _lastDialogOrdinal = 0;
   private _timers = new Set<NodeJS.Timeout>();
 
   constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: CodeGeneratorOutput, languageGenerator: LanguageGenerator, deviceName: string | undefined) {
@@ -150,9 +151,9 @@ export class RecorderController {
     this._generator.signal(pageAlias, page.mainFrame(), { name: 'download' });
   }
 
-  private _onDialog(page: playwright.Page, download: playwright.Dialog) {
+  private _onDialog(page: playwright.Page, dialog: playwright.Dialog) {
     const pageAlias = this._pageAliases.get(page)!;
-    this._generator.signal(pageAlias, page.mainFrame(), { name: 'dialog' });
+    this._generator.signal(pageAlias, page.mainFrame(), { name: 'dialog', dialogAlias: String(++this._lastDialogOrdinal) });
   }
 }
 

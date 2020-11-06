@@ -108,6 +108,7 @@ export type DownloadSignal = {
 
 export type DialogSignal = {
   name: 'dialog',
+  dialogAlias: string,
 };
 
 export type Signal = NavigationSignal | PopupSignal | DownloadSignal | DialogSignal;
