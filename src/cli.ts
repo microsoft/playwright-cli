@@ -310,9 +310,13 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
       terminalLanguage = 'csharp'; 
       languageGenerator = new CSharpLanguageGenerator();
       break;
-    default: 
+    case 'python': 
+    case 'python-async': 
       terminalLanguage = 'python'
       languageGenerator = new PythonLanguageGenerator(language === 'python-async');
+      break;
+    default: 
+      throw new Error(`Invalid target: '${language}'`);
   }
 
   const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, terminalLanguage)];
@@ -371,7 +375,7 @@ async function codegen(options: Options, url: string | undefined, target: string
     case 'python-async': language = 'python-async'; break;
     case 'csharp': language = 'csharp'; break;
     case 'javascript': language = 'javascript'; break;
-    default: program.help();
+    default: program.help(h => `Invalid target: '${target}'\n${h}`);
   }
   return open(options, url, true, language, outputFile);
 }
