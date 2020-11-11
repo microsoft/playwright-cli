@@ -208,7 +208,7 @@ class CLIMock {
   exited: Promise<number>
 
   constructor(args: string[]) {
-    this.data = ''
+    this.data = '';
     this.process = spawn('node', [
       path.join(__dirname, '..', 'lib', 'cli.js'),
       ...args
@@ -221,9 +221,14 @@ class CLIMock {
     this.process.stdout.on('data', line => {
       this.data += removeAnsiColors(line.toString());
       if (this.waitForCallback && this.data.includes(this.waitForText))
-        this.waitForCallback()
+        this.waitForCallback();
     })
-    this.exited = new Promise(r => this.process.on('exit', r))
+    this.exited = new Promise(r => this.process.on('exit', () => {
+      if (this.waitForCallback) {
+        this.waitForCallback();
+      }
+      return r();
+    }))
   }
 
   async waitFor(text: string): Promise<void> {
