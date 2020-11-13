@@ -105,7 +105,7 @@ it('should press', async ({ page, recorder }) => {
   const selector = await recorder.focusElement('input');
   expect(selector).toBe('input[name="name"]');
 
-  const messages = [];
+  const messages: any[] = [];
   page.on('console', message => messages.push(message)),
   await Promise.all([
     recorder.waitForActionPerformed(),
@@ -153,7 +153,7 @@ it('should record ArrowDown', async ({ page, recorder }) => {
   const selector = await recorder.focusElement('input');
   expect(selector).toBe('input[name="name"]');
 
-  const messages = [];
+  const messages: any[] = [];
   page.on('console', message => {
     messages.push(message);
   }),
@@ -174,7 +174,7 @@ it('should emit single keyup on ArrowDown', async ({ page, recorder }) => {
   const selector = await recorder.focusElement('input');
   expect(selector).toBe('input[name="name"]');
 
-  const messages = [];
+  const messages: any[] = [];
   page.on('console', message => {
     messages.push(message);
   }),
@@ -342,9 +342,9 @@ it('should contain close page', async ({ contextWrapper, recorder }) => {
 it('should not lead to an error if /html gets clicked', async ({ contextWrapper, recorder }) => {
   await recorder.setContentAndWait('');
   await contextWrapper.context.newPage();
-  const errors = [];
+  const errors: any[] = [];
   recorder.page.on('pageerror', e => errors.push(e));
-  await recorder.page.evaluate(() => document.querySelector('body').remove());
+  await recorder.page.evaluate(() => (document as any).querySelector('body').remove());
   const selector = await recorder.hoverOverElement('html');
   expect(selector).toBe('/html');
   await recorder.page.close();
@@ -405,7 +405,7 @@ it('should clear files', async ({ page, recorder }) => {
 
 it('should download files', async ({ page, recorder, httpServer }) => {
   httpServer.setHandler((req: http.IncomingMessage, res: http.ServerResponse) => {
-    const pathName = url.parse(req.url).path;
+    const pathName = url.parse(req.url!).path;
     if (pathName === '/download') {
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', 'attachment; filename=file.txt');
@@ -532,7 +532,7 @@ it('click should emit events in order', async ({ page, recorder }) => {
     </script>
   `);
 
-  const messages = [];
+  const messages: any[] = [];
   page.on('console', message => messages.push(message.text()));
   await Promise.all([
     page.click('button'),
