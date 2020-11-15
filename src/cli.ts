@@ -303,6 +303,7 @@ async function open(options: Options, url: string | undefined, enableRecorder: b
 
   switch (language) {
     case 'javascript': 
+    case undefined:
       terminalLanguage = 'javascript'; 
       languageGenerator = new JavaScriptLanguageGenerator();
       break;
