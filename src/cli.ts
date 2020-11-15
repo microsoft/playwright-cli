@@ -296,14 +296,13 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
 
 type Language = 'python' | 'python-async' | 'javascript' | 'csharp';
 
-async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: Language, outputFile?: string) {
+async function open(options: Options, url: string | undefined, enableRecorder: boolean, language: Language = 'javascript', outputFile?: string) {
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
   let terminalLanguage: string;
   let languageGenerator: LanguageGenerator;
 
   switch (language) {
     case 'javascript': 
-    case undefined:
       terminalLanguage = 'javascript'; 
       languageGenerator = new JavaScriptLanguageGenerator();
       break;
