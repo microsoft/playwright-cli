@@ -1,6 +1,6 @@
 {
   "name": "playwright-cli",
-  "version": "0.161.0",
+  "version": "0.162.0",
   "description": "Playwright CLI",
   "repository": "github:Microsoft/playwright-cli",
   "homepage": "https://playwright.dev",
@@ -31,7 +31,7 @@
   "dependencies": {
     "commander": "^6.1.0",
     "highlight.js": "^10.1.2",
-    "playwright": "=1.6.1"
+    "playwright": "=1.6.2"
   },
   "devDependencies": {
     "folio": "^0.3.10",
