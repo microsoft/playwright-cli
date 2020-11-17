@@ -16,9 +16,8 @@
 
 import * as playwright from 'playwright';
 import * as actions from './recorderActions';
-import { CodeGenerator, ActionInContext, CodeGeneratorOutput } from './codeGenerator';
+import { CodeGenerator, ActionInContext } from './codeGenerator';
 import { BindingSource, toClickOptions, toModifiers } from '../utils';
-import { LanguageGenerator } from './languages';
 
 export class RecorderController {
   private _generator: CodeGenerator;
@@ -27,8 +26,8 @@ export class RecorderController {
   private _lastDialogOrdinal = 0;
   private _timers = new Set<NodeJS.Timeout>();
 
-  constructor(browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: playwright.BrowserContext, output: CodeGeneratorOutput, languageGenerator: LanguageGenerator, deviceName: string | undefined) {
-    this._generator = new CodeGenerator(browserName, launchOptions, contextOptions, output, languageGenerator, deviceName);
+  constructor(context: playwright.BrowserContext, generator: CodeGenerator) {
+    this._generator = generator;
 
     // Input actions that potentially lead to navigation are intercepted on the page and are
     // performed by the Playwright.

@@ -34,7 +34,7 @@
     "playwright": "=1.6.2"
   },
   "devDependencies": {
-    "folio": "^0.3.10",
+    "folio": "^0.3.16",
     "css-loader": "^4.3.0",
     "file-loader": "^6.1.0",
     "html-webpack-plugin": "^4.4.1",

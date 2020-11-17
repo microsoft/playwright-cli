@@ -15,12 +15,17 @@
  */
 
 import * as playwright from 'playwright';
-import { LanguageGenerator } from '.';
+import { HighlighterType, LanguageGenerator } from '.';
 import { ActionInContext } from '../codeGenerator';
 import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class CSharpLanguageGenerator implements LanguageGenerator {
+
+  highligherType(): HighlighterType {
+    return 'csharp';
+  }
+
   generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
     const { action, pageAlias, frame } = actionInContext;
     const formatter = new CSharpFormatter(0);
