@@ -102,15 +102,17 @@ export class FilmStripView {
       const filmStripElement = this._stripElements.get(video)!;
 
       // Position clip on timeline.
+      const paddingLeft = 20 /* timeline zero */;
       const gapLeft = (metainfo.startTime - this._boundaries.minimum) / (this._boundaries.maximum - this._boundaries.minimum) * this._frameStripWidth;
       const gapRight = (this._boundaries.maximum - metainfo.endTime) / (this._boundaries.maximum - this._boundaries.minimum) * this._frameStripWidth;
-      const effectiveWidth = (metainfo.endTime - metainfo.startTime) / (this._boundaries.maximum - this._boundaries.minimum) * this._frameStripWidth;
-      filmStripElement.style.marginLeft = 20 /* timeline zero */ + gapLeft + 'px';
+      const effectiveWidth = (metainfo.endTime - metainfo.startTime) / (this._boundaries.maximum - this._boundaries.minimum) * (this._frameStripWidth - paddingLeft);
+      filmStripElement.style.marginLeft = paddingLeft + gapLeft + 'px';
       filmStripElement.style.marginRight = gapRight + 'px';
 
       const frameCount = effectiveWidth / (frameWidth + frameMargin) | 0;
       const frameStep = metainfo.frames / frameCount;
       const frameHeight = frameWidth / metainfo.width * metainfo.height | 0;
+      const frameGap = frameCount <= 1 ? 0 : (effectiveWidth - (frameWidth + frameMargin) * frameCount) / (frameCount - 1);
 
       let frameElement: HTMLElement = filmStripElement.querySelector('film-strip-frame') as HTMLElement;
       for (let i = 0; i < metainfo.frames; i += frameStep) {
@@ -131,6 +133,7 @@ export class FilmStripView {
         } else {
           frameElement.style.backgroundImage = `url(${this._imageURL(video.fileName, index)})`;
         }
+        frameElement.style.marginRight = (frameMargin / 2 + frameGap) + 'px';
         frameElement = frameElement.nextElementSibling as HTMLElement;
       }
       while (frameElement) {
@@ -147,7 +150,7 @@ export class FilmStripView {
     const metainfo = this._metainfo.get(video)!;
 
     const image = new Image(metainfo.width / 2 | 0, metainfo.height / 2 | 0);
-    const index = (time - metainfo.startTime) / (this._boundaries!.maximum - this._boundaries!.minimum) * metainfo.frames | 0;
+    const index = (time - metainfo.startTime) / (metainfo.endTime - metainfo.startTime) * metainfo.frames | 0;
     if (index < 0 || index >= metainfo.frames) {
       if (this._hoverImageElement) {
         this._hoverImageElement.remove();
