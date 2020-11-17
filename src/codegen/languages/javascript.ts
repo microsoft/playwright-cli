@@ -15,12 +15,17 @@
  */
 
 import * as playwright from 'playwright';
-import { LanguageGenerator } from '.';
+import { HighlighterType, LanguageGenerator } from '.';
 import { ActionInContext } from '../codeGenerator';
 import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class JavaScriptLanguageGenerator implements LanguageGenerator {
+
+  highligherType(): HighlighterType {
+    return 'javascript';
+  }
+
   generateAction(actionInContext: ActionInContext, performingAction: boolean): string {
     const { action, pageAlias, frame } = actionInContext;
     const formatter = new JavaScriptFormatter(2);

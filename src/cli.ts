@@ -24,7 +24,7 @@ import * as playwright from 'playwright';
 import { Browser, BrowserContext, Page } from 'playwright';
 import { ScriptController } from './scriptController';
 import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs'
-import { CodeGeneratorOutput } from './codegen/codeGenerator';
+import { CodeGenerator, CodeGeneratorOutput } from './codegen/codeGenerator';
 import { JavaScriptLanguageGenerator, LanguageGenerator } from './codegen/languages';
 import { showTraceViewer } from './traceViewer/traceViewer';
 import { PythonLanguageGenerator } from './codegen/languages/python';
@@ -48,7 +48,7 @@ program
     .command('open [url]')
     .description('open page in browser specified via -b, --browser')
     .action(function(url, command) {
-      open(command.parent, url, false);
+      open(command.parent, url);
     }).on('--help', function() {
       console.log('');
       console.log('Examples:');
@@ -68,7 +68,7 @@ for (const {alias, name, type} of browsers) {
       .command(`${alias} [url]`)
       .description(`open page in ${name}`)
       .action(function(url, command) {
-        open({ ...command.parent, browser: type }, url, false);
+        open({ ...command.parent, browser: type }, url);
       }).on('--help', function() {
         console.log('');
         console.log('Examples:');
@@ -294,40 +294,9 @@ async function openPage(context: playwright.BrowserContext, url: string | undefi
   return page;
 }
 
-type Language = 'python' | 'python-async' | 'javascript' | 'csharp';
-
-async function open(options: Options, url: string | undefined, enableRecorder: boolean, language?: Language, outputFile?: string) {
-  const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
-  let terminalLanguage: string;
-  let languageGenerator: LanguageGenerator;
-
-  switch (language) {
-    case 'javascript': 
-      terminalLanguage = 'javascript'; 
-      languageGenerator = new JavaScriptLanguageGenerator();
-      break;
-    case 'csharp': 
-      terminalLanguage = 'csharp'; 
-      languageGenerator = new CSharpLanguageGenerator();
-      break;
-    case 'python': 
-    case 'python-async': 
-      terminalLanguage = 'python'
-      languageGenerator = new PythonLanguageGenerator(language === 'python-async');
-      break;
-    default: 
-      throw new Error(`Invalid target: '${language}'`);
-  }
-
-  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, terminalLanguage)];
-  if (outputFile)
-    outputs.push(new FileOutput(outputFile));
-  const output = new OutputMultiplexer(outputs);
-  
-  if (process.env.PWTRACE) {
-    contextOptions.videosPath = path.join(process.cwd(), '.trace');
-  }
-  new ScriptController(browserName, launchOptions, contextOptions, context, output, languageGenerator, enableRecorder, options.device);
+async function open(options: Options, url: string | undefined) {
+  const { context } = await launchContext(options, false);
+  new ScriptController(context, undefined);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)
     await Promise.all(context.pages().map(p => p.close()))
@@ -369,15 +338,31 @@ async function pdf(options: Options, captureOptions: CaptureOptions, url: string
 }
 
 async function codegen(options: Options, url: string | undefined, target: string, outputFile?: string) {
-  let language: Language;
+  let languageGenerator: LanguageGenerator;
+
   switch (target) {
-    case 'python': language = 'python'; break;
-    case 'python-async': language = 'python-async'; break;
-    case 'csharp': language = 'csharp'; break;
-    case 'javascript': language = 'javascript'; break;
-    default: program.help(h => `Invalid target: '${target}'\n${h}`);
+    case 'javascript': languageGenerator = new JavaScriptLanguageGenerator(); break;
+    case 'csharp': languageGenerator = new CSharpLanguageGenerator(); break;
+    case 'python': 
+    case 'python-async': languageGenerator = new PythonLanguageGenerator(target === 'python-async'); break;
+    default: throw new Error(`Invalid target: '${target}'`);
   }
-  return open(options, url, true, language, outputFile);
+
+  const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
+
+  if (process.env.PWTRACE)
+    contextOptions.videosPath = path.join(process.cwd(), '.trace');
+
+  const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, languageGenerator.highligherType())];
+  if (outputFile)
+    outputs.push(new FileOutput(outputFile));
+  const output = new OutputMultiplexer(outputs);
+  
+  const generator = new CodeGenerator(browserName, launchOptions, contextOptions, output, languageGenerator, options.device);
+  new ScriptController(context, generator);
+  await openPage(context, url);
+  if (process.env.PWCLI_EXIT_FOR_TEST)
+    await Promise.all(context.pages().map(p => p.close()));
 }
 
 function lookupBrowserType(options: Options): playwright.BrowserType<playwright.WebKitBrowser | playwright.ChromiumBrowser | playwright.FirefoxBrowser> {
