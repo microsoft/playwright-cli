@@ -15,7 +15,7 @@
  */
 
 import * as playwright from 'playwright';
-import { LanguageGenerator } from '.';
+import { HighlighterType, LanguageGenerator } from '.';
 import { ActionInContext } from '../codeGenerator';
 import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
 import { MouseClickOptions, toModifiers } from '../../utils';
@@ -29,6 +29,10 @@ export class PythonLanguageGenerator implements LanguageGenerator {
     this._isAsync = isAsync;
     this._awaitPrefix = isAsync ? 'await ' : '';
     this._asyncPrefix = isAsync ? 'async ' : '';
+  }
+
+  highligherType(): HighlighterType {
+    return 'python';
   }
 
   generateAction(actionInContext: ActionInContext, performingAction: boolean): string {

@@ -25,6 +25,7 @@ import { ScriptController } from '../src/scriptController';
 import { Page } from 'playwright';
 import { TerminalOutput } from '../src/codegen/outputs';
 import { JavaScriptLanguageGenerator } from '../src/codegen/languages';
+import { CodeGenerator } from '../src/codegen/codeGenerator';
 export { expect, config } from 'folio';
 
 type WorkerFixtures = {
@@ -39,14 +40,15 @@ type TestFixtures = {
   runCLI: (args: string[]) => CLIMock;
 };
 
-export const fixtures = baseFolio.extend<WorkerFixtures, TestFixtures>();
+export const fixtures = baseFolio.extend<TestFixtures, WorkerFixtures>();
 
 fixtures.contextWrapper.init(async ({ browser }, runTest) => {
   const context = await browser.newContext();
   const outputBuffer = new WritableBuffer();
-  const output = new TerminalOutput(outputBuffer as any as Writable, 'javascript')
-  const languageGenerator = new JavaScriptLanguageGenerator()
-  new ScriptController('chromium', {}, {}, context, output, languageGenerator, true);
+  const output = new TerminalOutput(outputBuffer as any as Writable, 'javascript');
+  const languageGenerator = new JavaScriptLanguageGenerator();
+  const generator = new CodeGenerator('chromium', {}, {}, output, languageGenerator, undefined);
+  new ScriptController(context, generator);
   await runTest({ context, output: outputBuffer });
   await context.close();
 });
@@ -258,8 +260,6 @@ export const fit = folio.fit;
 export const xit = folio.xit;
 export const test = folio.test;
 export const describe = folio.describe;
-export const fdescribe = folio.fdescribe;
-export const xdescribe = folio.xdescribe;
 export const beforeEach = folio.beforeEach;
 export const afterEach = folio.afterEach;
 export const beforeAll = folio.beforeAll;
