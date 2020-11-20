@@ -100,7 +100,7 @@ export class PythonLanguageGenerator implements LanguageGenerator {
     formatter.add(code);
 
     if (assertNavigation)
-      formatter.add(`  # assert ${pageAlias}.url() == ${quote(navigationSignal!.url)}`);
+      formatter.add(`  # assert ${pageAlias}.url == ${quote(navigationSignal!.url)}`);
     return formatter.format();
   }
 
