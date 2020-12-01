@@ -23,13 +23,14 @@ import './workbench.css';
 
 export class Workbench {
   element: HTMLElement;
+  private _tabbedPane: PropertiesTabbedPane;
   private _timelineGrid: TimelineView;
 
   constructor(trace: TraceModel) {
     const context = trace.contexts[0];
     const size = context.created.viewportSize!;
-    const tabbedPane = new PropertiesTabbedPane(size);
-    const actionListView = new ActionListView(context, tabbedPane);
+    this._tabbedPane = new PropertiesTabbedPane(size);
+    const actionListView = new ActionListView(context, this._tabbedPane);
     this._timelineGrid = new TimelineView(context, { minimum: trace.startTime, maximum: trace.endTime });
 
     this.element = dom`
@@ -41,7 +42,7 @@ export class Workbench {
         ${this._timelineGrid.element}
         <hbox>
           ${actionListView.element}
-          ${tabbedPane.element}
+          ${this._tabbedPane.element}
         </hbox>
       </vbox>
     `;
@@ -50,5 +51,6 @@ export class Workbench {
 
   pack() {
     this._timelineGrid.pack();
+    this._tabbedPane.pack();
   }
 }

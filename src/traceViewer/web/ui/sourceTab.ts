@@ -35,7 +35,7 @@ export class SourceTab implements Tab {
       language: 'javascript',
       readOnly: true
     });
-    window.addEventListener('resize', () => this.resize());
+    window.addEventListener('resize', () => this.pack());
   }
 
   async setAction(actionEntry: ActionEntry | undefined) {
@@ -76,7 +76,7 @@ export class SourceTab implements Tab {
     return this._element;
   }
 
-  resize() {
+  pack() {
     this._editor.layout();
   }
 }
