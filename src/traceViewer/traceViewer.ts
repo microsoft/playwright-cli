@@ -350,7 +350,14 @@ class ScreenshotGenerator {
         this._snapshotRouter.route(route);
       });
     }
-    const snapshot = await fsReadFileAsync(path.join(this._traceStorageDir, action.snapshot.sha1), 'utf8');
+    const snapshotPath = path.join(this._traceStorageDir, action.snapshot.sha1);
+    let snapshot;
+    try {
+      snapshot = await fsReadFileAsync(snapshotPath, 'utf8');
+    } catch (e) {
+      console.log(`Unable to read snapshot at ${snapshotPath}`);
+      return;
+    }
     const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
     this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
     const url = snapshotObject.frames[0].url;

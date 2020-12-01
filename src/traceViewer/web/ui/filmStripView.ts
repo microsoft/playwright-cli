@@ -68,9 +68,10 @@ export class FilmStripView {
       let framesLine = lines.find(l => l.startsWith('frame='))!;
       framesLine = framesLine.substring(framesLine.lastIndexOf('frame='));
       const framesMatch = framesLine.match(/frame=\s+(\d+)/);
-      const streamLine = lines.find(l => l.trim().startsWith('Stream #0:0'))!
+      const outputLineIndex = lines.findIndex(l => l.trim().startsWith('Output #0'));
+      const streamLine = lines.slice(outputLineIndex).find(l => l.trim().startsWith('Stream #0:0'))!;
       const fpsMatch = streamLine.match(/, (\d+) fps,/);
-      const resolutionMatch = streamLine.match(/, (\d+)x(\d+),/);
+      const resolutionMatch = streamLine.match(/, (\d+)x(\d+)\D/);
       const durationMatch = lines.find(l => l.trim().startsWith('Duration'))!.match(/Duration: (\d+):(\d\d):(\d\d.\d\d)/);
       const duration = (((parseInt(durationMatch![1], 10) * 60) + parseInt(durationMatch![2], 10)) * 60 + parseFloat(durationMatch![3])) * 1000;
       this._metainfo.set(video, {

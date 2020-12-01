@@ -50,4 +50,6 @@ function platformName(): string {
   const workbench = new Workbench(traceModel);
   document.body.appendChild(workbench.element);
   workbench.pack();
+  // TODO: Things jump because the film strip is loading lazily. Figure this out.
+  setTimeout(() => workbench.pack(), 100);
 })();
