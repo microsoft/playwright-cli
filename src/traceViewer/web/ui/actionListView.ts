@@ -36,7 +36,7 @@ export class ActionListView {
   }
 
   render(actionEntry: ActionEntry, element: HTMLElement): HTMLElement {
-    const { action } = actionEntry;
+    const { action, actionId } = actionEntry;
     if (element) {
       return element;
     }
@@ -49,7 +49,7 @@ export class ActionListView {
         </action-header>
         <action-thumbnail>
           ${action.snapshot ?
-            dom`<img src="trace-storage/${action.snapshot.sha1}-thumbnail.png">` :
+            dom`<img src="action-preview/${actionId}.png">` :
             dom`No snapshot available`
           }
         </action-thumbnail>

@@ -17,13 +17,14 @@
 import * as trace from "./traceTypes";
 
 export type TraceModel = {
-  fileName: string;
   contexts: ContextEntry[];
-  startTime: number;
-  endTime: number;
 }
 
 export type ContextEntry = {
+  name: string;
+  filePath: string;
+  startTime: number;
+  endTime: number;
   created: trace.ContextCreatedTraceEvent;
   destroyed: trace.ContextDestroyedTraceEvent;
   pages: PageEntry[];
@@ -37,6 +38,7 @@ export type PageEntry = {
 }
 
 export type ActionEntry = {
+  actionId: string;
   action: trace.ActionTraceEvent;
   resources: trace.NetworkResourceTraceEvent[];
 }
