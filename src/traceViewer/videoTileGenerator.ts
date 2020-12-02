@@ -23,13 +23,7 @@ import { PageVideoTraceEvent } from './traceTypes';
 const fsWriteFileAsync = util.promisify(fs.writeFile.bind(fs));
 
 export class VideoTileGenerator {
-  private _traceStorageDir: string;
-
-  constructor(traceStorageDir: string) {
-    this._traceStorageDir = traceStorageDir;
-  }
-
-  async render(events: PageVideoTraceEvent[]) {
+  async render(events: PageVideoTraceEvent[], videoDir: string) {
     let ffmpegName = '';
     if (process.platform === 'win32') {
       if (process.arch === 'ia32')
@@ -43,7 +37,7 @@ export class VideoTileGenerator {
       ffmpegName = 'ffmpeg-linux';
     const ffmpeg = path.join(path.dirname(require.resolve('playwright')), 'third_party', 'ffmpeg', ffmpegName);
     for (const event of events) {
-      const fileName = path.join(this._traceStorageDir, event.fileName);
+      const fileName = path.join(videoDir, event.fileName);
       if (fs.existsSync(fileName + '-metainfo.txt'))
         continue;
       console.log('Generating frames for ' + fileName);

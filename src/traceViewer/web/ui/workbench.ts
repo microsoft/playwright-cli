@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-import { TraceModel } from '../../traceModel';
+import { ContextEntry, TraceModel } from '../../traceModel';
 import { dom } from '../components/dom';
 import { ActionListView } from './actionListView';
 import { PropertiesTabbedPane } from './propertiesTabbedPane';
@@ -23,34 +23,51 @@ import './workbench.css';
 
 export class Workbench {
   element: HTMLElement;
-  private _tabbedPane: PropertiesTabbedPane;
-  private _timelineGrid: TimelineView;
+  private _tabbedPane: PropertiesTabbedPane | undefined;
+  private _timelineGrid: TimelineView | undefined;
+  private _contextSelector: HTMLSelectElement;
 
   constructor(trace: TraceModel) {
-    const context = trace.contexts[0];
-    const size = context.created.viewportSize!;
-    this._tabbedPane = new PropertiesTabbedPane(size);
-    const actionListView = new ActionListView(context, this._tabbedPane);
-    this._timelineGrid = new TimelineView(context, { minimum: trace.startTime, maximum: trace.endTime });
-
+    this._contextSelector = dom`<select class="context-selector">${
+      trace.contexts.map(entry => dom`<option>${entry.name}</option>`)
+    }</select>` as HTMLElement as HTMLSelectElement;
+    this._contextSelector.addEventListener('input', () => {
+      this.showContext(trace.contexts[this._contextSelector.selectedIndex]);
+    });
     this.element = dom`
       <vbox class="workbench">
-        <hbox class="header">
-          <div class="logo">🎭</div>
-          <div class="product">Playwright</div>
-        </hbox>
-        ${this._timelineGrid.element}
-        <hbox>
-          ${actionListView.element}
-          ${this._tabbedPane.element}
-        </hbox>
       </vbox>
     `;
     window.addEventListener('resize', () => this.pack());
+    this.showContext(trace.contexts[0]);
+  }
+
+  showContext(context: ContextEntry) {
+    const size = context.created.viewportSize!;
+    this._tabbedPane = new PropertiesTabbedPane(size);
+    const actionListView = new ActionListView(context, this._tabbedPane);
+    this._timelineGrid = new TimelineView(context, { minimum: context.startTime, maximum: context.endTime });
+    this.element.textContent = '';
+    this.element.appendChild(dom`
+      <hbox class="header">
+        <div class="logo">🎭</div>
+        <div class="product">Playwright</div>
+        <div class="spacer"></div>
+        ${this._contextSelector}
+      </hbox>
+      ${this._timelineGrid.element}
+      <hbox>
+        ${actionListView.element}
+        ${this._tabbedPane.element}
+      </hbox>
+    `);
+    this.pack();
   }
 
   pack() {
-    this._timelineGrid.pack();
-    this._tabbedPane.pack();
+    if (this._timelineGrid)
+      this._timelineGrid.pack();
+    if (this._tabbedPane)
+      this._tabbedPane.pack();
   }
 }

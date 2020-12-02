@@ -142,12 +142,13 @@ if (process.env.PWTRACE) {
     .description('Show trace viewer')
     .option('--resources <dir>', 'Directory with the shared trace artifacts')
     .action(function(trace, command) {
-      showTraceViewer(resolveHome(command.resources), resolveHome(trace));
+      showTraceViewer(resolveHome(command.resources), resolveHome(trace)!);
     }).on('--help', function() {
       console.log('');
       console.log('Examples:');
       console.log('');
-      console.log('  $ show-trace --resources=resources trace.trace');
+      console.log('  $ show-trace --resources=resources trace/file.trace');
+      console.log('  $ show-trace trace/directory');
     });
 }
 
@@ -343,7 +344,7 @@ async function codegen(options: Options, url: string | undefined, target: string
   switch (target) {
     case 'javascript': languageGenerator = new JavaScriptLanguageGenerator(); break;
     case 'csharp': languageGenerator = new CSharpLanguageGenerator(); break;
-    case 'python': 
+    case 'python':
     case 'python-async': languageGenerator = new PythonLanguageGenerator(target === 'python-async'); break;
     default: throw new Error(`Invalid target: '${target}'`);
   }
@@ -357,7 +358,7 @@ async function codegen(options: Options, url: string | undefined, target: string
   if (outputFile)
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
-  
+
   const generator = new CodeGenerator(browserName, launchOptions, contextOptions, output, languageGenerator, options.device);
   new ScriptController(context, generator);
   await openPage(context, url);
@@ -395,8 +396,8 @@ function validateOptions(options: Options) {
   }
 }
 
-function resolveHome(filepath: string) {
-  if (filepath[0] === '~')
+function resolveHome(filepath: string | undefined) {
+  if (filepath && filepath[0] === '~')
     return path.join(os.homedir(), filepath.slice(1));
   return filepath;
 }

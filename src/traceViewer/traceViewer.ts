@@ -33,34 +33,36 @@ class TraceViewer {
   private _screenshotGenerator: ScreenshotGenerator;
   private _videoTileGenerator: VideoTileGenerator;
 
-  constructor(traceStorageDir: string, fileName: string) {
+  constructor(traceStorageDir: string) {
     this._traceStorageDir = traceStorageDir;
     this._snapshotRouter = new SnapshotRouter(traceStorageDir);
     this._traceModel = {
-      fileName,
       contexts: [],
-      startTime: Number.MAX_VALUE,
-      endTime: Number.MIN_VALUE,
     };
     this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter, this._traceModel);
-    this._videoTileGenerator = new VideoTileGenerator(path.dirname(fileName));
+    this._videoTileGenerator = new VideoTileGenerator();
   }
 
-  async load() {
-    // TODO: validate trace?
-    const traceContent = await fsReadFileAsync(this._traceModel.fileName, 'utf8');
+  private _updateTimes(entry: ContextEntry, event: TraceEvent) {
+    entry.startTime = Math.min(entry.startTime, (event as any).timestamp);
+    entry.endTime = Math.max(entry.endTime, (event as any).timestamp);
+  }
+
+  async load(filePath: string) {
+    const traceContent = await fsReadFileAsync(filePath, 'utf8');
     const events = traceContent.split('\n').map(line => line.trim()).filter(line => !!line).map(line => JSON.parse(line)) as TraceEvent[];
     const contextEntries = new Map<string, ContextEntry>();
     const pageEntries = new Map<string, PageEntry>();
     const videoEvents: PageVideoTraceEvent[] = [];
 
     for (const event of events) {
-      this._traceModel.startTime = Math.min(this._traceModel.startTime, (event as any).timestamp);
-      this._traceModel.endTime = Math.max(this._traceModel.endTime, (event as any).timestamp);
-
       switch (event.type) {
         case 'context-created': {
           contextEntries.set(event.contextId, {
+            filePath,
+            name: path.basename(filePath),
+            startTime: Number.MAX_VALUE,
+            endTime: Number.MIN_VALUE,
             created: event,
             pages: []
           } as any);
@@ -104,26 +106,28 @@ class TraceViewer {
           break;
         }
       }
+      this._updateTimes(contextEntries.get(event.contextId)!, event);
     }
-    this._traceModel.contexts = [...contextEntries.values()];
-    for (const context of this._traceModel.contexts) {
+
+    this._traceModel.contexts.push(...contextEntries.values());
+    for (const context of contextEntries.values()) {
       for (const page of context.pages) {
         for (const action of page.actions)
           await this._screenshotGenerator.render(action);
       }
     }
 
-    await this._videoTileGenerator.render(videoEvents);
+    await this._videoTileGenerator.render(videoEvents, path.dirname(filePath));
   }
 
   async show() {
     const browser = await playwright['chromium'].launch({ headless: false });
     const uiPage = await browser.newPage({ viewport: null });
     uiPage.on('close', () => process.exit(0));
-    await uiPage.exposeBinding('readFile', async (_: any, path: string) => {
+    await uiPage.exposeBinding('readFile', async (_, path: string) => {
       return fs.readFileSync(path).toString();
     });
-    await uiPage.exposeBinding('renderSnapshot', async (_: any, action: ActionTraceEvent) => {
+    await uiPage.exposeBinding('renderSnapshot', async (_, action: ActionTraceEvent) => {
       try {
         if (!action.snapshot) {
           const snapshotFrame = uiPage.frames()[1];
@@ -169,7 +173,8 @@ class TraceViewer {
           const fullPath = url.pathname.substring('/context-artifact/'.length);
           const [contextId] = fullPath.split('/');
           const fileName = fullPath.substring(contextId.length + 1);
-          filePath = path.join(path.dirname(this._traceModel.fileName), fileName);
+          const contextEntry = this._traceModel.contexts.find(entry => entry.created.contextId === contextId)!;
+          filePath = path.join(path.dirname(contextEntry.filePath), fileName);
         } else {
           filePath = path.join(__dirname, '../../out/web', url.pathname.substring(1));
         }
@@ -189,10 +194,37 @@ class TraceViewer {
   }
 }
 
-export async function showTraceViewer(traceStorageDir: string, traceFile: string) {
-  const traceViewer = new TraceViewer(traceStorageDir, traceFile);
-  await traceViewer.load();
+export async function showTraceViewer(traceStorageDir: string | undefined, tracePath: string) {
+  if (!fs.existsSync(tracePath))
+    throw new Error(`${tracePath} does not exist`);
+
+  let files: string[];
+  if (fs.statSync(tracePath).isFile()) {
+    files = [tracePath];
+    if (!traceStorageDir)
+      traceStorageDir = path.dirname(tracePath);
+  } else {
+    files = collectFiles(tracePath);
+    if (!traceStorageDir)
+      traceStorageDir = tracePath;
+  }
+
+  const traceViewer = new TraceViewer(traceStorageDir);
+  for (const filePath of files)
+    await traceViewer.load(filePath);
   await traceViewer.show();
+}
+
+function collectFiles(dir: string): string[] {
+  const files = [];
+  for (const name of fs.readdirSync(dir)) {
+    const fullName = path.join(dir, name);
+    if (fs.lstatSync(fullName).isDirectory())
+      files.push(...collectFiles(fullName));
+    else if (fullName.endsWith('.trace'))
+      files.push(fullName);
+  }
+  return files;
 }
 
 function removeHash(url: string) {
