@@ -26,20 +26,24 @@ import { VideoTileGenerator } from './videoTileGenerator';
 const fsReadFileAsync = util.promisify(fs.readFile.bind(fs));
 const fsWriteFileAsync = util.promisify(fs.writeFile.bind(fs));
 
+type Resources = Map<string, NetworkResourceTraceEvent[]>;
+
 class TraceViewer {
   private _traceStorageDir: string;
   private _traceModel: TraceModel;
   private _snapshotRouter: SnapshotRouter;
+  private _resources: Resources;
   private _screenshotGenerator: ScreenshotGenerator;
   private _videoTileGenerator: VideoTileGenerator;
 
   constructor(traceStorageDir: string) {
     this._traceStorageDir = traceStorageDir;
-    this._snapshotRouter = new SnapshotRouter(traceStorageDir);
+    this._resources = new Map();
+    this._snapshotRouter = new SnapshotRouter(traceStorageDir, this._resources);
     this._traceModel = {
       contexts: [],
     };
-    this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._snapshotRouter, this._traceModel);
+    this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._traceModel, this._resources);
     this._videoTileGenerator = new VideoTileGenerator();
   }
 
@@ -91,7 +95,9 @@ class TraceViewer {
           break;
         }
         case 'action': {
-          pageEntries.get(event.pageId!)!.actions.push({
+          const actions = pageEntries.get(event.pageId!)!.actions;
+          actions.push({
+            actionId: event.contextId + '/' + event.pageId + '/' + actions.length,
             action: event,
             resources: []
           });
@@ -102,21 +108,19 @@ class TraceViewer {
           const action = actions[actions.length - 1];
           if (action)
             action.resources.push(event);
-          this._snapshotRouter.addResource(event);
+          let responseEvents = this._resources.get(event.url);
+          if (!responseEvents) {
+            responseEvents = [];
+            this._resources.set(event.url, responseEvents);
+          }
+          responseEvents.push(event);
           break;
         }
       }
       this._updateTimes(contextEntries.get(event.contextId)!, event);
     }
-
     this._traceModel.contexts.push(...contextEntries.values());
-    for (const context of contextEntries.values()) {
-      for (const page of context.pages) {
-        for (const action of page.actions)
-          await this._screenshotGenerator.render(action);
-      }
-    }
-
+    // TODO: generate video tiles lazily.
     await this._videoTileGenerator.render(videoEvents, path.dirname(filePath));
   }
 
@@ -166,10 +170,15 @@ class TraceViewer {
       }
       const url = new URL(request.url());
       try {
+        if (request.url().includes('action-preview')) {
+          let fullPath = url.pathname.substring('/action-preview/'.length);
+          fullPath = fullPath.substring(0, fullPath.indexOf('.png'));
+          const [contextId, pageId, actionIndex] = fullPath.split('/');
+          this._screenshotGenerator.route(route, contextId, pageId, +actionIndex);
+          return;
+        }
         let filePath: string;
-        if (request.url().includes('trace-storage')) {
-          filePath = path.join(this._traceStorageDir, url.pathname.substring('/trace-storage/'.length));
-        } else if (request.url().includes('context-artifact')) {
+        if (request.url().includes('context-artifact')) {
           const fullPath = url.pathname.substring('/context-artifact/'.length);
           const [contextId] = fullPath.split('/');
           const fileName = fullPath.substring(contextId.length + 1);
@@ -253,22 +262,14 @@ const extensionToMime: { [key: string]: string } = {
 
 class SnapshotRouter {
   private _contextId: string | undefined;
-  private _resourceEventsByUrl = new Map<string, NetworkResourceTraceEvent[]>();
+  private _resourceEventsByUrl: Resources;
   private _unknownUrls = new Set<string>();
   private _traceStorageDir: string;
   private _frameBySrc = new Map<string, FrameSnapshot>();
 
-  constructor(traceStorageDir: string) {
+  constructor(traceStorageDir: string, resources: Resources) {
     this._traceStorageDir = traceStorageDir;
-  }
-
-  addResource(event: NetworkResourceTraceEvent) {
-    let responseEvents = this._resourceEventsByUrl.get(event.url);
-    if (!responseEvents) {
-      responseEvents = [];
-      this._resourceEventsByUrl.set(event.url, responseEvents);
-    }
-    responseEvents.push(event);
+    this._resourceEventsByUrl = resources;
   }
 
   selectSnapshot(snapshot: PageSnapshot, contextId: string) {
@@ -351,92 +352,115 @@ class SnapshotRouter {
 }
 
 class ScreenshotGenerator {
-  private _snapshotRouter: SnapshotRouter;
   private _traceStorageDir: string;
   private _browser: playwright.Browser | undefined;
-  private _page: playwright.Page | undefined;
   private _traceModel: TraceModel;
+  private _resources: Resources;
+  private _rendering = new Map<ActionEntry, Promise<Buffer | undefined>>();
 
-  constructor(traceStorageDir: string, snapshotRouter: SnapshotRouter, traceModel: TraceModel) {
+  constructor(traceStorageDir: string, traceModel: TraceModel, resources: Resources) {
     this._traceStorageDir = traceStorageDir;
-    this._snapshotRouter = snapshotRouter;
-    this._traceModel = traceModel
+    this._traceModel = traceModel;
+    this._resources = resources;
   }
 
-  async render(actionEntry: ActionEntry) {
-    const { action } = actionEntry;
-    if (!action.snapshot)
+  async route(route: Route, contextId: string, pageId: string, actionIndex: number) {
+    const context = this._traceModel.contexts.find(entry => entry.created.contextId === contextId)!;
+    const page = context.pages.find(entry => entry.created.pageId === pageId)!;
+    const action = page.actions[actionIndex]!;
+    if (!action.action.snapshot) {
+      route.fulfill({ status: 404 });
       return;
-    const imageFileName = path.join(this._traceStorageDir, action.snapshot.sha1 + '-thumbnail.png');
-    if (fs.existsSync(imageFileName))
-      return;
-
-    if (!this._page) {
-      this._browser = await playwright['chromium'].launch();
-      // TODO: figure out multiple contexts.
-      this._page = await this._browser.newPage({
-        viewport: this._traceModel.contexts[0].created.viewportSize,
-        deviceScaleFactor: this._traceModel.contexts[0].created.deviceScaleFactor
-      });
-      this._page.route('**/*', route => {
-        this._snapshotRouter.route(route);
-      });
     }
-    const snapshotPath = path.join(this._traceStorageDir, action.snapshot.sha1);
-    let snapshot;
+    const imageFileName = path.join(this._traceStorageDir, action.action.snapshot.sha1 + '-thumbnail.png');
+
+    let body: Buffer | undefined;
     try {
-      snapshot = await fsReadFileAsync(snapshotPath, 'utf8');
+      body = await fsReadFileAsync(imageFileName);
     } catch (e) {
-      console.log(`Unable to read snapshot at ${snapshotPath}`);
-      return;
+      if (!this._rendering.has(action)) {
+        this._rendering.set(action, this.render(context, action, imageFileName).then(body => {
+          this._rendering.delete(action);
+          return body;
+        }));
+      }
+      body = await this._rendering.get(action)!;
     }
-    const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
-    this._snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
-    const url = snapshotObject.frames[0].url;
-    console.log('Generating screenshot for ' + action.action, snapshotObject.frames[0].url);
-    await this._page!.goto(url);
+    if (body)
+      route.fulfill({ contentType: 'image/png', body });
+    else
+      route.fulfill({ status: 404 });
+  }
 
-    let clip: any = undefined;
-    const element = await this._page!.$(action.selector || '*[__playwright_target__]');
-    if (element) {
-      await element.evaluate(e => {
-        e.style.backgroundColor = '#ff69b460';
-      });
+  async render(contextEntry: ContextEntry, actionEntry: ActionEntry, imageFileName: string): Promise<Buffer | undefined> {
+    const { action } = actionEntry;
+    if (!this._browser)
+      this._browser = await playwright['chromium'].launch();
+    const page = await this._browser.newPage({
+      viewport: contextEntry.created.viewportSize,
+      deviceScaleFactor: contextEntry.created.deviceScaleFactor
+    });
 
-      clip = await element.boundingBox() || undefined;
-      if (clip) {
-        const thumbnailSize = {
-          width: 400,
-          height: 200
-        };
-        const insets = {
-          width: 60,
-          height: 30
-        };
-        clip.width = Math.min(thumbnailSize.width, clip.width);
-        clip.height = Math.min(thumbnailSize.height, clip.height);
-        if (clip.width < thumbnailSize.width) {
-          clip.x -= (thumbnailSize.width - clip.width) / 2;
-          clip.x = Math.max(0, clip.x);
-          clip.width = thumbnailSize.width;
-        } else {
-          clip.x = Math.max(0, clip.x - insets.width);
-        }
-        if (clip.height < thumbnailSize.height) {
-          clip.y -= (thumbnailSize.height - clip.height) / 2;
-          clip.y = Math.max(0, clip.y);
-          clip.height = thumbnailSize.height;
-        } else {
-          clip.y = Math.max(0, clip.y - insets.height);
+    try {
+      const snapshotPath = path.join(this._traceStorageDir, action.snapshot!.sha1);
+      let snapshot;
+      try {
+        snapshot = await fsReadFileAsync(snapshotPath, 'utf8');
+      } catch (e) {
+        console.log(`Unable to read snapshot at ${snapshotPath}`);
+        return;
+      }
+      const snapshotObject = JSON.parse(snapshot) as PageSnapshot;
+      const snapshotRouter = new SnapshotRouter(this._traceStorageDir, this._resources);
+      snapshotRouter.selectSnapshot(snapshotObject, action.contextId);
+      page.route('**/*', route => snapshotRouter.route(route));
+      const url = snapshotObject.frames[0].url;
+      console.log('Generating screenshot for ' + action.action, snapshotObject.frames[0].url);
+      await page.goto(url);
+
+      let clip: any = undefined;
+      const element = await page.$(action.selector || '*[__playwright_target__]');
+      if (element) {
+        await element.evaluate(e => {
+          e.style.backgroundColor = '#ff69b460';
+        });
+
+        clip = await element.boundingBox() || undefined;
+        if (clip) {
+          const thumbnailSize = {
+            width: 400,
+            height: 200
+          };
+          const insets = {
+            width: 60,
+            height: 30
+          };
+          clip.width = Math.min(thumbnailSize.width, clip.width);
+          clip.height = Math.min(thumbnailSize.height, clip.height);
+          if (clip.width < thumbnailSize.width) {
+            clip.x -= (thumbnailSize.width - clip.width) / 2;
+            clip.x = Math.max(0, clip.x);
+            clip.width = thumbnailSize.width;
+          } else {
+            clip.x = Math.max(0, clip.x - insets.width);
+          }
+          if (clip.height < thumbnailSize.height) {
+            clip.y -= (thumbnailSize.height - clip.height) / 2;
+            clip.y = Math.max(0, clip.y);
+            clip.height = thumbnailSize.height;
+          } else {
+            clip.y = Math.max(0, clip.y - insets.height);
+          }
         }
       }
-    }
 
-    try {
-      const imageData = await this._page!.screenshot({ clip });
+      const imageData = await page.screenshot({ clip });
       await fsWriteFileAsync(imageFileName, imageData);
+      return imageData;
     } catch (e) {
-      console.log(clip);
+      console.log(e);
+    } finally {
+      await page.close();
     }
   }
 }

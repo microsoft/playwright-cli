@@ -38,6 +38,7 @@ export type PageEntry = {
 }
 
 export type ActionEntry = {
+  actionId: string;
   action: trace.ActionTraceEvent;
   resources: trace.NetworkResourceTraceEvent[];
 }

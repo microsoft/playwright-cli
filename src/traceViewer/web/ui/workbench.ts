@@ -34,6 +34,8 @@ export class Workbench {
     this._contextSelector.addEventListener('input', () => {
       this.showContext(trace.contexts[this._contextSelector.selectedIndex]);
     });
+    if (trace.contexts.length === 1)
+      this._contextSelector.style.visibility = 'hidden';
     this.element = dom`
       <vbox class="workbench">
       </vbox>
