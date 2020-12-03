@@ -175,12 +175,12 @@ class Recorder {
     return generatedSelector;
   }
 
-  async waitForActionPerformed(): Promise<void> {
+  async waitForActionPerformed(): Promise<{ hovered: string | null, active: string | null }> {
     if (!this._actionReporterInstalled) {
       this._actionReporterInstalled = true;
       await this.page.exposeBinding('_actionPerformedForTest', (source, arg) => this._actionPerformedCallback(arg));
     }
-    await new Promise(f => this._actionPerformedCallback = f);
+    return await new Promise(f => this._actionPerformedCallback = f);
   }
 
   async hoverOverElement(selector: string): Promise<string> {
