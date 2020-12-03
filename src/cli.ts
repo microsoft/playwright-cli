@@ -183,16 +183,16 @@ type CaptureOptions = {
 async function launchContext(options: Options, headless: boolean): Promise<{ browser: Browser, browserName: string, launchOptions: playwright.LaunchOptions, contextOptions: playwright.BrowserContextOptions, context: BrowserContext }> {
   validateOptions(options);
   const browserType = lookupBrowserType(options);
-  const launchOptions: playwright.LaunchOptions = {
-    headless,
-  };
+  const launchOptions: playwright.LaunchOptions = { headless };
   const contextOptions: playwright.BrowserContextOptions =
     // Copy the device descriptor since we have to compare and modify the options.
-    options.device ? { ...playwright.devices[options.device] } :
-      // In headful mode, use host device scale factor for things to look nice.
-      // In headless, keep things the way it works in Playwright by default.
-      // Assume high-dpi on MacOS. TODO: this is not perfect.
-      { deviceScaleFactor: headless ? undefined : (os.platform() === 'darwin' ? 2 : 1) };
+    options.device ? { ...playwright.devices[options.device] } : {};
+
+  // In headful mode, use host device scale factor for things to look nice.
+  // In headless, keep things the way it works in Playwright by default.
+  // Assume high-dpi on MacOS. TODO: this is not perfect.
+  if (!headless)
+    contextOptions.deviceScaleFactor = os.platform() === 'darwin' ? 2 : 1;
 
   // Work around the WebKit GTK scrolling issue.
   if (browserType.name() === 'webkit' && process.platform === 'linux') {
@@ -352,7 +352,7 @@ async function codegen(options: Options, url: string | undefined, target: string
   const { context, browserName, launchOptions, contextOptions } = await launchContext(options, false);
 
   if (process.env.PWTRACE)
-    contextOptions.videosPath = path.join(process.cwd(), '.trace');
+    contextOptions.recordVideo = { dir: path.join(process.cwd(), '.trace') };
 
   const outputs: CodeGeneratorOutput[] = [new TerminalOutput(process.stdout, languageGenerator.highligherType())];
   if (outputFile)
