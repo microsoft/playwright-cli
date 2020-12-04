@@ -418,7 +418,7 @@ it('should download files', async ({ page, recorder, httpServer }) => {
   await recorder.setContentAndWait(`
     <a href="${httpServer.PREFIX}/download" download>Download</a>
   `, httpServer.PREFIX);
-  await recorder.hoverOverElement('text=Download')
+  await recorder.hoverOverElement('text=Download');
   await Promise.all([
     page.waitForEvent('download'),
     page.click('text=Download')
@@ -539,4 +539,33 @@ it('click should emit events in order', async ({ page, recorder }) => {
     recorder.waitForOutput('page.click')
   ]);
   expect(messages).toEqual(['mousedown', 'mouseup', 'click']);
+});
+
+it('should update hover model on action', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="checkbox.name='updated'"></input>`);
+  const [ models ] = await Promise.all([
+    recorder.waitForActionPerformed(),
+    page.click('input')
+  ]);
+  expect(models.hovered).toBe('input[name="updated"]');
+});
+
+it('should update active model on action', (test, { browserName, headful }) => {
+  test.fixme(browserName === 'webkit' && !headful);
+  test.fixme(browserName === 'firefox' && !headful);
+}, async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="checkbox.name='updated'"></input>`);
+  const [ models ] = await Promise.all([
+    recorder.waitForActionPerformed(),
+    page.click('input')
+  ]);
+  expect(models.active).toBe('input[name="updated"]');
+});
+
+it('should check input with chaning id', async ({ page, recorder }) => {
+  await recorder.setContentAndWait(`<input id="checkbox" type="checkbox" name="accept" onchange="checkbox.name = 'updated'"></input>`);
+  await Promise.all([
+    recorder.waitForActionPerformed(),
+    page.click('input[id=checkbox]')
+  ]);
 });

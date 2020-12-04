@@ -116,8 +116,8 @@ export class Recorder {
       addEventListener(document, 'mouseup', event => this._onMouseUp(event as MouseEvent), true),
       addEventListener(document, 'mousemove', event => this._onMouseMove(event as MouseEvent), true),
       addEventListener(document, 'mouseleave', event => this._onMouseLeave(event as MouseEvent), true),
-      addEventListener(document, 'focus', event => this._onFocus(event as FocusEvent), true),
-      addEventListener(document, 'scroll', event => {
+      addEventListener(document, 'focus', () => this._onFocus(), true),
+      addEventListener(document, 'scroll', () => {
         this._hoveredModel = null;
         this._updateHighlight();
       }, true),
@@ -153,11 +153,21 @@ export class Recorder {
   private _onClick(event: MouseEvent) {
     if (this._shouldIgnoreMouseEvent(event))
       return;
-
     if (this._actionInProgress(event))
       return;
     if (this._consumedDueToNoModel(event, this._hoveredModel))
       return;
+
+    const checkbox = asCheckbox(deepEventTarget(event));
+    if (checkbox) {
+      // Interestingly, inputElement.checked is reversed inside this event handler.
+      this._performAction({
+        name: checkbox.checked ? 'check' : 'uncheck',
+        selector: this._hoveredModel!.selector,
+        signals: [],
+      });
+      return;
+    }
 
     this._performAction({
       name: 'click',
@@ -174,14 +184,14 @@ export class Recorder {
     const nodeName = target.nodeName;
     if (nodeName === 'SELECT')
       return true;
-    if (nodeName === 'INPUT' && ['date', 'checkbox'].includes((target as HTMLInputElement).type.toLowerCase()))
+    if (nodeName === 'INPUT' && ['date'].includes((target as HTMLInputElement).type))
       return true;
     return false;
   }
 
   private _onMouseDown(event: MouseEvent) {
     if (this._shouldIgnoreMouseEvent(event))
-      return
+      return;
     if (!this._performingAction)
       consumeEvent(event);
     this._activeModel = this._hoveredModel;
@@ -211,7 +221,7 @@ export class Recorder {
     }
   }
 
-  private _onFocus(event: FocusEvent) {
+  private _onFocus() {
     const activeElement = deepActiveElement(document);
     const result = activeElement ? this._consoleAPI.buildSelector(activeElement) : null;
     this._activeModel = result && result.selector ? result : null;
@@ -317,15 +327,7 @@ export class Recorder {
       const inputElement = target as HTMLInputElement;
       const elementType = (inputElement.type || '').toLowerCase()
       if (elementType === 'checkbox') {
-        if (this._actionInProgress(event))
-          return;
-        if (this._consumedDueWrongTarget(event))
-          return;
-        this._performAction({
-          name: inputElement.checked ? 'check' : 'uncheck',
-          selector: this._activeModel!.selector,
-          signals: [],
-        });
+        // Checkbox is handled in click, we can't let input trigger on checkbox - that would mean we dispatched click events while recording.
         return;
       }
 
@@ -384,7 +386,7 @@ export class Recorder {
       return false;
     const hasModifier = event.ctrlKey || event.altKey || event.metaKey;
     if (event.key.length === 1 && !hasModifier)
-      return false;
+      return !!asCheckbox(deepEventTarget(event));
     return true;
   }
 
@@ -397,6 +399,19 @@ export class Recorder {
     }
     if (this._consumedDueWrongTarget(event))
       return;
+    // Similarly to click, trigger checkbox on key event, not input.
+    if (event.key === ' ') {
+      const checkbox = asCheckbox(deepEventTarget(event));
+      if (checkbox) {
+        this._performAction({
+          name: checkbox.checked ? 'uncheck' : 'check',
+          selector: this._activeModel!.selector,
+          signals: [],
+        });
+        return;
+      }
+    }
+
     this._performAction({
       name: 'press',
       selector: this._activeModel!.selector,
@@ -422,8 +437,17 @@ export class Recorder {
     this._performingAction = true;
     await window.performPlaywrightAction(action);
     this._performingAction = false;
+
+    // Action could have changed DOM, update hovered model selectors.
+    this._commitActionAndUpdateModelForHoveredElement();
+    // If that was a keyboard action, it similarly requires new selectors for active model.
+    this._onFocus();
+
     if ((window as any)._actionPerformedForTest)
-      (window as any)._actionPerformedForTest();
+      (window as any)._actionPerformedForTest({
+        hovered: this._hoveredModel ? this._hoveredModel.selector : null,
+        active: this._activeModel ? this._activeModel.selector : null,
+      });
   }
 }
 
@@ -461,3 +485,10 @@ type HighlightModel = {
   selector: string;
   elements: Element[];
 };
+
+function asCheckbox(node: Node | null): HTMLInputElement | null {
+  if (!node || node.nodeName !== 'INPUT')
+    return null;
+  const inputElement = node as HTMLInputElement;
+  return inputElement.type === 'checkbox' ? inputElement : null;
+}
