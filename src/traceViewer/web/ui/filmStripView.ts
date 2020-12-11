@@ -148,7 +148,9 @@ export class FilmStripView {
   updatePreview(clientX: number, time: number) {
     // TODO: pick file from the Y position.
     const video = this._videos[0];
-    const metainfo = this._metainfo.get(video)!;
+    const metainfo = this._metainfo.get(video);
+    if (!metainfo)
+      return;
 
     const image = new Image(metainfo.width / 2 | 0, metainfo.height / 2 | 0);
     const index = (time - metainfo.startTime) / (metainfo.endTime - metainfo.startTime) * metainfo.frames | 0;

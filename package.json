@@ -31,12 +31,16 @@
   "dependencies": {
     "commander": "^6.1.0",
     "highlight.js": "^10.1.2",
-    "playwright": "=1.7.0-next.1607623793189"
+    "playwright": "=1.7.0-next.1607623793189",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1"
   },
   "devDependencies": {
-    "folio": "^0.3.16",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
     "css-loader": "^4.3.0",
     "file-loader": "^6.1.0",
+    "folio": "^0.3.16",
     "html-webpack-plugin": "^4.4.1",
     "monaco-editor": "^0.20.0",
     "pkg": "^4.4.9",

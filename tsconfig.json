@@ -8,9 +8,10 @@
     "outDir": "./lib",
     "strict": true,
     "declaration": false,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "jsx": "react"
   },
   "compileOnSave": true,
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules"]
 }
