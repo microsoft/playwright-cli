@@ -53,21 +53,6 @@
   flex: auto;
 }
 
-.workbench .context-selector {
-  min-width: 38px;
-  border: 1px solid transparent;
-  border-radius: 0;
-  padding: 0 13px 0 5px;
-  position: relative;
-  height: 22px;
-  align-self: center;
-  margin-right: 20px;
-  background: rgba(222, 222, 222, 0.3);
-  color: white;
-  border-radius: 3px;
-  outline: none !important;
-}
-
 tab-strip {
   background-color: var(--light-background);
 }

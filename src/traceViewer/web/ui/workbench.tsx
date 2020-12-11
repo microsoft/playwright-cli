@@ -20,27 +20,24 @@ import { ActionListView } from './actionListView';
 import { PropertiesTabbedPane } from './propertiesTabbedPane';
 import { TimelineView } from './timelineView';
 import './workbench.css';
+import * as ReactDOM from 'react-dom';
+import * as React from 'react';
+import { ContextSelector } from './contextSelector';
 
 export class Workbench {
   element: HTMLElement;
   private _tabbedPane: PropertiesTabbedPane | undefined;
   private _timelineGrid: TimelineView | undefined;
-  private _contextSelector: HTMLSelectElement;
+  private _contextSelectorDiv: HTMLElement;
 
   constructor(trace: TraceModel) {
-    this._contextSelector = dom`<select class="context-selector">${
-      trace.contexts.map(entry => dom`<option>${entry.name}</option>`)
-    }</select>` as HTMLElement as HTMLSelectElement;
-    this._contextSelector.addEventListener('input', () => {
-      this.showContext(trace.contexts[this._contextSelector.selectedIndex]);
-    });
-    if (trace.contexts.length === 1)
-      this._contextSelector.style.visibility = 'hidden';
+    this._contextSelectorDiv = dom`<div></div>`;
     this.element = dom`
       <vbox class="workbench">
       </vbox>
     `;
     window.addEventListener('resize', () => this.pack());
+    ReactDOM.render(<ContextSelector contexts={trace.contexts} onChange={context => this.showContext(context)} />, this._contextSelectorDiv);
     this.showContext(trace.contexts[0]);
   }
 
@@ -55,7 +52,7 @@ export class Workbench {
         <div class="logo">🎭</div>
         <div class="product">Playwright</div>
         <div class="spacer"></div>
-        ${this._contextSelector}
+        ${this._contextSelectorDiv}
       </hbox>
       ${this._timelineGrid.element}
       <hbox>

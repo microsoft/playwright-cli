@@ -7,7 +7,7 @@ module.exports = {
     app: path.join(__dirname, 'index.ts'),
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js', '.tsx', '.jsx']
   },
   output: {
     globalObject: 'self',
@@ -17,7 +17,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.ts?$/,
+        test: /\.(j|t)sx?$/,
         use: 'ts-loader',
         exclude: /node_modules/
       },
