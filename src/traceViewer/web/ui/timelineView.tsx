@@ -15,12 +15,14 @@
   limitations under the License.
 */
 
-import { ActionTraceEvent } from 'playwright/types/trace';
+import { ActionTraceEvent } from '../../traceTypes';
 import { ContextEntry } from '../../traceModel';
 import { dom, Element$ } from '../components/dom';
 import './timelineView.css';
-import { FilmStripView } from './filmStripView';
+import { FilmStrip } from './filmStripView';
 import { Boundaries } from '../components/geometry';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 export class TimelineView {
   element: Element$;
@@ -29,21 +31,23 @@ export class TimelineView {
   private _actionsElement: HTMLElement;
   private _hoverTimeBarElement: HTMLElement;
 
+  private _context: ContextEntry;
   private _boundaries: Boundaries;
   private _actions = new Map<ActionTraceEvent, { label: HTMLElement, element: HTMLElement }>();
   private _clientWidth = 0;
   private _zeroGap = 20;
-  private _filmStripView: FilmStripView;
+  private _filmStripViewDiv: Element;
 
   constructor(context: ContextEntry, boundaries: Boundaries) {
+    this._context = context;
     this._boundaries = boundaries;
-    this._filmStripView = new FilmStripView(context, boundaries);
+    this._filmStripViewDiv = dom`<div></div>`;
     this.element = dom`
       <timeline-view>
         <timeline-grid></timeline-grid>
         <timeline-lane class="timeline-action-labels"></timeline-lane>
         <timeline-lane class="timeline-actions"></timeline-lane>
-        ${this._filmStripView.element}
+        ${this._filmStripViewDiv}
         <timeline-time-bar class="timeline-time-bar-hover"></timeline-time-bar>
       </timeline-view>`;
     this._gridElement = this.element.$('timeline-grid');
@@ -63,6 +67,7 @@ export class TimelineView {
         this._actions.set(action, { label: actionLabelElement, element: actionElement });
       }
     }
+    this._updateFilmStrip();
   }
 
   pack() {
@@ -74,12 +79,13 @@ export class TimelineView {
 
   measure() {
     this._clientWidth = this._gridElement.clientWidth;
-    this._filmStripView.measure();
+  }
+
+  private _updateFilmStrip(preview?: { time: number, clientX: number }) {
+    ReactDOM.render(<FilmStrip context={this._context} boundaries={this._boundaries} preview={preview} />, this._filmStripViewDiv);
   }
 
   rebuild() {
-    this._filmStripView.rebuild();
-
     // Update dividers.
     const offsets = this._calculateDividerOffsets();
     let divider: HTMLElement = this._gridElement.firstElementChild as HTMLElement;
@@ -120,12 +126,12 @@ export class TimelineView {
 
   private _onMouseLeave(event: MouseEvent) {
     this._hoverTimeBarElement.style.display = 'none';
-    this._filmStripView.updatePreview(0, 0);
+    this._updateFilmStrip({ time: 0, clientX: 0 });
   }
 
   private _onMouseMove(event: MouseEvent) {
     this._hoverTimeBarElement.style.left = event.clientX + 'px';
-    this._filmStripView.updatePreview(event.clientX, this._positionToTime(event.clientX));
+    this._updateFilmStrip({ clientX: event.clientX, time: this._positionToTime(event.clientX) });
   }
 
   private _calculateDividerOffsets(): { percent: number, time: number }[] {
