@@ -38,6 +38,7 @@
   "devDependencies": {
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "@types/resize-observer-browser": "^0.1.4",
     "css-loader": "^4.3.0",
     "file-loader": "^6.1.0",
     "folio": "^0.3.16",

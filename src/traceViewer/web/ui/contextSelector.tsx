@@ -22,7 +22,7 @@ export const ContextSelector: React.FunctionComponent<{
   contexts: ContextEntry[],
   onChange: (contextEntry: ContextEntry) => void,
 }> = ({ contexts, onChange }) => {
-  const [index, setIndex] = React.useState<number>(0);
+  const [index, setIndex] = React.useState(0);
   return (
     <select
       className='context-selector'
