@@ -41,7 +41,7 @@ export class TimelineView {
   constructor(context: ContextEntry, boundaries: Boundaries) {
     this._context = context;
     this._boundaries = boundaries;
-    this._filmStripViewDiv = dom`<div></div>`;
+    this._filmStripViewDiv = dom`<div style='padding: 20px'></div>`;
     this.element = dom`
       <timeline-view>
         <timeline-grid></timeline-grid>
@@ -130,8 +130,9 @@ export class TimelineView {
   }
 
   private _onMouseMove(event: MouseEvent) {
+    const kPadding = 20;
     this._hoverTimeBarElement.style.left = event.clientX + 'px';
-    this._updateFilmStrip({ clientX: event.clientX, time: this._positionToTime(event.clientX) });
+    this._updateFilmStrip({ clientX: event.clientX - kPadding, time: this._positionToTime(event.clientX) });
   }
 
   private _calculateDividerOffsets(): { percent: number, time: number }[] {

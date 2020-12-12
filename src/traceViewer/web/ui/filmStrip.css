@@ -30,7 +30,6 @@
   flex: none;
   pointer-events: none;
   box-shadow: var(--box-shadow);
-  margin: 2.5px;
 }
 
 .film-strip-hover {
