@@ -27,6 +27,7 @@ export const ActionList: React.FunctionComponent<{
     const { action, actionId } = actionEntry;
     return <div
       className={'action-entry' + (actionEntry === selectedAction ? ' selected' : '')}
+      key={actionId}
       onClick={() => onSelected(actionEntry)}>
       <div className='action-header'>
         <div className='action-title'>{action.action}</div>
