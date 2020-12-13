@@ -15,7 +15,7 @@
 */
 
 import { ContextEntry } from '../../traceModel';
-import './filmStripView.css';
+import './filmStrip.css';
 import { PageVideoTraceEvent } from '../../traceTypes';
 import { Boundaries } from '../components/geometry';
 import * as React from 'react';

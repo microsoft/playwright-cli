@@ -19,7 +19,7 @@ import { ActionTraceEvent } from '../../traceTypes';
 import { ContextEntry } from '../../traceModel';
 import { dom, Element$ } from '../components/dom';
 import './timelineView.css';
-import { FilmStrip } from './filmStripView';
+import { FilmStrip } from './filmStrip';
 import { Boundaries } from '../components/geometry';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';

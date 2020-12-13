@@ -14,9 +14,9 @@
   limitations under the License.
 */
 
-import { ContextEntry, TraceModel } from '../../traceModel';
+import { ActionEntry, ContextEntry, TraceModel } from '../../traceModel';
 import { dom } from '../components/dom';
-import { ActionListView } from './actionListView';
+import { ActionList } from './actionList';
 import { PropertiesTabbedPane } from './propertiesTabbedPane';
 import { TimelineView } from './timelineView';
 import './workbench.css';
@@ -29,9 +29,11 @@ export class Workbench {
   private _tabbedPane: PropertiesTabbedPane | undefined;
   private _timelineGrid: TimelineView | undefined;
   private _contextSelectorDiv: HTMLElement;
+  private _actionListDiv: HTMLElement;
 
   constructor(trace: TraceModel) {
     this._contextSelectorDiv = dom`<div></div>`;
+    this._actionListDiv = dom`<div style="display:flex"></div>`;
     this.element = dom`
       <vbox class="workbench">
       </vbox>
@@ -44,7 +46,20 @@ export class Workbench {
   showContext(context: ContextEntry) {
     const size = context.created.viewportSize!;
     this._tabbedPane = new PropertiesTabbedPane(size);
-    const actionListView = new ActionListView(context, this._tabbedPane);
+
+    const actions: ActionEntry[] = [];
+    for (const page of context.pages)
+      actions.push(...page.actions);
+    let selectedAction: ActionEntry | undefined;
+    ReactDOM.render(<ActionList
+      actions={actions}
+      selectedAction={selectedAction}
+      onSelected={action => {
+        selectedAction = action;
+        this._tabbedPane!.setAction(selectedAction);
+      }}
+    />, this._actionListDiv);
+
     this._timelineGrid = new TimelineView(context, { minimum: context.startTime, maximum: context.endTime });
     this.element.textContent = '';
     this.element.appendChild(dom`
@@ -56,7 +71,7 @@ export class Workbench {
       </hbox>
       ${this._timelineGrid.element}
       <hbox>
-        ${actionListView.element}
+        ${this._actionListDiv}
         ${this._tabbedPane.element}
       </hbox>
     `);
