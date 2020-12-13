@@ -18,7 +18,7 @@ import { ActionEntry, ContextEntry, TraceModel } from '../../traceModel';
 import { dom } from '../components/dom';
 import { ActionList } from './actionList';
 import { PropertiesTabbedPane } from './propertiesTabbedPane';
-import { TimelineView } from './timelineView';
+import { Timeline } from './timeline';
 import './workbench.css';
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
@@ -27,13 +27,14 @@ import { ContextSelector } from './contextSelector';
 export class Workbench {
   element: HTMLElement;
   private _tabbedPane: PropertiesTabbedPane | undefined;
-  private _timelineGrid: TimelineView | undefined;
+  private _timelineDiv: HTMLElement;
   private _contextSelectorDiv: HTMLElement;
   private _actionListDiv: HTMLElement;
 
   constructor(trace: TraceModel) {
     this._contextSelectorDiv = dom`<div></div>`;
     this._actionListDiv = dom`<div style="display:flex"></div>`;
+    this._timelineDiv = dom`<div style="background:white;padding-left:20px"></div>`;
     this.element = dom`
       <vbox class="workbench">
       </vbox>
@@ -60,7 +61,11 @@ export class Workbench {
       }}
     />, this._actionListDiv);
 
-    this._timelineGrid = new TimelineView(context, { minimum: context.startTime, maximum: context.endTime });
+    ReactDOM.render(<Timeline
+      context={context}
+      boundaries={{ minimum: context.startTime, maximum: context.endTime }}
+    />, this._timelineDiv);
+
     this.element.textContent = '';
     this.element.appendChild(dom`
       <hbox class="header">
@@ -69,7 +74,7 @@ export class Workbench {
         <div class="spacer"></div>
         ${this._contextSelectorDiv}
       </hbox>
-      ${this._timelineGrid.element}
+      ${this._timelineDiv}
       <hbox>
         ${this._actionListDiv}
         ${this._tabbedPane.element}
@@ -79,8 +84,6 @@ export class Workbench {
   }
 
   pack() {
-    if (this._timelineGrid)
-      this._timelineGrid.pack();
     if (this._tabbedPane)
       this._tabbedPane.pack();
   }
