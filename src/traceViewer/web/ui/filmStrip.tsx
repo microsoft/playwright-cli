@@ -19,6 +19,7 @@ import './filmStrip.css';
 import { PageVideoTraceEvent } from '../../traceTypes';
 import { Boundaries } from '../components/geometry';
 import * as React from 'react';
+import { useAsyncMemo, useMeasure } from './helpers';
 
 type MetaInfo = {
   frames: number;
@@ -63,37 +64,19 @@ export const FilmStrip: React.FunctionComponent<{
   boundaries: Boundaries,
   preview?: { time: number, clientX: number },
 }> = ({ context, boundaries, preview }) => {
-  const [metaInfos, setMetaInfos] = React.useState<Map<PageVideoTraceEvent, MetaInfo>>(new Map());
-  React.useEffect(() => {
-    async function initializeMetaInfo() {
-      const infos = new Map<PageVideoTraceEvent, MetaInfo>();
-      for (const page of context.pages) {
-        if (!page.video)
-          continue;
-        const metaInfo = await fetchMetaInfo(context, page.video);
-        if (metaInfo)
-          infos.set(page.video, metaInfo);
-      }
-      return infos;
-    }
-    setMetaInfos(new Map());
-    initializeMetaInfo().then(infos => setMetaInfos(infos));
-  }, [context]);
+  const [measure, ref] = useMeasure<HTMLDivElement>();
 
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [measure, setMeasure] = React.useState(new DOMRect(0, 0, 10, 10));
-  React.useLayoutEffect(() => {
-    const target = ref.current;
-    if (!target)
-      return;
-    const resizeObserver = new ResizeObserver(entries => {
-      const entry = entries[entries.length - 1];
-      if (entry && entry.contentRect)
-        setMeasure(entry.contentRect);
-    });
-    resizeObserver.observe(target);
-    return () => resizeObserver.unobserve(target);
-  });
+  const metaInfos = useAsyncMemo<Map<PageVideoTraceEvent, MetaInfo>>(async () => {
+    const infos = new Map();
+    for (const page of context.pages) {
+      if (!page.video)
+        continue;
+      const metaInfo = await fetchMetaInfo(context, page.video);
+      if (metaInfo)
+        infos.set(page.video, metaInfo);
+    }
+    return infos;
+  }, [context], new Map(), new Map());
 
   // TODO: pick file from the Y position.
   const previewVideo = metaInfos.keys().next().value;
@@ -102,20 +85,17 @@ export const FilmStrip: React.FunctionComponent<{
   if (preview && previewMetaInfo)
     previewIndex = (preview.time - previewMetaInfo.startTime) / (previewMetaInfo.endTime - previewMetaInfo.startTime) * previewMetaInfo.frames | 0;
 
-  const [previewImage, setPreviewImage] = React.useState<HTMLImageElement | null>();
-  React.useEffect(() => {
-    async function loadPreviewImage() {
-      if (!previewMetaInfo || previewIndex < 0 || previewIndex >= previewMetaInfo.frames)
-        return null;
-      const idealWidth = previewMetaInfo.width / 2;
-      const idealHeight = previewMetaInfo.height / 2;
-      const ratio = Math.min(1, (measure.width - 20) / idealWidth);
-      const image = new Image((idealWidth * ratio) | 0, (idealHeight * ratio) | 0);
-      image.src = imageURL(context, previewVideo.fileName, previewIndex);
-      return new Promise<HTMLImageElement>(f => image.onload = () => f(image));
-    }
-    loadPreviewImage().then(image => setPreviewImage(image));
-  }, [previewVideo, previewMetaInfo, previewIndex, measure.width]);
+  const previewImage = useAsyncMemo<HTMLImageElement | undefined>(async () => {
+    if (!previewMetaInfo || previewIndex < 0 || previewIndex >= previewMetaInfo.frames)
+      return;
+    const idealWidth = previewMetaInfo.width / 2;
+    const idealHeight = previewMetaInfo.height / 2;
+    const ratio = Math.min(1, (measure.width - 20) / idealWidth);
+    const image = new Image((idealWidth * ratio) | 0, (idealHeight * ratio) | 0);
+    image.src = imageURL(context, previewVideo.fileName, previewIndex);
+    await new Promise(f => image.onload = f);
+    return image;
+  }, [previewVideo, previewMetaInfo, previewIndex, measure.width], undefined);
 
   return <div className='film-strip' ref={ref}>{
     Array.from(metaInfos.entries()).map(([video, metaInfo]) => <FilmStripLane
@@ -146,18 +126,17 @@ const FilmStripLane: React.FunctionComponent<{
   metaInfo: MetaInfo,
   width: number,
 }> = ({ context, boundaries, video, metaInfo, width }) => {
-  // Position clip on timeline. Note: should be aligned with css.
-  const paddingLeft = 20 /* timeline zero */;
   const frameWidth = 80;
-  const frameMargin = 5;
-  const gapLeft = (metaInfo.startTime - boundaries.minimum) / (boundaries.maximum - boundaries.minimum) * width;
-  const gapRight = (boundaries.maximum - metaInfo.endTime) / (boundaries.maximum - boundaries.minimum) * width;
-  const effectiveWidth = (metaInfo.endTime - metaInfo.startTime) / (boundaries.maximum - boundaries.minimum) * (width - paddingLeft);
+  const frameMargin = 2.5;
+  const boundariesSize = boundaries.maximum - boundaries.minimum;
+  const gapLeft = (metaInfo.startTime - boundaries.minimum) / boundariesSize * width;
+  const gapRight = (boundaries.maximum - metaInfo.endTime) / boundariesSize * width;
+  const effectiveWidth = (metaInfo.endTime - metaInfo.startTime) / boundariesSize * width;
 
-  const frameCount = effectiveWidth / (frameWidth + frameMargin) | 0;
+  const frameCount = effectiveWidth / (frameWidth + 2 * frameMargin) | 0;
   const frameStep = metaInfo.frames / frameCount;
   const frameHeight = frameWidth / metaInfo.width * metaInfo.height | 0;
-  const frameGap = frameCount <= 1 ? 0 : (effectiveWidth - (frameWidth + frameMargin) * frameCount) / (frameCount - 1);
+  const frameGap = frameCount <= 1 ? 0 : (effectiveWidth - (frameWidth + 2 * frameMargin) * frameCount) / (frameCount - 1);
 
   const videoId = context.created.contextId + ':' + video.fileName;
 
@@ -172,12 +151,13 @@ const FilmStripLane: React.FunctionComponent<{
       height: frameHeight + 'px',
       backgroundImage: `url(${imageURL(context, video.fileName, index)})`,
       backgroundSize: `${frameWidth}px ${frameHeight}px`,
-      marginRight: (frameMargin / 2 + frameGap) + 'px',
+      margin: frameMargin + 'px',
+      marginRight: (frameMargin + frameGap) + 'px',
     }} />);
   }
 
   return <div className='film-strip-lane' key={videoId} style={{
-    marginLeft: paddingLeft + gapLeft + 'px',
+    marginLeft: gapLeft + 'px',
     marginRight: gapRight + 'px',
   }}>{frames}</div>;
 };
