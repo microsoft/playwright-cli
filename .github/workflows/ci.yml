@@ -30,6 +30,8 @@ jobs:
       run: npm ci
     - name: build
       run: npm run build
+    - name: lint
+      run: npm run lint
     - name: test (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: xvfb-run npm run test -- --forbid-only --timeout=30000 --retries=3 --global-timeout=1200000 --retries=3
