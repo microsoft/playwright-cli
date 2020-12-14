@@ -199,5 +199,5 @@ export const afterAll = folio.afterAll;
 // If browser is not specified, we are running tests against all three browsers.
 
 folio.generateParametrizedTests(
-  'browserName',
-  process.env.BROWSER ? [process.env.BROWSER] as any : ['chromium', 'webkit', 'firefox']);
+    'browserName',
+    process.env.BROWSER ? [process.env.BROWSER] as any : ['chromium', 'webkit', 'firefox']);

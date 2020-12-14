@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
 import { it, expect } from './fixtures';
 
-const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString()
+const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString();
 
 it('should print the correct imports and context options', async ({ runCLI }) => {
   const cli = runCLI(['codegen', '--target=csharp', emptyHTML]);
@@ -32,15 +31,15 @@ var context = await browser.NewContextAsync();`;
 
 it('should print the correct context options for custom settings', async ({ runCLI }) => {
   const cli = runCLI([
-    '--color-scheme=dark', 
-    '--geolocation=37.819722,-122.478611', 
+    '--color-scheme=dark',
+    '--geolocation=37.819722,-122.478611',
     '--lang=es',
     '--proxy-server=http://myproxy:3128',
     '--timezone=Europe/Rome',
     '--timeout=1000',
     '--user-agent=hardkodemium',
-    '--viewport-size=1280,720', 
-    'codegen', 
+    '--viewport-size=1280,720',
+    'codegen',
     '--target=csharp',
     emptyHTML]);
   const expectedResult = `await Playwright.InstallAsync();
@@ -72,28 +71,28 @@ var context = await browser.NewContextAsync(
 });
 
 it('should print the correct context options when using a device', async ({ runCLI }) => {
-  const cli = runCLI(['--device=Pixel 2', 'codegen', '--target=csharp', emptyHTML])
+  const cli = runCLI(['--device=Pixel 2', 'codegen', '--target=csharp', emptyHTML]);
   const expectedResult = `await Playwright.InstallAsync();
 using var playwright = await Playwright.CreateAsync();
 await using var browser = await playwright.Chromium.LaunchAsync(headless: false);
 var context = await browser.NewContextAsync(playwright.Devices["Pixel 2"]);`;
 
-  await cli.waitFor(expectedResult)
-  expect(cli.text()).toContain(expectedResult)
+  await cli.waitFor(expectedResult);
+  expect(cli.text()).toContain(expectedResult);
 });
 
 it('should print the correct context options when using a device and additional options', async ({ runCLI }) => {
   const cli = runCLI([
     '--device=Pixel 2',
-    '--color-scheme=dark', 
-    '--geolocation=37.819722,-122.478611', 
+    '--color-scheme=dark',
+    '--geolocation=37.819722,-122.478611',
     '--lang=es',
     '--proxy-server=http://myproxy:3128',
     '--timezone=Europe/Rome',
     '--timeout=1000',
     '--user-agent=hardkodemium',
-    '--viewport-size=1280,720', 
-    'codegen', 
+    '--viewport-size=1280,720',
+    'codegen',
     '--target=csharp',
     emptyHTML]);
   const expectedResult = `await Playwright.InstallAsync();

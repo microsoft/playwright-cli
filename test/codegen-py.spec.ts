@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { it, expect } from './fixtures';
 
-const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString()
+const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString();
 
 it('should print the correct imports and context options', async ({ runCLI }) => {
   const cli = runCLI(['codegen', '--target=python', emptyHTML]);
@@ -43,14 +43,14 @@ def run(playwright):
 });
 
 it('should print the correct context options when using a device', async ({ runCLI }) => {
-  const cli = runCLI(['--device=Pixel 2', 'codegen', '--target=python', emptyHTML])
+  const cli = runCLI(['--device=Pixel 2', 'codegen', '--target=python', emptyHTML]);
   const expectedResult = `from playwright import sync_playwright
 
 def run(playwright):
     browser = playwright.chromium.launch(headless=False)
     context = browser.newContext(**playwright.devices["Pixel 2"])`;
-  await cli.waitFor(expectedResult)
-  expect(cli.text()).toContain(expectedResult)
+  await cli.waitFor(expectedResult);
+  expect(cli.text()).toContain(expectedResult);
 });
 
 it('should print the correct context options when using a device and additional options', async ({ runCLI }) => {

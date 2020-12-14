@@ -15,7 +15,7 @@
  */
 
 import * as monaco from 'monaco-editor';
-import { ActionEntry } from "../../traceModel";
+import { ActionEntry } from '../../traceModel';
 import { dom, Element$ } from '../components/dom';
 import { Tab } from './propertiesTabbedPane';
 

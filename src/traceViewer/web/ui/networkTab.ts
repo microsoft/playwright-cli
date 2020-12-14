@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { ActionEntry } from "../../traceModel";
-import { NetworkResourceTraceEvent } from "../../traceTypes";
+import { ActionEntry } from '../../traceModel';
+import { NetworkResourceTraceEvent } from '../../traceTypes';
 import { dom, Element$ } from '../components/dom';
-import { ListView } from "../components/listView";
+import { ListView } from '../components/listView';
 import { Tab } from './propertiesTabbedPane';
 import './networkTab.css';
-import { PwExpandableElement } from "../components/pwExpandable";
+import { PwExpandableElement } from '../components/pwExpandable';
 
 export class NetworkTab implements Tab {
   label = 'Network';

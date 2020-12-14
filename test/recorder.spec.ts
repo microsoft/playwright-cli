@@ -132,7 +132,7 @@ it('should update selected element after pressing Tab', async ({ page, recorder 
   await page.keyboard.press('Tab');
   await recorder.waitForOutput('Tab');
   await page.keyboard.type('barfoo321');
-  await recorder.waitForOutput('barfoo321')
+  await recorder.waitForOutput('barfoo321');
 
   expect(recorder.output()).toContain(`
   // Fill input[name="one"]
@@ -359,11 +359,11 @@ it('should upload a single file', async ({ page, recorder }) => {
   </form>
 `);
 
-  await page.focus('input[type=file]')
-  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
-  await page.click('input[type=file]')
+  await page.focus('input[type=file]');
+  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt');
+  await page.click('input[type=file]');
 
-  await recorder.waitForOutput('setInputFiles')
+  await recorder.waitForOutput('setInputFiles');
   expect(recorder.output()).toContain(`
   // Upload file-to-upload.txt
   await page.setInputFiles('input[type="file"]', 'file-to-upload.txt');`);
@@ -376,11 +376,11 @@ it('should upload multiple files', async ({ page, recorder }) => {
   </form>
 `);
 
-  await page.focus('input[type=file]')
-  await page.setInputFiles('input[type=file]', ['test/assets/file-to-upload.txt', 'test/assets/file-to-upload-2.txt'])
-  await page.click('input[type=file]')
+  await page.focus('input[type=file]');
+  await page.setInputFiles('input[type=file]', ['test/assets/file-to-upload.txt', 'test/assets/file-to-upload-2.txt']);
+  await page.click('input[type=file]');
 
-  await recorder.waitForOutput('setInputFiles')
+  await recorder.waitForOutput('setInputFiles');
   expect(recorder.output()).toContain(`
   // Upload file-to-upload.txt, file-to-upload-2.txt
   await page.setInputFiles('input[type="file"]', ['file-to-upload.txt', 'file-to-upload-2.txt']);`);
@@ -392,16 +392,16 @@ it('should clear files', async ({ page, recorder }) => {
     <input type="file" multiple>
   </form>
 `);
-  await page.focus('input[type=file]')
-  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt')
-  await page.setInputFiles('input[type=file]', [])
-  await page.click('input[type=file]')
+  await page.focus('input[type=file]');
+  await page.setInputFiles('input[type=file]', 'test/assets/file-to-upload.txt');
+  await page.setInputFiles('input[type=file]', []);
+  await page.click('input[type=file]');
 
-  await recorder.waitForOutput('setInputFiles')
+  await recorder.waitForOutput('setInputFiles');
   expect(recorder.output()).toContain(`
   // Clear selected files
   await page.setInputFiles('input[type="file"]', []);`);
-  });
+});
 
 it('should download files', async ({ page, recorder, httpServer }) => {
   httpServer.setHandler((req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -423,7 +423,7 @@ it('should download files', async ({ page, recorder, httpServer }) => {
     page.waitForEvent('download'),
     page.click('text=Download')
   ]);
-  await recorder.waitForOutput('page.click')
+  await recorder.waitForOutput('page.click');
   expect(recorder.output()).toContain(`
   // Click text="Download"
   const [download] = await Promise.all([
@@ -448,7 +448,7 @@ it('should handle dialogs', async ({ page, recorder }) => {
     console.log(\`Dialog message: $\{dialog.message()}\`);
     dialog.dismiss().catch(() => {});
   });
-  await page.click('text="click me"')`)
+  await page.click('text="click me"')`);
 });
 
 it('should handle history.postData', async ({ page, recorder, httpServer }) => {
@@ -498,7 +498,7 @@ it('should record open in a new tab with url', (test, { browserName }) => {
 });
 
 it('should not clash pages', (test, { browserName }) => {
-  test.fixme(browserName === 'firefox', 'Times out on Firefox, maybe the focus issue')
+  test.fixme(browserName === 'firefox', 'Times out on Firefox, maybe the focus issue');
 }, async ({ page, recorder }) => {
   const [popup1] = await Promise.all([
     page.context().waitForEvent('page'),

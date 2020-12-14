@@ -199,7 +199,7 @@ export class Recorder {
 
   private _onMouseUp(event: MouseEvent) {
     if (this._shouldIgnoreMouseEvent(event))
-      return
+      return;
     if (!this._performingAction)
       consumeEvent(event);
   }
@@ -325,20 +325,20 @@ export class Recorder {
     const target = deepEventTarget(event);
     if (['INPUT', 'TEXTAREA'].includes(target.nodeName)) {
       const inputElement = target as HTMLInputElement;
-      const elementType = (inputElement.type || '').toLowerCase()
+      const elementType = (inputElement.type || '').toLowerCase();
       if (elementType === 'checkbox') {
         // Checkbox is handled in click, we can't let input trigger on checkbox - that would mean we dispatched click events while recording.
         return;
       }
 
-      if (elementType === "file") {
+      if (elementType === 'file') {
         window.recordPlaywrightAction({
           name: 'setInputFiles',
           selector: this._activeModel!.selector,
           signals: [],
           files: [...(inputElement.files || [])].map(file => file.name),
         });
-        return
+        return;
       }
 
       // Non-navigating actions are simply recorded by Playwright.
@@ -370,8 +370,8 @@ export class Recorder {
     if (['Backspace', 'Delete'].includes(event.key))
       return false;
     // Ignore the QWERTZ shortcut for creating a at sign on MacOS
-    if (event.key === "@" && event.code === "KeyL")
-      return false
+    if (event.key === '@' && event.code === 'KeyL')
+      return false;
     // Allow and ignore common used shortcut for pasting.
     if (process.platform === 'darwin') {
       if (event.key === 'v' && event.metaKey)
@@ -443,11 +443,12 @@ export class Recorder {
     // If that was a keyboard action, it similarly requires new selectors for active model.
     this._onFocus();
 
-    if ((window as any)._actionPerformedForTest)
+    if ((window as any)._actionPerformedForTest) {
       (window as any)._actionPerformedForTest({
         hovered: this._hoveredModel ? this._hoveredModel.selector : null,
         active: this._activeModel ? this._activeModel.selector : null,
       });
+    }
   }
 }
 
@@ -460,7 +461,7 @@ function deepActiveElement(document: Document): Element | null {
   while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement)
     activeElement = activeElement.shadowRoot.activeElement;
   return activeElement;
-};
+}
 
 function modifiersForEvent(event: MouseEvent | KeyboardEvent): number {
   return (event.altKey ? 1 : 0) | (event.ctrlKey ? 2 : 0) | (event.metaKey ? 4 : 0) | (event.shiftKey ? 8 : 0);

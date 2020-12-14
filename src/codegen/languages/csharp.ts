@@ -17,7 +17,7 @@
 import * as playwright from 'playwright';
 import { HighlighterType, LanguageGenerator } from '.';
 import { ActionInContext } from '../codeGenerator';
-import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
+import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions';
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class CSharpLanguageGenerator implements LanguageGenerator {
@@ -64,7 +64,7 @@ export class CSharpLanguageGenerator implements LanguageGenerator {
           e.Dialog.DismissAsync();
           ${pageAlias}.Dialog -= ${pageAlias}_Dialog${dialogSignal.dialogAlias}_EventHandler;
       }
-      ${pageAlias}.Dialog += ${pageAlias}_Dialog${dialogSignal.dialogAlias}_EventHandler;`)
+      ${pageAlias}.Dialog += ${pageAlias}_Dialog${dialogSignal.dialogAlias}_EventHandler;`);
     }
 
     const waitForNavigation = navigationSignal && !performingAction;
@@ -153,7 +153,7 @@ export class CSharpLanguageGenerator implements LanguageGenerator {
     return formatter.format();
   }
 
-generateFooter(): string {
+  generateFooter(): string {
     return `// ---------------------`;
   }
 }
@@ -191,7 +191,7 @@ function formatArgs(value: any, indent = '    '): string {
     const tokens: string[] = [];
     for (const key of keys)
       tokens.push(`${keys.length !==  1 ? indent : ''}${key}: ${formatObject(value[key], indent, key)}`);
-    if(keys.length === 1)
+    if (keys.length === 1)
       return `${tokens.join(`,\n${indent}`)}`;
     else
       return `\n${indent}${tokens.join(`,\n${indent}`)}`;
@@ -201,9 +201,9 @@ function formatArgs(value: any, indent = '    '): string {
 
 function formatObject(value: any, indent = '    ', name = ''): string {
   if (typeof value === 'string') {
-    if (name === 'permissions' || name === 'colorScheme') 
+    if (name === 'permissions' || name === 'colorScheme')
       return `${getClassName(name)}.${toPascal(value)}`;
-      return quote(value);
+    return quote(value);
   }
   if (Array.isArray(value))
     return `new[] { ${value.map(o => formatObject(o, indent, name)).join(', ')} }`;
@@ -214,18 +214,18 @@ function formatObject(value: any, indent = '    ', name = ''): string {
     const tokens: string[] = [];
     for (const key of keys)
       tokens.push(`${toPascal(key)} = ${formatObject(value[key], indent, key)},`);
-    if(name)
+    if (name)
       return `new ${getClassName(name)}\n{\n${indent}${tokens.join(`\n${indent}`)}\n${indent}}`;
     return `{\n${indent}${tokens.join(`\n${indent}`)}\n${indent}}`;
   }
-  if (name === 'latitude' || name === 'longitude') 
+  if (name === 'latitude' || name === 'longitude')
     return String(value) + 'm';
 
   return String(value);
 }
 
 function getClassName(value: string): string {
-  switch(value) {
+  switch (value) {
     case 'viewport': return 'ViewportSize';
     case 'proxy': return 'ProxySettings';
     case 'permissions': return 'ContextPermission';
@@ -234,7 +234,7 @@ function getClassName(value: string): string {
 }
 
 function toPascal(value: string): string {
-  return value[0].toUpperCase() + value.slice(1)
+  return value[0].toUpperCase() + value.slice(1);
 }
 
 function formatContextOptions(options: playwright.BrowserContextOptions, deviceName: string | undefined): string {
@@ -242,19 +242,19 @@ function formatContextOptions(options: playwright.BrowserContextOptions, deviceN
   if (!device)
     return formatArgs(options);
   // Filter out all the properties from the device descriptor.
-  const cleanedOptions: Record<string, any> = {}
-  for (const property in options)
+  const cleanedOptions: Record<string, any> = {};
+  for (const property in options) {
     if ((device as any)[property] !== (options as any)[property])
-      cleanedOptions[property] = (options as any)[property]
-  let serializedObject = formatObject(cleanedOptions, '    ');
+      cleanedOptions[property] = (options as any)[property];
+  }
+  const serializedObject = formatObject(cleanedOptions, '    ');
   // When there are no additional context options, we still want to spread the device inside.
-  
-  if(!serializedObject)
+
+  if (!serializedObject)
     return `playwright.Devices["${deviceName}"]`;
   let result = `new BrowserContextOptions(playwright.Devices["${deviceName}"])`;
 
-  if(serializedObject)
-  {
+  if (serializedObject) {
     const lines = serializedObject.split('\n');
     result = `${result} \n${lines.join('\n')}`;
   }
@@ -292,7 +292,7 @@ class CSharpFormatter {
         return line;
       if (line.startsWith('}') || line.startsWith(']') || line.includes('});'))
         spaces = spaces.substring(this._baseIndent.length);
-      
+
       const extraSpaces = /^(for|while|if).*\(.*\)$/.test(previousLine) ? this._baseIndent : '';
       previousLine = line;
 
@@ -301,7 +301,7 @@ class CSharpFormatter {
         spaces += this._baseIndent;
       if (line.endsWith('});'))
         spaces = spaces.substring(this._baseIndent.length);
-      
+
       return this._baseOffset + line;
     }).join('\n');
   }

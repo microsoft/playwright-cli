@@ -203,4 +203,4 @@ function msToString(ms: number): string {
 
   const days = hours / 24;
   return days.toFixed(1) + 'h';
-};
+}

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as fs from 'fs'
+import * as fs from 'fs';
 import * as querystring from 'querystring';
 import { Writable } from 'stream';
 import { highlight } from 'highlight.js';

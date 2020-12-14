@@ -36,11 +36,12 @@ export function buildSelector(injectedScript: InjectedScript, targetElement: Ele
       path.unshift(selector);
     }
   }
-  if (document.documentElement === targetElement)
+  if (document.documentElement === targetElement) {
     return {
       selector: '/html',
       elements: [document.documentElement]
     };
+  }
   const selector =
       XPathEngine.create(document.documentElement, targetElement, 'default') ||
       cssSelectorForElement(injectedScript, targetElement);
@@ -62,7 +63,7 @@ function buildSelectorCandidate(element: Element): SelectorToken | null {
       return { engine: 'css', selector: `${element.nodeName.toLocaleLowerCase()}[${attribute}=${quoteString(element.getAttribute(attribute)!)}]` };
   }
   if (['INPUT', 'TEXTAREA'].includes(element.nodeName)) {
-    const nodeNameLowercase = element.nodeName.toLowerCase()
+    const nodeNameLowercase = element.nodeName.toLowerCase();
     if (element.getAttribute('name'))
       return { engine: 'css', selector: `${nodeNameLowercase}[name=${quoteString(element.getAttribute('name')!)}]` };
     if (element.getAttribute('placeholder'))

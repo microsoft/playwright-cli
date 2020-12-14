@@ -39,4 +39,4 @@ export const ActionList: React.FunctionComponent<{
       </div>
     </div>;
   })}</div>;
-}
+};

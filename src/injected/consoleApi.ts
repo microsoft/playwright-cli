@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { buildSelector } from "./selectorGenerator";
+import { buildSelector } from './selectorGenerator';
 
 export type ParsedSelector = {
   parts: {
@@ -29,7 +29,7 @@ export interface InjectedScript {
   engines: Set<string>;
   querySelector(selector: ParsedSelector, document: Document): Element | undefined;
   querySelectorAll(selector: ParsedSelector, document: Document): Element[];
-};
+}
 
 export class ConsoleAPI {
   private _injectedScript: InjectedScript;

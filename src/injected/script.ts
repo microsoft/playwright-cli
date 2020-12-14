@@ -25,6 +25,6 @@ export default class Script {
       return;
     this._consoleAPI = new ConsoleAPI(injectedScript);
     if (options.enableRecorder)
-       new Recorder(injectedScript, this._consoleAPI);
+      new Recorder(injectedScript, this._consoleAPI);
   }
 }

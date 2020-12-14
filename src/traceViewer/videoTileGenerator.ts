@@ -43,7 +43,7 @@ export class VideoTileGenerator {
       console.log('Generating frames for ' + fileName);
       // Force output frame rate to 25 fps as otherwise it would produce one image per timebase unit
       // which is currently 1 / (25 * 1000).
-      let result = spawnSync(ffmpeg, ['-i', fileName, '-r', '25', `${fileName}-%03d.png`]);
+      const result = spawnSync(ffmpeg, ['-i', fileName, '-r', '25', `${fileName}-%03d.png`]);
       await fsWriteFileAsync(fileName + '-metainfo.txt', result.stderr);
     }
   }
