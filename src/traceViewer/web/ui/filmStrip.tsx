@@ -62,8 +62,8 @@ function imageURL(context: ContextEntry, fileName: string, index: number) {
 export const FilmStrip: React.FunctionComponent<{
   context: ContextEntry,
   boundaries: Boundaries,
-  preview?: { time: number, clientX: number },
-}> = ({ context, boundaries, preview }) => {
+  previewX?: number,
+}> = ({ context, boundaries, previewX }) => {
   const [measure, ref] = useMeasure<HTMLDivElement>();
 
   const metaInfos = useAsyncMemo<Map<PageVideoTraceEvent, MetaInfo>>(async () => {
@@ -82,8 +82,10 @@ export const FilmStrip: React.FunctionComponent<{
   const previewVideo = metaInfos.keys().next().value;
   const previewMetaInfo = metaInfos.get(previewVideo);
   let previewIndex = 0;
-  if (preview && previewMetaInfo)
-    previewIndex = (preview.time - previewMetaInfo.startTime) / (previewMetaInfo.endTime - previewMetaInfo.startTime) * previewMetaInfo.frames | 0;
+  if ((previewX !== undefined) && previewMetaInfo) {
+    const previewTime = boundaries.minimum + (boundaries.maximum - boundaries.minimum) * previewX / measure.width;
+    previewIndex = (previewTime - previewMetaInfo.startTime) / (previewMetaInfo.endTime - previewMetaInfo.startTime) * previewMetaInfo.frames | 0;
+  }
 
   const previewImage = useAsyncMemo<HTMLImageElement | undefined>(async () => {
     if (!previewMetaInfo || previewIndex < 0 || previewIndex >= previewMetaInfo.frames)
@@ -95,7 +97,7 @@ export const FilmStrip: React.FunctionComponent<{
     image.src = imageURL(context, previewVideo.fileName, previewIndex);
     await new Promise(f => image.onload = f);
     return image;
-  }, [previewMetaInfo, previewIndex, measure.width, context, previewVideo.fileName], undefined);
+  }, [previewMetaInfo, previewIndex, measure.width, context, previewVideo], undefined);
 
   return <div className='film-strip' ref={ref}>{
     Array.from(metaInfos.entries()).map(([video, metaInfo]) => <FilmStripLane
@@ -104,14 +106,15 @@ export const FilmStrip: React.FunctionComponent<{
       video={video}
       metaInfo={metaInfo}
       width={measure.width}
+      key={context.created.contextId + ':' + video.fileName}
     />)
   }
-  {preview && previewMetaInfo && previewImage &&
+  {(previewX !== undefined) && previewMetaInfo && previewImage &&
     <div className='film-strip-hover' style={{
       width: previewImage.width + 'px',
       height: previewImage.height + 'px',
       top: measure.bottom + 5 + 'px',
-      left: Math.min(preview.clientX, measure.width - previewImage.width - 10) + 'px',
+      left: Math.min(previewX, measure.width - previewImage.width - 10) + 'px',
     }}>
       <img src={previewImage.src} width={previewImage.width} height={previewImage.height} />
     </div>
@@ -138,15 +141,13 @@ const FilmStripLane: React.FunctionComponent<{
   const frameHeight = frameWidth / metaInfo.width * metaInfo.height | 0;
   const frameGap = frameCount <= 1 ? 0 : (effectiveWidth - (frameWidth + 2 * frameMargin) * frameCount) / (frameCount - 1);
 
-  const videoId = context.created.contextId + ':' + video.fileName;
-
   const frames: JSX.Element[] = [];
   for (let i = 0; i < metaInfo.frames; i += frameStep) {
     let index = i | 0;
     // Always show last frame.
     if (Math.floor(i + frameStep) >= metaInfo.frames)
       index = metaInfo.frames - 1;
-    frames.push(<div className='film-strip-frame' key={videoId + ':' + i} style={{
+    frames.push(<div className='film-strip-frame' key={i} style={{
       width: frameWidth + 'px',
       height: frameHeight + 'px',
       backgroundImage: `url(${imageURL(context, video.fileName, index)})`,
@@ -156,7 +157,7 @@ const FilmStripLane: React.FunctionComponent<{
     }} />);
   }
 
-  return <div className='film-strip-lane' key={videoId} style={{
+  return <div className='film-strip-lane' style={{
     marginLeft: gapLeft + 'px',
     marginRight: gapRight + 'px',
   }}>{frames}</div>;
