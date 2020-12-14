@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { it, expect } from './fixtures';
 
-const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString()
+const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString();
 
 it('should print the correct imports and context options', async ({ runCLI }) => {
   const cli = runCLI(['codegen', emptyHTML]);
@@ -50,7 +50,7 @@ it('should print the correct context options for custom settings', async ({ runC
 
 
 it('should print the correct context options when using a device', async ({ runCLI }) => {
-  const cli = runCLI(['--device=Pixel 2', 'codegen', emptyHTML])
+  const cli = runCLI(['--device=Pixel 2', 'codegen', emptyHTML]);
   const expectedResult = `const { chromium, devices } = require('playwright');
 
 (async () => {
@@ -59,9 +59,9 @@ it('should print the correct context options when using a device', async ({ runC
   });
   const context = await browser.newContext({
     ...devices['Pixel 2'],
-  });`
-  await cli.waitFor(expectedResult)
-  expect(cli.text()).toContain(expectedResult)
+  });`;
+  await cli.waitFor(expectedResult);
+  expect(cli.text()).toContain(expectedResult);
 });
 
 it('should print the correct context options when using a device and additional options', async ({ runCLI }) => {
@@ -81,10 +81,10 @@ it('should print the correct context options when using a device and additional 
 });
 
 it('should save the codegen output to a file if specified', async ({ runCLI, testInfo }) => {
-  const tmpFile = testInfo.outputPath('script.js')
+  const tmpFile = testInfo.outputPath('script.js');
   const cli = runCLI(['codegen', '--output', tmpFile, emptyHTML]);
-  await cli.exited
-  const content = await fs.readFileSync(tmpFile)
+  await cli.exited;
+  const content = await fs.readFileSync(tmpFile);
   expect(content.toString()).toBe(`const { chromium } = require('playwright');
 
 (async () => {
@@ -105,5 +105,5 @@ it('should save the codegen output to a file if specified', async ({ runCLI, tes
   // ---------------------
   await context.close();
   await browser.close();
-})();`)
+})();`);
 });

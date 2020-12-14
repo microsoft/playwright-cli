@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { ActionEntry } from "../../traceModel";
+import { ActionEntry } from '../../traceModel';
 import { dom, Element$ } from '../components/dom';
-import { Size } from "../components/geometry";
-import { TabbedPane, TabOptions } from "../components/tabbedPane";
+import { Size } from '../components/geometry';
+import { TabbedPane, TabOptions } from '../components/tabbedPane';
 import { NetworkTab } from './networkTab';
 import { SourceTab } from './sourceTab';
 

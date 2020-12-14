@@ -95,7 +95,7 @@ export const FilmStrip: React.FunctionComponent<{
     image.src = imageURL(context, previewVideo.fileName, previewIndex);
     await new Promise(f => image.onload = f);
     return image;
-  }, [previewVideo, previewMetaInfo, previewIndex, measure.width], undefined);
+  }, [previewMetaInfo, previewIndex, measure.width, context, previewVideo.fileName], undefined);
 
   return <div className='film-strip' ref={ref}>{
     Array.from(metaInfos.entries()).map(([video, metaInfo]) => <FilmStripLane
@@ -117,7 +117,7 @@ export const FilmStrip: React.FunctionComponent<{
     </div>
   }
   </div>;
-}
+};
 
 const FilmStripLane: React.FunctionComponent<{
   context: ContextEntry,

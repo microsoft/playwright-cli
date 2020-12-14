@@ -23,7 +23,7 @@ import * as fs from 'fs';
 import * as playwright from 'playwright';
 import { Browser, BrowserContext, Page } from 'playwright';
 import { ScriptController } from './scriptController';
-import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs'
+import { OutputMultiplexer, TerminalOutput, FileOutput } from './codegen/outputs';
 import { CodeGenerator, CodeGeneratorOutput } from './codegen/codeGenerator';
 import { JavaScriptLanguageGenerator, LanguageGenerator } from './codegen/languages';
 import { showTraceViewer } from './traceViewer/traceViewer';
@@ -40,7 +40,7 @@ program
     .option('--lang <language>', 'specify language / locale, for example "en-GB"')
     .option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"')
     .option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"')
-    .option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', "10000")
+    .option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', '10000')
     .option('--user-agent <ua string>', 'specify user agent string')
     .option('--viewport-size <size>', 'specify browser viewport size in pixels, for example "1280, 720"');
 
@@ -129,37 +129,37 @@ program
       let browsersJsonDir = path.dirname(process.execPath);
       if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json'))) {
         browsersJsonDir = path.dirname(require.resolve('playwright'));
-        if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json'))) {
+        if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json')))
           throw new Error('Failed to find browsers.json in ' + browsersJsonDir);
-        }
+
       }
       require('playwright/lib/install/installer').installBrowsersWithProgressBar(browsersJsonDir);
     });
 
 if (process.env.PWTRACE) {
   program
-    .command('show-trace <trace>')
-    .description('Show trace viewer')
-    .option('--resources <dir>', 'Directory with the shared trace artifacts')
-    .action(function(trace, command) {
-      showTraceViewer(resolveHome(command.resources), resolveHome(trace)!);
-    }).on('--help', function() {
-      console.log('');
-      console.log('Examples:');
-      console.log('');
-      console.log('  $ show-trace --resources=resources trace/file.trace');
-      console.log('  $ show-trace trace/directory');
-    });
+      .command('show-trace <trace>')
+      .description('Show trace viewer')
+      .option('--resources <dir>', 'Directory with the shared trace artifacts')
+      .action(function(trace, command) {
+        showTraceViewer(resolveHome(command.resources), resolveHome(trace)!);
+      }).on('--help', function() {
+        console.log('');
+        console.log('Examples:');
+        console.log('');
+        console.log('  $ show-trace --resources=resources trace/file.trace');
+        console.log('  $ show-trace trace/directory');
+      });
 }
 
 // Implement driver command.
-if (process.argv[2] === 'run-driver') {
+if (process.argv[2] === 'run-driver')
   runServer();
-} else if (process.argv[2] === 'print-api-json') {
+else if (process.argv[2] === 'print-api-json')
   printApiJson();
-} else {
+else
   program.parse(process.argv);
-}
+
 
 type Options = {
   browser: string;
@@ -200,9 +200,9 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
     delete contextOptions.isMobile;
   }
 
-  if (contextOptions.isMobile && browserType.name() === 'firefox') {
-    contextOptions.isMobile = undefined
-  }
+  if (contextOptions.isMobile && browserType.name() === 'firefox')
+    contextOptions.isMobile = undefined;
+
 
   // Proxy
 
@@ -270,7 +270,7 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
         return;
       // Avoid the error when the last page is closed because the browser has been closed.
       browser.close().catch(e => null);
-    })
+    });
   });
   if (options.timeout) {
     context.setDefaultTimeout(parseInt(options.timeout, 10));
@@ -286,9 +286,9 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
 async function openPage(context: playwright.BrowserContext, url: string | undefined): Promise<Page> {
   const page = await context.newPage();
   if (url) {
-    if(fs.existsSync(url))
+    if (fs.existsSync(url))
       url = 'file://' + path.resolve(url);
-    else if (!url.startsWith('http') && !url.startsWith("file://"))
+    else if (!url.startsWith('http') && !url.startsWith('file://'))
       url = 'http://' + url;
     await page.goto(url);
   }
@@ -300,7 +300,7 @@ async function open(options: Options, url: string | undefined) {
   new ScriptController(context, undefined);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)
-    await Promise.all(context.pages().map(p => p.close()))
+    await Promise.all(context.pages().map(p => p.close()));
 }
 
 async function waitForPage(page: Page, captureOptions: CaptureOptions) {
@@ -386,11 +386,11 @@ function lookupBrowserType(options: Options): playwright.BrowserType<playwright.
 function validateOptions(options: Options) {
   if (options.device && !(options.device in playwright.devices)) {
     console.log(`Device descriptor not found: '${options.device}', available devices are:`);
-    for (let name in playwright.devices)
+    for (const name in playwright.devices)
       console.log(`  "${name}"`);
     process.exit(0);
   }
-  if (options.colorScheme && !["light", "dark"].includes(options.colorScheme)) {
+  if (options.colorScheme && !['light', 'dark'].includes(options.colorScheme)) {
     console.log('Invalid color scheme, should be one of "light", "dark"');
     process.exit(0);
   }

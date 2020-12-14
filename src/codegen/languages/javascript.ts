@@ -17,7 +17,7 @@
 import * as playwright from 'playwright';
 import { HighlighterType, LanguageGenerator } from '.';
 import { ActionInContext } from '../codeGenerator';
-import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
+import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions';
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class JavaScriptLanguageGenerator implements LanguageGenerator {
@@ -61,7 +61,7 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
       formatter.add(`  ${pageAlias}.once('dialog', dialog => {
     console.log(\`Dialog message: $\{dialog.message()}\`);
     dialog.dismiss().catch(() => {});
-  });`)
+  });`);
     }
 
     const waitForNavigation = navigationSignal && !performingAction;
@@ -197,10 +197,11 @@ function formatContextOptions(options: playwright.BrowserContextOptions, deviceN
   if (!device)
     return formatObjectOrVoid(options);
   // Filter out all the properties from the device descriptor.
-  const cleanedOptions: Record<string, any> = {}
-  for (const property in options)
+  const cleanedOptions: Record<string, any> = {};
+  for (const property in options) {
     if ((device as any)[property] !== (options as any)[property])
-      cleanedOptions[property] = (options as any)[property]
+      cleanedOptions[property] = (options as any)[property];
+  }
   let serializedObject = formatObjectOrVoid(cleanedOptions);
   // When there are no additional context options, we still want to spread the device inside.
   if (!serializedObject)

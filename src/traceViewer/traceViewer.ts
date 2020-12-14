@@ -158,7 +158,7 @@ class TraceViewer {
             e.style.backgroundColor = '#ff69b460';
           });
         }
-      } catch(e) {
+      } catch (e) {
         console.log(e);
       }
     });

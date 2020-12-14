@@ -17,7 +17,7 @@
 import * as playwright from 'playwright';
 import { HighlighterType, LanguageGenerator } from '.';
 import { ActionInContext } from '../codeGenerator';
-import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions'
+import { actionTitle, NavigationSignal, PopupSignal, DownloadSignal, DialogSignal, Action } from '../recorderActions';
 import { MouseClickOptions, toModifiers } from '../../utils';
 
 export class PythonLanguageGenerator implements LanguageGenerator {
@@ -213,10 +213,10 @@ function formatContextOptions(options: playwright.BrowserContextOptions, deviceN
   if (!device)
     return formatOptions(options, false);
   // Filter out all the properties from the device descriptor.
-  const cleanedOptions: Record<string, any> = {}
+  const cleanedOptions: Record<string, any> = {};
   for (const property in options) {
     if ((device as any)[property] !== (options as any)[property])
-      cleanedOptions[property] = (options as any)[property]
+      cleanedOptions[property] = (options as any)[property];
   }
   return `**playwright.devices["${deviceName}"]` + formatOptions(cleanedOptions, true);
 }
