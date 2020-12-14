@@ -79,7 +79,8 @@ class TraceViewer {
         case 'page-created': {
           const pageEntry: any = {
             created: event,
-            actions: []
+            actions: [],
+            resources: [],
           };
           pageEntries.set(event.pageId, pageEntry);
           contextEntries.get(event.contextId)!.pages.push(pageEntry);
@@ -95,19 +96,23 @@ class TraceViewer {
           break;
         }
         case 'action': {
-          const actions = pageEntries.get(event.pageId!)!.actions;
-          actions.push({
-            actionId: event.contextId + '/' + event.pageId + '/' + actions.length,
+          const pageEntry = pageEntries.get(event.pageId!)!;
+          const action: ActionEntry = {
+            actionId: event.contextId + '/' + event.pageId + '/' + pageEntry.actions.length,
             action: event,
-            resources: []
-          });
+            resources: pageEntry.resources,
+          };
+          pageEntry.resources = [];
+          pageEntry.actions.push(action);
           break;
         }
         case 'resource': {
-          const actions = pageEntries.get(event.pageId!)!.actions;
-          const action = actions[actions.length - 1];
+          const pageEntry = pageEntries.get(event.pageId!)!;
+          const action = pageEntry.actions[pageEntry.actions.length - 1];
           if (action)
             action.resources.push(event);
+          else
+            pageEntry.resources.push(event);
           let responseEvents = this._resources.get(event.url);
           if (!responseEvents) {
             responseEvents = [];

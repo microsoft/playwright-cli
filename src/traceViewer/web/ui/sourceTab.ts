@@ -45,12 +45,12 @@ export class SourceTab implements Tab {
     }
     const { action } = actionEntry;
     const frames = action.stack!.split('\n').slice(1);
-    const frame = frames.filter(frame => !frame.includes('playwright/lib/client/'))[0];
+    const frame = frames.filter(frame => !frame.includes('playwright/lib/') && !frame.includes('playwright/src/'))[0];
     if (!frame) {
       this._editor.setValue(action.stack!);
       return;
     }
-    const match = frame.match(/at ([^:]+):(\d+):\d+/);
+    const match = frame.match(/at [^(]+\(([^:]+):(\d+):\d+\)/) || frame.match(/at ([^:^(]+):(\d+):\d+/);
     if (!match) {
       this._editor.setValue(action.stack!);
       return;

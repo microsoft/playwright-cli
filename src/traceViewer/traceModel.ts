@@ -35,6 +35,7 @@ export type PageEntry = {
   destroyed: trace.PageDestroyedTraceEvent;
   video?: trace.PageVideoTraceEvent;
   actions: ActionEntry[];
+  resources: trace.NetworkResourceTraceEvent[];
 }
 
 export type ActionEntry = {
