@@ -38,7 +38,9 @@ program
     .option('--device <deviceName>', 'emulate device, for example  "iPhone 11"')
     .option('--geolocation <coordinates>', 'specify geolocation coordinates, for example "37.819722,-122.478611"')
     .option('--lang <language>', 'specify language / locale, for example "en-GB"')
+    .option('--load-storage <filename>', 'load context storage state from the file, previously saved with --save-storage')
     .option('--proxy-server <proxy>', 'specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080"')
+    .option('--save-storage <filename>', 'save context storage state at the end, for later use with --load-storage')
     .option('--timezone <time zone>', 'time zone to emulate, for example "Europe/Rome"')
     .option('--timeout <timeout>', 'timeout for Playwright actions in milliseconds', '10000')
     .option('--user-agent <ua string>', 'specify user agent string')
@@ -163,20 +165,22 @@ else
 
 type Options = {
   browser: string;
-  colorScheme: string | undefined;
-  device: string | undefined;
-  geolocation: string;
-  lang: string;
-  proxyServer: string;
-  timeout: string | undefined;
-  timezone: string;
-  viewportSize: string | undefined;
-  userAgent: string | undefined;
+  colorScheme?: string;
+  device?: string;
+  geolocation?: string;
+  lang?: string;
+  loadStorage?: string;
+  proxyServer?: string;
+  saveStorage?: string;
+  timeout: string;
+  timezone?: string;
+  viewportSize?: string;
+  userAgent?: string;
 };
 
 type CaptureOptions = {
-  waitForSelector: string | undefined;
-  waitForTimeout: string | undefined;
+  waitForSelector?: string;
+  waitForTimeout?: string;
   fullPage: boolean;
 };
 
@@ -261,15 +265,33 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
   if (options.timezone)
     contextOptions.timezoneId = options.timezone;
 
+  // Storage
+
+  if (options.loadStorage)
+    contextOptions.storageState = options.loadStorage;
+
   // Close app when the last window closes.
 
   const context = await browser.newContext(contextOptions);
+
+  let closingBrowser = false;
+  async function closeBrowser() {
+    // We can come here multiple times. For example, saving storage creates
+    // a temporary page and we call closeBrowser again when that page closes.
+    if (closingBrowser)
+      return;
+    if (options.saveStorage)
+      await context.storageState({ path: options.saveStorage }).catch(e => null);
+    await browser.close();
+  }
+
   context.on('page', page => {
     page.on('close', () => {
-      if (browser.contexts().find(c => c.pages().length))
+      const hasPage = browser.contexts().some(context => context.pages().length > 0);
+      if (hasPage)
         return;
       // Avoid the error when the last page is closed because the browser has been closed.
-      browser.close().catch(e => null);
+      closeBrowser().catch(e => null);
     });
   });
   if (options.timeout) {
