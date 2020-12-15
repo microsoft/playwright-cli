@@ -91,3 +91,27 @@ def run(playwright):
 with sync_playwright() as playwright:
     run(playwright)`);
 });
+
+it('should print load/save storageState', async ({ runCLI, testInfo }) => {
+  const loadFileName = testInfo.outputPath('load.json');
+  const saveFileName = testInfo.outputPath('save.json');
+  await fs.promises.writeFile(loadFileName, JSON.stringify({ cookies: [], origins: [] }), 'utf8');
+  const cli = runCLI([`--load-storage=${loadFileName}`, `--save-storage=${saveFileName}`, 'codegen', '--target=python', emptyHTML]);
+  const expectedResult = `from playwright import sync_playwright
+
+  def run(playwright):
+      browser = playwright.chromium.launch(headless=False)
+      context = browser.newContext(storageState="${loadFileName}")
+
+      # Open new page
+      page = context.newPage()
+
+      # ---------------------
+      context.storageState(path="${saveFileName}")
+      context.close()
+      browser.close()
+
+  with sync_playwright() as playwright:
+      run(playwright)`;
+  await cli.waitFor(expectedResult);
+});

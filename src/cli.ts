@@ -280,6 +280,7 @@ async function launchContext(options: Options, headless: boolean): Promise<{ bro
     // a temporary page and we call closeBrowser again when that page closes.
     if (closingBrowser)
       return;
+    closingBrowser = true;
     if (options.saveStorage)
       await context.storageState({ path: options.saveStorage }).catch(e => null);
     await browser.close();
@@ -381,7 +382,7 @@ async function codegen(options: Options, url: string | undefined, target: string
     outputs.push(new FileOutput(outputFile));
   const output = new OutputMultiplexer(outputs);
 
-  const generator = new CodeGenerator(browserName, launchOptions, contextOptions, output, languageGenerator, options.device);
+  const generator = new CodeGenerator(browserName, launchOptions, contextOptions, output, languageGenerator, options.device, options.saveStorage);
   new ScriptController(context, generator);
   await openPage(context, url);
   if (process.env.PWCLI_EXIT_FOR_TEST)

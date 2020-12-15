@@ -15,6 +15,7 @@
  */
 
 import * as path from 'path';
+import * as fs from 'fs';
 import { it, expect } from './fixtures';
 
 const emptyHTML = new URL('file://' + path.join(__dirname, 'assets', 'empty.html')).toString();
@@ -124,4 +125,23 @@ var context = await browser.NewContextAsync(new BrowserContextOptions(playwright
 
   await cli.waitFor(expectedResult);
   expect(cli.text()).toContain(expectedResult);
+});
+
+it('should print load/save storageState', async ({ runCLI, testInfo }) => {
+  const loadFileName = testInfo.outputPath('load.json');
+  const saveFileName = testInfo.outputPath('save.json');
+  await fs.promises.writeFile(loadFileName, JSON.stringify({ cookies: [], origins: [] }), 'utf8');
+  const cli = runCLI([`--load-storage=${loadFileName}`, `--save-storage=${saveFileName}`, 'codegen', '--target=csharp', emptyHTML]);
+  const expectedResult = `await Playwright.InstallAsync();
+using var playwright = await Playwright.CreateAsync();
+await using var browser = await playwright.Chromium.LaunchAsync();
+var context = await browser.NewContextAsync(storageState: "${loadFileName}");
+
+// Open new page
+var page = await context.NewPageAsync();
+
+// ---------------------
+await context.StorageStateAsync(path: "${saveFileName}");
+`;
+  await cli.waitFor(expectedResult);
 });
