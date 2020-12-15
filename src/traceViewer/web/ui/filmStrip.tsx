@@ -99,6 +99,7 @@ export const FilmStrip: React.FunctionComponent<{
     return image;
   }, [previewMetaInfo, previewIndex, measure.width, context, previewVideo], undefined);
 
+  // TODO: show lanes while meta info is still loading.
   return <div className='film-strip' ref={ref}>{
     Array.from(metaInfos.entries()).map(([video, metaInfo]) => <FilmStripLane
       context={context}

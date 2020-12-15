@@ -14,12 +14,18 @@
   limitations under the License.
 */
 
-network-tab {
+.network-tab {
+  display: flex;
+  flex-direction: column;
   flex: auto;
   overflow: auto;
 }
 
-network-tab network-request {
+.network-tab:focus {
+  outline: none;
+}
+
+.network-request {
   box-shadow: var(--box-shadow);
   white-space: nowrap;
   display: flex;
@@ -29,9 +35,11 @@ network-tab network-request {
   background: #fdfcfc;
   width: 100%;
   border: 3px solid transparent;
+  flex: none;
+  outline: none;
 }
 
-network-tab request-title {
+.network-request-title {
   height: 36px;
   display: flex;
   align-items: center;
@@ -39,22 +47,22 @@ network-tab request-title {
   text-overflow: ellipsis;
 }
 
-network-tab request-details {
+.network-request-details {
   font-family: var(--monospace-font);
   white-space: pre;
   overflow: hidden;
 }
 
-network-tab request-title > div {
+.network-request-title > div {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-network-tab list-view > list-item.selected network-request,
-network-tab list-view > list-item:hover network-request {
+.network-request.selected,
+.network-request:hover {
   border-color: var(--inactive-focus-ring);
 }
 
-network-tab list-view > list-item.selected:focus network-request {
+.network-request.selected:focus {
   border-color: var(--orange);
 }

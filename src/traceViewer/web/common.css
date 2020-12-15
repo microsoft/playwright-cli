@@ -74,6 +74,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
 .platform-windows {
   --monospace-font: Consolas, Inconsolata, "Courier New", monospace;
 }
@@ -86,14 +92,14 @@ body {
   --monospace-font: "SF Mono",Monaco,Menlo,Inconsolata,"Courier New",monospace;
 }
 
-vbox {
+.vbox {
   display: flex;
   flex-direction: column;
   flex: auto;
   position: relative;
 }
 
-hbox {
+.hbox {
   display: flex;
   flex: auto;
   position: relative;

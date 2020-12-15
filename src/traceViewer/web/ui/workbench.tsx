@@ -14,77 +14,54 @@
   limitations under the License.
 */
 
-import { ActionEntry, ContextEntry, TraceModel } from '../../traceModel';
-import { dom } from '../components/dom';
+import { ActionEntry, TraceModel } from '../../traceModel';
 import { ActionList } from './actionList';
 import { PropertiesTabbedPane } from './propertiesTabbedPane';
 import { Timeline } from './timeline';
 import './workbench.css';
-import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { ContextSelector } from './contextSelector';
 
-export class Workbench {
-  element: HTMLElement;
-  private _tabbedPane: PropertiesTabbedPane | undefined;
-  private _timelineDiv: HTMLElement;
-  private _contextSelectorDiv: HTMLElement;
-  private _actionListDiv: HTMLElement;
+export const Workbench: React.FunctionComponent<{
+  traceModel: TraceModel,
+}> = ({ traceModel }) => {
+  const [context, setContext] = React.useState(traceModel.contexts[0]);
+  const [action, setAction] = React.useState<ActionEntry | undefined>();
 
-  constructor(trace: TraceModel) {
-    this._contextSelectorDiv = dom`<div></div>`;
-    this._actionListDiv = dom`<div style="display:flex"></div>`;
-    this._timelineDiv = dom`<div style="background:white;padding-left:20px"></div>`;
-    this.element = dom`
-      <vbox class="workbench">
-      </vbox>
-    `;
-    window.addEventListener('resize', () => this.pack());
-    ReactDOM.render(<ContextSelector contexts={trace.contexts} onChange={context => this.showContext(context)} />, this._contextSelectorDiv);
-    this.showContext(trace.contexts[0]);
-  }
-
-  showContext(context: ContextEntry) {
-    const size = context.created.viewportSize!;
-    this._tabbedPane = new PropertiesTabbedPane(size);
-
+  const actions = React.useMemo(() => {
     const actions: ActionEntry[] = [];
     for (const page of context.pages)
       actions.push(...page.actions);
-    let selectedAction: ActionEntry | undefined;
-    ReactDOM.render(<ActionList
-      actions={actions}
-      selectedAction={selectedAction}
-      onSelected={action => {
-        selectedAction = action;
-        this._tabbedPane!.setAction(selectedAction);
-      }}
-    />, this._actionListDiv);
+    return actions;
+  }, [context]);
 
-    ReactDOM.render(<Timeline
-      context={context}
-      boundaries={{ minimum: context.startTime, maximum: context.endTime }}
-    />, this._timelineDiv);
+  const snapshotSize = context.created.viewportSize!;
 
-    this.element.textContent = '';
-    this.element.appendChild(dom`
-      <hbox class="header">
-        <div class="logo">🎭</div>
-        <div class="product">Playwright</div>
-        <div class="spacer"></div>
-        ${this._contextSelectorDiv}
-      </hbox>
-      ${this._timelineDiv}
-      <hbox>
-        ${this._actionListDiv}
-        ${this._tabbedPane.element}
-      </hbox>
-    `);
-    this.pack();
-  }
-
-  pack() {
-    if (this._tabbedPane)
-      this._tabbedPane.pack();
-  }
-}
+  return <div className='vbox workbench'>
+    <div className='hbox header'>
+      <div className='logo'>🎭</div>
+      <div className='product'>Playwright</div>
+      <div className='spacer'></div>
+      <ContextSelector
+        contexts={traceModel.contexts}
+        context={context}
+        onChange={context => {
+          setContext(context);
+          setAction(undefined);
+        }}
+      />
+    </div>
+    <div style={{ background: 'white', paddingLeft: '20px' }}>
+      <Timeline
+        context={context}
+        boundaries={{ minimum: context.startTime, maximum: context.endTime }}
+      />
+    </div>
+    <div className='hbox'>
+      <div style={{ display: 'flex' }}>
+        <ActionList actions={actions} selectedAction={action} onSelected={action => setAction(action)} />
+      </div>
+      <PropertiesTabbedPane actionEntry={action} snapshotSize={snapshotSize} />
+    </div>
+  </div>;
+};

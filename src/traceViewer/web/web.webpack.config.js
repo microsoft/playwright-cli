@@ -4,7 +4,7 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 module.exports = {
   mode: 'development',
   entry: {
-    app: path.join(__dirname, 'index.ts'),
+    app: path.join(__dirname, 'index.tsx'),
   },
   resolve: {
     extensions: ['.ts', '.js', '.tsx', '.jsx']
@@ -33,7 +33,8 @@ module.exports = {
   },
   plugins: [
     new HtmlWebPackPlugin({
-      title: 'Playwright Trace Viewer'
+      title: 'Playwright Trace Viewer',
+      template: path.join(__dirname, 'index.html'),
     })
   ]
 };
