@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - release-*
 
 jobs:
   publish-canary-npm:
