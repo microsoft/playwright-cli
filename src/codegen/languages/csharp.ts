@@ -153,8 +153,9 @@ export class CSharpLanguageGenerator implements LanguageGenerator {
     return formatter.format();
   }
 
-  generateFooter(): string {
-    return `// ---------------------`;
+  generateFooter(saveStorage: string | undefined): string {
+    const storageStateLine = saveStorage ? `\nawait context.StorageStateAsync(path: "${saveStorage}")` : '';
+    return `// ---------------------${storageStateLine}`;
   }
 }
 

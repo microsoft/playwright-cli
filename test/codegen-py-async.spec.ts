@@ -98,3 +98,30 @@ async def main():
         await run(playwright)
 asyncio.run(main())`);
 });
+
+it('should print load/save storageState', async ({ runCLI, testInfo }) => {
+  const loadFileName = testInfo.outputPath('load.json');
+  const saveFileName = testInfo.outputPath('save.json');
+  await fs.promises.writeFile(loadFileName, JSON.stringify({ cookies: [], origins: [] }), 'utf8');
+  const cli = runCLI([`--load-storage=${loadFileName}`, `--save-storage=${saveFileName}`, 'codegen', '--target=python-async', emptyHTML]);
+  const expectedResult = `import asyncio
+  from playwright import async_playwright
+
+  async def run(playwright):
+      browser = await playwright.chromium.launch(headless=False)
+      context = await browser.newContext(storageState="${loadFileName}")
+
+      # Open new page
+      page = await context.newPage()
+
+      # ---------------------
+      await context.storageState(path="${saveFileName}")
+      await context.close()
+      await browser.close()
+
+  async def main():
+      async with async_playwright() as playwright:
+          await run(playwright)
+  asyncio.run(main())`;
+  await cli.waitFor(expectedResult);
+});

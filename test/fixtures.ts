@@ -47,7 +47,7 @@ fixtures.contextWrapper.init(async ({ browser }, runTest) => {
   const outputBuffer = new WritableBuffer();
   const output = new TerminalOutput(outputBuffer as any as Writable, 'javascript');
   const languageGenerator = new JavaScriptLanguageGenerator();
-  const generator = new CodeGenerator('chromium', {}, {}, output, languageGenerator, undefined);
+  const generator = new CodeGenerator('chromium', {}, {}, output, languageGenerator, undefined, undefined);
   new ScriptController(context, generator);
   await runTest({ context, output: outputBuffer });
   await context.close();
@@ -205,9 +205,9 @@ fixtures.runCLI.init(async ({  }, runTest) => {
 class CLIMock {
   private process: ChildProcessWithoutNullStreams
   private data: string;
-  private waitForText: string
+  private waitForText: string;
   private waitForCallback: () => void;
-  exited: Promise<number>
+  exited: Promise<void>;
 
   constructor(args: string[]) {
     this.data = '';
@@ -225,10 +225,9 @@ class CLIMock {
       if (this.waitForCallback && this.data.includes(this.waitForText))
         this.waitForCallback();
     });
-    this.exited = new Promise(r => this.process.on('exit', () => {
+    this.exited = new Promise<void>(r => this.process.on('exit', () => {
       if (this.waitForCallback)
         this.waitForCallback();
-
       return r();
     }));
   }

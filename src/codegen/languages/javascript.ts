@@ -155,8 +155,9 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
     return formatter.format();
   }
 
-  generateFooter(): string {
-    return `  // ---------------------
+  generateFooter(saveStorage: string | undefined): string {
+    const storageStateLine = saveStorage ? `\n  await context.storageState({ path: '${saveStorage}' })` : '';
+    return `  // ---------------------${storageStateLine}
   await context.close();
   await browser.close();
 })();`;

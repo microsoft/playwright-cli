@@ -166,9 +166,10 @@ def run(playwright) {
     return formatter.format();
   }
 
-  generateFooter(): string {
+  generateFooter(saveStorage: string | undefined): string {
     if (this._isAsync) {
-      return `    # ---------------------
+      const storageStateLine = saveStorage ? `\n    await context.storageState(path="${saveStorage}")` : '';
+      return `    # ---------------------${storageStateLine}
     await context.close()
     await browser.close()
 
@@ -177,7 +178,8 @@ async def main():
         await run(playwright)
 asyncio.run(main())`;
     } else {
-      return `    # ---------------------
+      const storageStateLine = saveStorage ? `\n    context.storageState(path="${saveStorage}")` : '';
+      return `    # ---------------------${storageStateLine}
     context.close()
     browser.close()
 
