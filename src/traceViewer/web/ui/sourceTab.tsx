@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import * as monaco from 'monaco-editor';
 import { ActionEntry } from '../../traceModel';
 import * as React from 'react';
 import { useAsyncMemo, useMeasure } from './helpers';
+import type { editor as MonacoEditor } from 'monaco-editor';
 
 export const SourceTab: React.FunctionComponent<{
   actionEntry: ActionEntry | undefined,
@@ -40,12 +40,12 @@ export const SourceTab: React.FunctionComponent<{
 
   const content = useAsyncMemo<string>(async () => {
     if (location.fileName)
-      return (window as any).readFile(location.fileName);
+      return window.readFile(location.fileName);
     return location.value || '';
   }, [location.fileName, location.value], '');
 
   const [editor, setEditor] = React.useState<{
-    editor: monaco.editor.IStandaloneCodeEditor,
+    editor: MonacoEditor.IStandaloneCodeEditor,
     element: HTMLElement,
     decorations: string[]
   } | undefined>();
@@ -85,7 +85,7 @@ export const SourceTab: React.FunctionComponent<{
   return <div ref={ref} style={{ flex: 'auto', minWidth: '0', minHeight: '0' }}></div>;
 };
 
-function decorateLine(editor: monaco.editor.IStandaloneCodeEditor, lineNumber: number | undefined, decorations: string[]): string[] {
+function decorateLine(editor: MonacoEditor.IStandaloneCodeEditor, lineNumber: number | undefined, decorations: string[]): string[] {
   if (lineNumber !== undefined) {
     const result = editor.deltaDecorations(decorations, [{
       range: new monaco.Range(lineNumber, 1, lineNumber, 1),

@@ -2,14 +2,9 @@ const path = require('path');
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   entry: {
     app: path.join(__dirname, 'index.tsx'),
-    'monaco.editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-    'monaco.json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
-    'monaco.css.worker': 'monaco-editor/esm/vs/language/css/css.worker',
-    'monaco.html.worker': 'monaco-editor/esm/vs/language/html/html.worker',
-    'monaco.ts.worker': 'monaco-editor/esm/vs/language/typescript/ts.worker',
   },
   resolve: {
     extensions: ['.ts', '.js', '.tsx', '.jsx']

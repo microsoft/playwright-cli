@@ -190,7 +190,10 @@ class TraceViewer {
           const contextEntry = this._traceModel.contexts.find(entry => entry.created.contextId === contextId)!;
           filePath = path.join(path.dirname(contextEntry.filePath), fileName);
         } else {
-          filePath = path.join(__dirname, '../../out/web', url.pathname.substring(1));
+          let relativePath = url.pathname.substring(1);
+          if (relativePath.startsWith('node_modules/'))
+            relativePath = path.join('..', '..', relativePath);
+          filePath = path.join(__dirname, '..', '..', 'out', 'web', relativePath);
         }
         const body = fs.readFileSync(filePath);
         route.fulfill({
