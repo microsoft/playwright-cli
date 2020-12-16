@@ -18,7 +18,7 @@
 import { ContextEntry } from '../../traceModel';
 import './timeline.css';
 import { FilmStrip } from './filmStrip';
-import { Boundaries } from '../components/geometry';
+import { Boundaries } from '../geometry';
 import * as React from 'react';
 import { useMeasure } from './helpers';
 

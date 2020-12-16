@@ -15,7 +15,7 @@
  */
 
 import { ActionEntry } from '../../traceModel';
-import { Size } from '../components/geometry';
+import { Size } from '../geometry';
 import { NetworkTab } from './networkTab';
 import { SourceTab } from './sourceTab';
 import './propertiesTabbedPane.css';
