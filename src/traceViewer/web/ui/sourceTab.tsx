@@ -57,7 +57,6 @@ export const SourceTab: React.FunctionComponent<{
     if (editor && editor.element === ref.current)
       return;
 
-    monaco.editor.setTheme('vs-light');
     const standalone = monaco.editor.create(ref.current, {
       value: '',
       language: 'javascript',
