@@ -20,23 +20,22 @@ import './contextSelector.css';
 
 export const ContextSelector: React.FunctionComponent<{
   contexts: ContextEntry[],
+  context: ContextEntry,
   onChange: (contextEntry: ContextEntry) => void,
-}> = ({ contexts, onChange }) => {
-  const [index, setIndex] = React.useState(0);
+}> = ({ contexts, context, onChange }) => {
   return (
     <select
       className='context-selector'
       style={{
         visibility: contexts.length <= 1 ? 'hidden' : 'visible',
       }}
-      value={index}
+      value={context.created.contextId}
       onChange={e => {
-        const newIndex = +e.target.value;
-        setIndex(newIndex);
+        const newIndex = e.target.selectedIndex;
         onChange(contexts[newIndex]);
       }}
     >
-      {contexts.map((entry, index) => <option value={index} key={entry.name}>{entry.name}</option>)}
+      {contexts.map(entry => <option value={entry.created.contextId} key={entry.created.contextId}>{entry.name}</option>)}
     </select>
   );
 };

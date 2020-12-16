@@ -50,6 +50,24 @@ export function useMeasure<T extends Element>() {
     });
     resizeObserver.observe(target);
     return () => resizeObserver.unobserve(target);
-  });
+  }, [ref]);
   return [measure, ref] as const;
 }
+
+export const Expandable: React.FunctionComponent<{
+  title: JSX.Element,
+  body: JSX.Element,
+  style?: React.CSSProperties,
+}> = ({ title, body, style }) => {
+  const [expanded, setExpanded] = React.useState(true);
+  return <div style={{ ...style, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', whiteSpace: 'nowrap' }}>
+      <div
+        className={'codicon codicon-' + (expanded ? 'chevron-down' : 'chevron-right')}
+        style={{ cursor: 'pointer', color: 'var(--color)', marginRight: '4px'}}
+        onClick={() => setExpanded(!expanded)} />
+      {title}
+    </div>
+    { expanded && <div style={{ display: 'flex', flex: 'auto', margin: '5px 0 5px 20px' }}>{body}</div> }
+  </div>;
+};
