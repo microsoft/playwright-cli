@@ -1,12 +1,12 @@
 /*
   Copyright (c) Microsoft Corporation.
- 
+
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
- 
+
       http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,34 +14,12 @@
   limitations under the License.
 */
 
-:host {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-}
+export type Size = {
+  width: number;
+  height: number;
+};
 
-:host > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-:host .codicon {
-  
-  display: block;
-  cursor: pointer;
-  flex: none;
-  height: 18px;
-  width: 18px;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  margin-right: 9px;
-  margin-left: 0;
-  padding: 0;
-  background: var(--control-background);
-}
-
-:host .codicon:focus {
-  border-color: var(--focus-ring);
-  border-radius: 0;
-  outline: none;    
-}
+export type Boundaries = {
+  minimum: number;
+  maximum: number;
+};
