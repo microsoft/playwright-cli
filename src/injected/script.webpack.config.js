@@ -18,6 +18,7 @@ const path = require('path');
 const InlineSource = require('../../utils/webpack-inline-source-plugin');
 
 module.exports = {
+  mode: 'development',
   entry: path.join(__dirname, 'script.ts'),
   devtool: 'source-map',
   module: {

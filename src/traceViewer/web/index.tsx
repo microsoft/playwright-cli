@@ -20,7 +20,31 @@ import './third_party/vscode/codicon.css';
 import { Workbench } from './ui/workbench';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import * as monaco from 'monaco-editor';
+import { ActionTraceEvent } from '../traceTypes';
+
+declare global {
+  const monaco: typeof import('monaco-editor');
+  interface Window {
+    getTraceModel(): Promise<TraceModel>;
+    readFile(filePath: string): Promise<string>;
+    renderSnapshot(action: ActionTraceEvent): void;
+  }
+}
+
+async function loadMonaco() {
+  const base = document.baseURI.substring(0, (document.baseURI.lastIndexOf('/') + 1) || undefined);
+  const loaderUrl = base + 'node_modules/monaco-editor/min/vs/loader.js';
+
+  // Note: it is important to use window.eval to make |this| equal to window,
+  // because webpack evaluates our code with |this| being undefined.
+  await fetch(loaderUrl).then(response => response.text()).then(text => window.eval(text +  '\n//# sourceURL=' + loaderUrl));
+
+  // Note: it is important to use window.require to not conflict with webpack's require.
+  // @ts-ignore
+  window.require.config({ paths: { 'vs': base + 'node_modules/monaco-editor/min/vs' } });
+  // @ts-ignore
+  await new Promise(fulfill => window.require(['vs/editor/editor.main'], fulfill));
+}
 
 function platformName(): string {
   if (window.navigator.userAgent.includes('Linux'))
@@ -43,26 +67,9 @@ function platformName(): string {
 
   document.documentElement.classList.add(platformName());
 
+  await loadMonaco();
   monaco.editor.setTheme('vs-light');
-  const monacoEnvironment: monaco.Environment = {
-    getWorkerUrl(moduleId, label) {
-      switch (label) {
-        case 'json':
-          return './monaco.json.worker.bundle.js';
-        case 'css':
-          return './monaco.css.worker.bundle.js';
-        case 'html':
-          return './monaco.html.worker.bundle.js';
-        case 'typescript':
-        case 'javascript':
-          return './monaco.ts.worker.bundle.js';
-        default:
-          return './monaco.editor.worker.bundle.js';
-      }
-    }
-  };
-  (self as any).MonacoEnvironment = monacoEnvironment;
 
-  const traceModel = await (window as any).getTraceModel() as TraceModel;
+  const traceModel = await window.getTraceModel();
   ReactDOM.render(<Workbench traceModel={traceModel} />, document.querySelector('#root'));
 })();

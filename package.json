@@ -7,7 +7,7 @@
   "scripts": {
     "test": "folio test/",
     "lint": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext ts,tsx . || eslint --ext ts,tsx .",
-    "build": "node utils/runWebpack.js --mode='development' && tsc -p .",
+    "build": "node utils/runWebpack.js && tsc -p .",
     "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p .",
     "bake-mac": "pkg --public --targets node12-macos-x64 --output=out/binary/mac/playwright-cli .",
     "bake-win32": "pkg --public --targets node12-win-x86 --output=out/binary/win32/playwright-cli.exe .",

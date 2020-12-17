@@ -72,7 +72,7 @@ const SnapshotTab: React.FunctionComponent<{
 
   React.useEffect(() => {
     if (actionEntry)
-      (window as any).renderSnapshot(actionEntry.action);
+      window.renderSnapshot(actionEntry.action);
   }, [actionEntry]);
 
   const scale = Math.min(measure.width / snapshotSize.width, measure.height / snapshotSize.height);
