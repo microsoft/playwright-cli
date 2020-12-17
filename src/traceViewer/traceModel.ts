@@ -28,6 +28,7 @@ export type ContextEntry = {
   created: trace.ContextCreatedTraceEvent;
   destroyed: trace.ContextDestroyedTraceEvent;
   pages: PageEntry[];
+  resourcesByUrl: Map<string, trace.NetworkResourceTraceEvent[]>;
 }
 
 export type PageEntry = {
@@ -42,4 +43,93 @@ export type ActionEntry = {
   actionId: string;
   action: trace.ActionTraceEvent;
   resources: trace.NetworkResourceTraceEvent[];
+}
+
+export function readTraceFile(events: trace.TraceEvent[], traceModel: TraceModel, filePath: string): trace.PageVideoTraceEvent[] {
+  const contextEntries = new Map<string, ContextEntry>();
+  const pageEntries = new Map<string, PageEntry>();
+  const videoEvents: trace.PageVideoTraceEvent[] = [];
+
+  for (const event of events) {
+    switch (event.type) {
+      case 'context-created': {
+        contextEntries.set(event.contextId, {
+          filePath,
+          name: filePath.substring(filePath.lastIndexOf('/') + 1),
+          startTime: Number.MAX_VALUE,
+          endTime: Number.MIN_VALUE,
+          created: event,
+          destroyed: undefined as any,
+          pages: [],
+          resourcesByUrl: new Map(),
+        });
+        break;
+      }
+      case 'context-destroyed': {
+        contextEntries.get(event.contextId)!.destroyed = event;
+        break;
+      }
+      case 'page-created': {
+        const pageEntry: PageEntry = {
+          created: event,
+          destroyed: undefined as any,
+          actions: [],
+          resources: [],
+        };
+        pageEntries.set(event.pageId, pageEntry);
+        contextEntries.get(event.contextId)!.pages.push(pageEntry);
+        break;
+      }
+      case 'page-destroyed': {
+        pageEntries.get(event.pageId)!.destroyed = event;
+        break;
+      }
+      case 'page-video': {
+        pageEntries.get(event.pageId)!.video = event;
+        videoEvents.push(event);
+        break;
+      }
+      case 'action': {
+        const pageEntry = pageEntries.get(event.pageId!)!;
+        const action: ActionEntry = {
+          actionId: event.contextId + '/' + event.pageId + '/' + pageEntry.actions.length,
+          action: event,
+          resources: pageEntry.resources,
+        };
+        pageEntry.resources = [];
+        pageEntry.actions.push(action);
+        break;
+      }
+      case 'resource': {
+        const contextEntry = contextEntries.get(event.contextId)!;
+        const pageEntry = pageEntries.get(event.pageId!)!;
+        const action = pageEntry.actions[pageEntry.actions.length - 1];
+        if (action)
+          action.resources.push(event);
+        else
+          pageEntry.resources.push(event);
+        let responseEvents = contextEntry.resourcesByUrl.get(event.url);
+        if (!responseEvents) {
+          responseEvents = [];
+          contextEntry.resourcesByUrl.set(event.url, responseEvents);
+        }
+        responseEvents.push(event);
+        break;
+      }
+    }
+
+    const contextEntry = contextEntries.get(event.contextId)!;
+    contextEntry.startTime = Math.min(contextEntry.startTime, (event as any).timestamp);
+    contextEntry.endTime = Math.max(contextEntry.endTime, (event as any).timestamp);
+  }
+  traceModel.contexts.push(...contextEntries.values());
+  return videoEvents;
+}
+
+export function actionById(traceModel: TraceModel, actionId: string): { context: ContextEntry, page: PageEntry, action: ActionEntry } {
+  const [contextId, pageId, actionIndex] = actionId.split('/');
+  const context = traceModel.contexts.find(entry => entry.created.contextId === contextId)!;
+  const page = context.pages.find(entry => entry.created.pageId === pageId)!;
+  const action = page.actions[+actionIndex];
+  return { context, page, action };
 }
