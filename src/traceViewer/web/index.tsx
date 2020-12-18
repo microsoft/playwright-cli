@@ -23,27 +23,11 @@ import * as ReactDOM from 'react-dom';
 import { ActionTraceEvent } from '../traceTypes';
 
 declare global {
-  const monaco: typeof import('monaco-editor');
   interface Window {
     getTraceModel(): Promise<TraceModel>;
     readFile(filePath: string): Promise<string>;
     renderSnapshot(action: ActionTraceEvent): void;
   }
-}
-
-async function loadMonaco() {
-  const base = document.baseURI.substring(0, (document.baseURI.lastIndexOf('/') + 1) || undefined);
-  const loaderUrl = base + 'node_modules/monaco-editor/min/vs/loader.js';
-
-  // Note: it is important to use window.eval to make |this| equal to window,
-  // because webpack evaluates our code with |this| being undefined.
-  await fetch(loaderUrl).then(response => response.text()).then(text => window.eval(text +  '\n//# sourceURL=' + loaderUrl));
-
-  // Note: it is important to use window.require to not conflict with webpack's require.
-  // @ts-ignore
-  window.require.config({ paths: { 'vs': base + 'node_modules/monaco-editor/min/vs' } });
-  // @ts-ignore
-  await new Promise(fulfill => window.require(['vs/editor/editor.main'], fulfill));
 }
 
 function platformName(): string {
@@ -66,9 +50,6 @@ function platformName(): string {
   }, false);
 
   document.documentElement.classList.add(platformName());
-
-  await loadMonaco();
-  monaco.editor.setTheme('vs-light');
 
   const traceModel = await window.getTraceModel();
   ReactDOM.render(<Workbench traceModel={traceModel} />, document.querySelector('#root'));

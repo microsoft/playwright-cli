@@ -69,8 +69,6 @@
 }
 
 .snapshot-wrapper {
-  min-width: 0;
-  min-height: 0;
   flex: auto;
   margin: 1px;
 }
