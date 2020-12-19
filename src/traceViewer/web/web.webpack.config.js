@@ -12,7 +12,7 @@ module.exports = {
   output: {
     globalObject: 'self',
     filename: '[name].bundle.js',
-    path: path.resolve(__dirname, '../../../out/web')
+    path: path.resolve(__dirname, '../../../lib/traceViewer/web')
   },
   module: {
     rules: [
