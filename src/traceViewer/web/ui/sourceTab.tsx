@@ -16,8 +16,12 @@
 
 import { ActionEntry } from '../../traceModel';
 import * as React from 'react';
-import { useAsyncMemo, useMeasure } from './helpers';
-import type { editor as MonacoEditor } from 'monaco-editor';
+import { useAsyncMemo } from './helpers';
+import './sourceTab.css';
+import 'highlight.js/styles/tomorrow.css';
+import * as highlightjs from 'highlight.js/lib/core';
+
+highlightjs.registerLanguage('javascript', require('highlight.js/lib/languages/javascript'));
 
 export const SourceTab: React.FunctionComponent<{
   actionEntry: ActionEntry | undefined,
@@ -38,65 +42,36 @@ export const SourceTab: React.FunctionComponent<{
     return { fileName, lineNumber };
   }, [actionEntry]);
 
-  const content = useAsyncMemo<string>(async () => {
-    if (location.fileName)
-      return window.readFile(location.fileName);
-    return location.value || '';
-  }, [location.fileName, location.value], '');
-
-  const [editor, setEditor] = React.useState<{
-    editor: MonacoEditor.IStandaloneCodeEditor,
-    element: HTMLElement,
-    decorations: string[]
-  } | undefined>();
-  const [measure, ref] = useMeasure<HTMLDivElement>();
-
-  React.useLayoutEffect(() => {
-    if (!ref.current)
-      return;
-    if (editor && editor.element === ref.current)
-      return;
-
-    const standalone = monaco.editor.create(ref.current, {
-      value: '',
-      language: 'javascript',
-      readOnly: true
-    });
-    standalone.layout();
-    setEditor({ editor: standalone, element: ref.current, decorations: [] });
-  }, [ref, editor]);
-
-  React.useLayoutEffect(() => {
-    if (editor) {
-      editor.editor.setValue(content);
-      editor.decorations = decorateLine(editor.editor, location.lineNumber, editor.decorations);
+  const content = useAsyncMemo<string[]>(async () => {
+    const value = location.fileName ? await window.readFile(location.fileName) : location.value;
+    const result = [];
+    let continuation: any;
+    for (const line of (value || '').split('\n')) {
+      const highlighted = highlightjs.highlight('javascript', line, true, continuation);
+      continuation = highlighted.top;
+      result.push(highlighted.value);
     }
-  }, [content, editor, location.lineNumber]);
-  React.useLayoutEffect(() => {
-    if (editor)
-      editor.decorations = decorateLine(editor.editor, location.lineNumber, editor.decorations);
-  }, [location.lineNumber, editor]);
-
-  React.useLayoutEffect(() => {
-    if (editor)
-      editor.editor.layout();
-  }, [editor, measure.width, measure.height]);
-
-  return <div ref={ref} style={{ flex: 'auto', minWidth: '0', minHeight: '0' }}></div>;
-};
-
-function decorateLine(editor: MonacoEditor.IStandaloneCodeEditor, lineNumber: number | undefined, decorations: string[]): string[] {
-  if (lineNumber !== undefined) {
-    const result = editor.deltaDecorations(decorations, [{
-      range: new monaco.Range(lineNumber, 1, lineNumber, 1),
-      options: {
-        isWholeLine: true,
-        className: 'monaco-execution-line'
-      }
-    }]);
-    editor.revealLineInCenterIfOutsideViewport(lineNumber, 1);
     return result;
-  } else {
-    return editor.deltaDecorations(decorations, []);
+  }, [location.fileName, location.value], []);
+
+  const targetLineRef = React.createRef<HTMLDivElement>();
+  React.useLayoutEffect(() => {
+    if (targetLineRef.current)
+      targetLineRef.current.scrollIntoView({ block: 'center', inline: 'nearest' });
+  }, [content, location.lineNumber, targetLineRef]);
+
+  return <div className='source-tab'>{
+    content.map((markup, index) => {
+      const isTargetLine = (index + 1) === location.lineNumber;
+      return <div
+        key={index}
+        className={isTargetLine ? 'source-line-highlight' : ''}
+        ref={isTargetLine ? targetLineRef : null}
+      >
+        <div className='source-line-number'>{index + 1}</div>
+        <div className='source-code' dangerouslySetInnerHTML={{ __html: markup }}></div>
+      </div>;
+    })
   }
-}
+  </div>;
+};

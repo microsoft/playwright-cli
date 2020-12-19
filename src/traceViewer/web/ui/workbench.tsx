@@ -51,14 +51,14 @@ export const Workbench: React.FunctionComponent<{
         }}
       />
     </div>
-    <div style={{ background: 'white', paddingLeft: '20px' }}>
+    <div style={{ background: 'white', paddingLeft: '20px', flex: 'none' }}>
       <Timeline
         context={context}
         boundaries={{ minimum: context.startTime, maximum: context.endTime }}
       />
     </div>
     <div className='hbox'>
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', flex: 'none' }}>
         <ActionList actions={actions} selectedAction={action} onSelected={action => setAction(action)} />
       </div>
       <PropertiesTabbedPane actionEntry={action} snapshotSize={snapshotSize} />

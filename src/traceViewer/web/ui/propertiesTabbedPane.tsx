@@ -28,7 +28,7 @@ export const PropertiesTabbedPane: React.FunctionComponent<{
 }> = ({ actionEntry, snapshotSize }) => {
   const [selected, setSelected] = React.useState<'snapshot' | 'source' | 'network'>('snapshot');
   return <div className='properties-tabbed-pane'>
-    <div className='vbox' style={{ minWidth: '0', minHeight: '0' }}>
+    <div className='vbox'>
       <div className='hbox' style={{ flex: 'none' }}>
         <div className='properties-tab-strip'>
           <div className={'properties-tab-element ' + (selected === 'snapshot' ? 'selected' : '')}
