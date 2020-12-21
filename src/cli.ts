@@ -127,7 +127,7 @@ program
 program
     .command('install')
     .description('Ensure browsers necessary for this version of Playwright are installed')
-    .action(function (url, filename, command) {
+    .action(function(url, filename, command) {
       let browsersJsonDir = path.dirname(process.execPath);
       if (!fs.existsSync(path.join(browsersJsonDir, 'browsers.json'))) {
         browsersJsonDir = path.dirname(require.resolve('playwright'));
