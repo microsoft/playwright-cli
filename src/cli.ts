@@ -135,7 +135,10 @@ program
           throw new Error('Failed to find browsers.json in ' + browsersJsonDir);
 
       }
-      require('playwright/lib/install/installer').installBrowsersWithProgressBar(browsersJsonDir);
+      require('playwright/lib/install/installer').installBrowsersWithProgressBar(browsersJsonDir).catch((e: any) => {
+        console.log(`Failed to install browsers\n${e}`);
+        process.exit(1);
+      });
     });
 
 if (process.env.PWTRACE) {
