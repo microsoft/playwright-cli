@@ -137,7 +137,7 @@ program
       }
       require('playwright/lib/install/installer').installBrowsersWithProgressBar(browsersJsonDir).catch((e: any) => {
         console.log(`Failed to install browsers\n${e}`);
-        require('process').exit(1);
+        process.exit(1);
       });
     });
 
