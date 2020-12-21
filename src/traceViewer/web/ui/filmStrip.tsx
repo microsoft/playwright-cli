@@ -14,49 +14,15 @@
   limitations under the License.
 */
 
-import { ContextEntry } from '../../traceModel';
+import { ContextEntry, VideoEntry, VideoMetaInfo } from '../../traceModel';
 import './filmStrip.css';
-import { PageVideoTraceEvent } from '../../traceTypes';
 import { Boundaries } from '../geometry';
 import * as React from 'react';
 import { useAsyncMemo, useMeasure } from './helpers';
 
-type MetaInfo = {
-  frames: number;
-  width: number;
-  height: number;
-  fps: number;
-  startTime: number;
-  endTime: number;
-};
-
-async function fetchMetaInfo(context: ContextEntry, video: PageVideoTraceEvent): Promise<MetaInfo | undefined> {
-  const response = await fetch(`context-artifact/${context.created.contextId}/${video.fileName}-metainfo.txt`);
-  const lines = (await response.text()).split('\n');
-  let framesLine = lines.find(l => l.startsWith('frame='));
-  if (!framesLine)
-    return;
-  framesLine = framesLine.substring(framesLine.lastIndexOf('frame='));
-  const framesMatch = framesLine.match(/frame=\s+(\d+)/);
-  const outputLineIndex = lines.findIndex(l => l.trim().startsWith('Output #0'));
-  const streamLine = lines.slice(outputLineIndex).find(l => l.trim().startsWith('Stream #0:0'))!;
-  const fpsMatch = streamLine.match(/, (\d+) fps,/);
-  const resolutionMatch = streamLine.match(/, (\d+)x(\d+)\D/);
-  const durationMatch = lines.find(l => l.trim().startsWith('Duration'))!.match(/Duration: (\d+):(\d\d):(\d\d.\d\d)/);
-  const duration = (((parseInt(durationMatch![1], 10) * 60) + parseInt(durationMatch![2], 10)) * 60 + parseFloat(durationMatch![3])) * 1000;
-  return {
-    frames: parseInt(framesMatch![1], 10),
-    width: parseInt(resolutionMatch![1], 10),
-    height: parseInt(resolutionMatch![2], 10),
-    fps: parseInt(fpsMatch![1], 10),
-    startTime: (video as any).timestamp,
-    endTime: (video as any).timestamp + duration
-  };
-}
-
-function imageURL(context: ContextEntry, fileName: string, index: number) {
+function imageURL(videoId: string, index: number) {
   const imageURLpadding = '0'.repeat(3 - String(index + 1).length);
-  return `context-artifact/${context.created.contextId}/${fileName}-${imageURLpadding}${index + 1}.png`;
+  return `video-tile/${videoId}/${imageURLpadding}${index + 1}.png`;
 }
 
 export const FilmStrip: React.FunctionComponent<{
@@ -66,20 +32,24 @@ export const FilmStrip: React.FunctionComponent<{
 }> = ({ context, boundaries, previewX }) => {
   const [measure, ref] = useMeasure<HTMLDivElement>();
 
-  const metaInfos = useAsyncMemo<Map<PageVideoTraceEvent, MetaInfo>>(async () => {
-    const infos = new Map();
+  const videos = React.useMemo(() => {
+    const videos: VideoEntry[] = [];
     for (const page of context.pages) {
-      if (!page.video)
-        continue;
-      const metaInfo = await fetchMetaInfo(context, page.video);
-      if (metaInfo)
-        infos.set(page.video, metaInfo);
+      if (page.video)
+        videos.push(page.video);
     }
+    return videos;
+  }, [context]);
+
+  const metaInfos = useAsyncMemo<Map<VideoEntry, VideoMetaInfo | undefined>>(async () => {
+    const infos = new Map<VideoEntry, VideoMetaInfo | undefined>();
+    for (const video of videos)
+      infos.set(video, await window.getVideoMetaInfo(video.videoId));
     return infos;
-  }, [context], new Map(), new Map());
+  }, [videos], new Map(), new Map());
 
   // TODO: pick file from the Y position.
-  const previewVideo = metaInfos.keys().next().value;
+  const previewVideo = videos[0];
   const previewMetaInfo = metaInfos.get(previewVideo);
   let previewIndex = 0;
   if ((previewX !== undefined) && previewMetaInfo) {
@@ -94,20 +64,18 @@ export const FilmStrip: React.FunctionComponent<{
     const idealHeight = previewMetaInfo.height / 2;
     const ratio = Math.min(1, (measure.width - 20) / idealWidth);
     const image = new Image((idealWidth * ratio) | 0, (idealHeight * ratio) | 0);
-    image.src = imageURL(context, previewVideo.fileName, previewIndex);
+    image.src = imageURL(previewVideo.videoId, previewIndex);
     await new Promise(f => image.onload = f);
     return image;
-  }, [previewMetaInfo, previewIndex, measure.width, context, previewVideo], undefined);
+  }, [previewMetaInfo, previewIndex, measure.width, previewVideo], undefined);
 
-  // TODO: show lanes while meta info is still loading.
   return <div className='film-strip' ref={ref}>{
-    Array.from(metaInfos.entries()).map(([video, metaInfo]) => <FilmStripLane
-      context={context}
+    videos.map(video => <FilmStripLane
       boundaries={boundaries}
       video={video}
-      metaInfo={metaInfo}
+      metaInfo={metaInfos.get(video)}
       width={measure.width}
-      key={context.created.contextId + ':' + video.fileName}
+      key={video.videoId}
     />)
   }
   {(previewX !== undefined) && previewMetaInfo && previewImage &&
@@ -124,14 +92,18 @@ export const FilmStrip: React.FunctionComponent<{
 };
 
 const FilmStripLane: React.FunctionComponent<{
-  context: ContextEntry,
   boundaries: Boundaries,
-  video: PageVideoTraceEvent,
-  metaInfo: MetaInfo,
+  video: VideoEntry,
+  metaInfo: VideoMetaInfo | undefined,
   width: number,
-}> = ({ context, boundaries, video, metaInfo, width }) => {
-  const frameWidth = 80;
+}> = ({ boundaries, video, metaInfo, width }) => {
+  const frameHeight = 45;
   const frameMargin = 2.5;
+
+  if (!metaInfo)
+    return <div className='film-strip-lane' style={{ height: (frameHeight + 2 * frameMargin) + 'px' }}></div>;
+
+  const frameWidth = frameHeight / metaInfo.height * metaInfo.width | 0;
   const boundariesSize = boundaries.maximum - boundaries.minimum;
   const gapLeft = (metaInfo.startTime - boundaries.minimum) / boundariesSize * width;
   const gapRight = (boundaries.maximum - metaInfo.endTime) / boundariesSize * width;
@@ -139,7 +111,6 @@ const FilmStripLane: React.FunctionComponent<{
 
   const frameCount = effectiveWidth / (frameWidth + 2 * frameMargin) | 0;
   const frameStep = metaInfo.frames / frameCount;
-  const frameHeight = frameWidth / metaInfo.width * metaInfo.height | 0;
   const frameGap = frameCount <= 1 ? 0 : (effectiveWidth - (frameWidth + 2 * frameMargin) * frameCount) / (frameCount - 1);
 
   const frames: JSX.Element[] = [];
@@ -151,7 +122,7 @@ const FilmStripLane: React.FunctionComponent<{
     frames.push(<div className='film-strip-frame' key={i} style={{
       width: frameWidth + 'px',
       height: frameHeight + 'px',
-      backgroundImage: `url(${imageURL(context, video.fileName, index)})`,
+      backgroundImage: `url(${imageURL(video.videoId, index)})`,
       backgroundSize: `${frameWidth}px ${frameHeight}px`,
       margin: frameMargin + 'px',
       marginRight: (frameMargin + frameGap) + 'px',

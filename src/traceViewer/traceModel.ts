@@ -31,10 +31,15 @@ export type ContextEntry = {
   resourcesByUrl: Map<string, trace.NetworkResourceTraceEvent[]>;
 }
 
+export type VideoEntry = {
+  video: trace.PageVideoTraceEvent;
+  videoId: string;
+};
+
 export type PageEntry = {
   created: trace.PageCreatedTraceEvent;
   destroyed: trace.PageDestroyedTraceEvent;
-  video?: trace.PageVideoTraceEvent;
+  video?: VideoEntry;
   actions: ActionEntry[];
   resources: trace.NetworkResourceTraceEvent[];
 }
@@ -43,12 +48,20 @@ export type ActionEntry = {
   actionId: string;
   action: trace.ActionTraceEvent;
   resources: trace.NetworkResourceTraceEvent[];
-}
+};
 
-export function readTraceFile(events: trace.TraceEvent[], traceModel: TraceModel, filePath: string): trace.PageVideoTraceEvent[] {
+export type VideoMetaInfo = {
+  frames: number;
+  width: number;
+  height: number;
+  fps: number;
+  startTime: number;
+  endTime: number;
+};
+
+export function readTraceFile(events: trace.TraceEvent[], traceModel: TraceModel, filePath: string) {
   const contextEntries = new Map<string, ContextEntry>();
   const pageEntries = new Map<string, PageEntry>();
-  const videoEvents: trace.PageVideoTraceEvent[] = [];
 
   for (const event of events) {
     switch (event.type) {
@@ -85,8 +98,8 @@ export function readTraceFile(events: trace.TraceEvent[], traceModel: TraceModel
         break;
       }
       case 'page-video': {
-        pageEntries.get(event.pageId)!.video = event;
-        videoEvents.push(event);
+        const pageEntry = pageEntries.get(event.pageId)!;
+        pageEntry.video = { video: event, videoId: event.contextId + '/' + event.pageId };
         break;
       }
       case 'action': {
@@ -123,7 +136,6 @@ export function readTraceFile(events: trace.TraceEvent[], traceModel: TraceModel
     contextEntry.endTime = Math.max(contextEntry.endTime, (event as any).timestamp);
   }
   traceModel.contexts.push(...contextEntries.values());
-  return videoEvents;
 }
 
 export function actionById(traceModel: TraceModel, actionId: string): { context: ContextEntry, page: PageEntry, action: ActionEntry } {
@@ -132,4 +144,11 @@ export function actionById(traceModel: TraceModel, actionId: string): { context:
   const page = context.pages.find(entry => entry.created.pageId === pageId)!;
   const action = page.actions[+actionIndex];
   return { context, page, action };
+}
+
+export function videoById(traceModel: TraceModel, videoId: string): { context: ContextEntry, page: PageEntry } {
+  const [contextId, pageId] = videoId.split('/');
+  const context = traceModel.contexts.find(entry => entry.created.contextId === contextId)!;
+  const page = context.pages.find(entry => entry.created.pageId === pageId)!;
+  return { context, page };
 }

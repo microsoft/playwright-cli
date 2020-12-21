@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { TraceModel } from '../traceModel';
+import { TraceModel, VideoMetaInfo } from '../traceModel';
 import './common.css';
 import './third_party/vscode/codicon.css';
 import { Workbench } from './ui/workbench';
@@ -25,6 +25,7 @@ import { ActionTraceEvent } from '../traceTypes';
 declare global {
   interface Window {
     getTraceModel(): Promise<TraceModel>;
+    getVideoMetaInfo(videoId: string): Promise<VideoMetaInfo | undefined>;
     readFile(filePath: string): Promise<string>;
     renderSnapshot(action: ActionTraceEvent): void;
   }
