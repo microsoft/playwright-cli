@@ -27,7 +27,7 @@ const fsWriteFileAsync = util.promisify(fs.writeFile.bind(fs));
 
 export class ScreenshotGenerator {
   private _traceStorageDir: string;
-  private _browser: playwright.Browser | undefined;
+  private _browserPromise: Promise<playwright.Browser> | undefined;
   private _traceModel: TraceModel;
   private _rendering = new Map<ActionEntry, Promise<Buffer | undefined>>();
 
@@ -57,11 +57,16 @@ export class ScreenshotGenerator {
     return body;
   }
 
+  private _browser() {
+    if (!this._browserPromise)
+      this._browserPromise = playwright.chromium.launch();
+    return this._browserPromise;
+  }
+
   private async _render(contextEntry: ContextEntry, actionEntry: ActionEntry, imageFileName: string): Promise<Buffer | undefined> {
     const { action } = actionEntry;
-    if (!this._browser)
-      this._browser = await playwright['chromium'].launch();
-    const page = await this._browser.newPage({
+    const browser = await this._browser();
+    const page = await browser.newPage({
       viewport: contextEntry.created.viewportSize,
       deviceScaleFactor: contextEntry.created.deviceScaleFactor
     });

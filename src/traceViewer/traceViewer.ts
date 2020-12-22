@@ -40,15 +40,13 @@ class TraceViewer {
       contexts: [],
     };
     this._screenshotGenerator = new ScreenshotGenerator(traceStorageDir, this._traceModel);
-    this._videoTileGenerator = new VideoTileGenerator();
+    this._videoTileGenerator = new VideoTileGenerator(this._traceModel);
   }
 
   async load(filePath: string) {
     const traceContent = await fsReadFileAsync(filePath, 'utf8');
     const events = traceContent.split('\n').map(line => line.trim()).filter(line => !!line).map(line => JSON.parse(line)) as TraceEvent[];
-    const videoEvents = readTraceFile(events, this._traceModel, filePath);
-    // TODO: generate video tiles lazily.
-    await this._videoTileGenerator.render(videoEvents, path.dirname(filePath));
+    readTraceFile(events, this._traceModel, filePath);
   }
 
   async show() {
@@ -91,6 +89,9 @@ class TraceViewer {
       }
     });
     await uiPage.exposeBinding('getTraceModel', () => this._traceModel);
+    await uiPage.exposeBinding('getVideoMetaInfo', async (_, videoId: string) => {
+      return this._videoTileGenerator.render(videoId);
+    });
     await uiPage.route('**/*', (route, request) => {
       if (request.frame().parentFrame()) {
         this._snapshotRouter.route(route);
@@ -110,12 +111,9 @@ class TraceViewer {
           return;
         }
         let filePath: string;
-        if (request.url().includes('context-artifact')) {
-          const fullPath = url.pathname.substring('/context-artifact/'.length);
-          const [contextId] = fullPath.split('/');
-          const fileName = fullPath.substring(contextId.length + 1);
-          const contextEntry = this._traceModel.contexts.find(entry => entry.created.contextId === contextId)!;
-          filePath = path.join(path.dirname(contextEntry.filePath), fileName);
+        if (request.url().includes('video-tile')) {
+          const fullPath = url.pathname.substring('/video-tile/'.length);
+          filePath = this._videoTileGenerator.tilePath(fullPath);
         } else {
           filePath = path.join(__dirname, 'web', url.pathname.substring(1));
         }
