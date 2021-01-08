@@ -28,25 +28,3 @@ jobs:
         node-version: 12.x
     - name: install
       run: npm ci
-    - name: build
-      run: npm run build
-    - name: lint
-      run: npm run lint
-    - name: test (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: xvfb-run npm run test -- --forbid-only --timeout=30000 --retries=3 --global-timeout=1200000 --retries=3
-    - name: test
-      if: matrix.os != 'ubuntu-latest'
-      run: npm run test -- --forbid-only --timeout=30000 --retries=3 --global-timeout=1200000 --retries=3
-    - name: bake-driver-linux
-      if: matrix.os == 'ubuntu-latest'
-      run: npm run bake-linux
-    - name: bake-driver-mac
-      if: matrix.os == 'macos-latest'
-      run: npm run bake-mac
-    - name: bake-driver-win32
-      if: matrix.os == 'windows-latest'
-      run: npm run bake-win32
-    - name: bake-driver-win32_x64
-      if: matrix.os == 'windows-latest'
-      run: npm run bake-win32_x64

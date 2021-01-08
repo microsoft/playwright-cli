@@ -4,24 +4,7 @@
   "description": "Playwright CLI",
   "repository": "github:Microsoft/playwright-cli",
   "homepage": "https://playwright.dev",
-  "scripts": {
-    "test": "folio test/",
-    "lint": "[ \"$CI\" = true ] && eslint --quiet -f codeframe --ext ts,tsx . || eslint --ext ts,tsx .",
-    "build": "node utils/runWebpack.js && tsc -p .",
-    "watch": "node utils/runWebpack.js --mode='development' --watch --silent |  tsc -w -p .",
-    "bake-mac": "pkg --public --targets node12-macos-x64 --output=out/binary/mac/playwright-cli .",
-    "bake-win32": "pkg --public --targets node12-win-x86 --output=out/binary/win32/playwright-cli.exe .",
-    "bake-win32_x64": "pkg --public --targets node12-win-x64 --output=out/binary/win32_x64/playwright-cli.exe .",
-    "bake-linux": "pkg --public --targets node12-linux-x64 --output=out/binary/linux/playwright-cli .",
-    "bake-64": "npm run bake-mac && npm run bake-win32_x64 && npm run bake-linux",
-    "bake-32": "npm run bake-win32",
-    "copy-64": "./utils/copy.sh",
-    "copy-32": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/copy.ps1",
-    "zip-64": "./utils/zip.sh",
-    "zip-32": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/zip.ps1",
-    "upload-64": "./utils/upload.sh",
-    "upload-32": "@powershell -NoProfile -ExecutionPolicy Unrestricted -Command  ./utils/upload.ps1"
-  },
+  "scripts": {},
   "bin": {
     "playwright-cli": "./index.js"
   },
@@ -29,31 +12,6 @@
     "name": "Microsoft Corporation"
   },
   "license": "Apache-2.0",
-  "dependencies": {
-    "commander": "^6.1.0",
-    "highlight.js": "^10.1.2",
-    "playwright": "=1.8.0-next.1608746109749",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1"
-  },
-  "devDependencies": {
-    "@types/react": "^17.0.0",
-    "@types/react-dom": "^17.0.0",
-    "@types/resize-observer-browser": "^0.1.4",
-    "@typescript-eslint/eslint-plugin": "^4.9.1",
-    "@typescript-eslint/parser": "^4.9.1",
-    "css-loader": "^4.3.0",
-    "eslint": "^7.15.0",
-    "eslint-plugin-notice": "^0.9.10",
-    "eslint-plugin-react-hooks": "^4.2.0",
-    "file-loader": "^6.1.0",
-    "folio": "^0.3.16",
-    "html-webpack-plugin": "^4.4.1",
-    "pkg": "^4.4.9",
-    "style-loader": "^1.2.1",
-    "ts-loader": "^8.0.3",
-    "typescript": "^4.0.2",
-    "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
