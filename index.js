@@ -16,6 +16,5 @@
  * limitations under the License.
  */
 
-const args = process.argv.slice(2);
 console.error(`playwright-cli has moved to playwright. Use npx playwright instead.`);
 process.exit(1);
