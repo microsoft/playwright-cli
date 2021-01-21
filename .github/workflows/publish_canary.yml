@@ -23,6 +23,8 @@ jobs:
         git config user.email "devops@playwright.dev"
         git config user.name "playwright-devops"
         npm version "$(node utils/canary_version.js)"
-    - run: npm publish --tag next
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # - run: npm publish --tag next
+    #   env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - run:
+        node -p "require('./package.json').version"
