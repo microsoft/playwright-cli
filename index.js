@@ -16,4 +16,5 @@
  * limitations under the License.
  */
 
-require('./lib/cli.js');
+console.error(`playwright-cli has moved to playwright. Use npx playwright instead.`);
+process.exit(1);

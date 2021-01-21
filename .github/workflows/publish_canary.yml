@@ -19,7 +19,6 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - uses: microsoft/playwright-github-action@v1
     - run: npm ci
-    - run: npm run build
     - run: |
         git config user.email "devops@playwright.dev"
         git config user.name "playwright-devops"
@@ -27,53 +26,3 @@ jobs:
     - run: npm publish --tag next
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  publish-canary-cdn-64-archives:
-    name: "publish 64bit to CDN"
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
-        registry-url: 'https://registry.npmjs.org'
-    - uses: microsoft/playwright-github-action@v1
-    - run: npm ci
-    - run: npm run build
-    - run: |
-        git config user.email "devops@playwright.dev"
-        git config user.name "playwright-devops"
-        npm version "$(node utils/canary_version.js)"
-    - run: npm run bake-64
-    - run: npm run copy-64
-    - run: npm run zip-64
-    - run: npm run upload-64
-      env:
-        AZ_UPLOAD_FOLDER: cli/next
-        AZ_ACCOUNT_KEY: ${{ secrets.AZ_ACCOUNT_KEY }}
-        AZ_ACCOUNT_NAME: ${{ secrets.AZ_ACCOUNT_NAME }}
-
-  publish-canary-cdn-32-archives:
-    name: "publish 32bit to CDN"
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
-        registry-url: 'https://registry.npmjs.org'
-    - uses: microsoft/playwright-github-action@v1
-    - run: npm ci
-    - run: npm run build
-    - run: |
-        git config user.email "devops@playwright.dev"
-        git config user.name "playwright-devops"
-        npm version "$(node utils/canary_version.js)"
-    - run: npm run bake-32
-    - run: npm run copy-32
-    - run: npm run zip-32
-    - run: npm run upload-32
-      env:
-        AZ_UPLOAD_FOLDER: cli/next
-        AZ_ACCOUNT_KEY: ${{ secrets.AZ_ACCOUNT_KEY }}
-        AZ_ACCOUNT_NAME: ${{ secrets.AZ_ACCOUNT_NAME }}

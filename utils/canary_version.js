@@ -28,14 +28,9 @@
 const childProcess = require('child_process');
 const json = require('../package.json');
 const hash = childProcess.execSync('git rev-parse --short HEAD').toString().trim();
-if (json.dependencies.playwright.includes('next')) {
-  const timestamp = json.dependencies.playwright.replace(/.*next\./, '');
-  if (json.version.includes('-')) {
-    console.log(json.version + '.' + timestamp + '-' + hash);
-  } else {
-    // Ensure dash in the third component, to avoid being semver-like.
-    console.log(json.version + '-' + timestamp + '-' + hash);
-  }
+if (json.dependencies['playwright-core'].includes('next')) {
+  const timestamp = json.dependencies['playwright-core'].replace(/.*next\./, '');
+  console.log(json.version + '-' + timestamp + '-' + hash);
 } else {
   console.log(json.version + '-' + hash);
 }
