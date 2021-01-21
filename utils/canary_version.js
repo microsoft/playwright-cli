@@ -14,23 +14,9 @@
  * limitations under the License.
  */
 
-// This script generates the canary version to publish to npm, based on the verison of playwright.
-// It should not be used to publish a release version.
-//
-// 1. Takes timestamp from the playwright@next version, so that language packages
-//   have easier time syncing between the two.
-//
-// 2. Appends git hash:
-//   - Avoids accidentally generating a release version.
-//   - Ensures that we can publish packages that have the same version of
-//     both playwright and playwright-cli, but different content.
-
-const childProcess = require('child_process');
-const json = require('../package.json');
-const hash = childProcess.execSync('git rev-parse --short HEAD').toString().trim();
-if (json.dependencies['playwright-core'].includes('next')) {
-  const timestamp = json.dependencies['playwright-core'].replace(/.*next\./, '');
-  console.log(json.version + '-' + timestamp + '-' + hash);
-} else {
-  console.log(json.version + '-' + hash);
-}
+const { execSync } = require('child_process');
+const timestamp = execSync('git show -s --format=%ct HEAD', {
+  stdio: ['ignore', 'pipe', 'ignore']
+}).toString('utf8').trim() + '000';
+const packageJSON = require('../package.json');
+console.log(packageJSON.version + '-' + timestamp);
