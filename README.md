@@ -1,8 +1,8 @@
 # 🎭 Playwright CLI
 
-## Use `npx playwright`
+## Please use `npx playwright`
 
-**Playwright [Command Line Interface](https://playwright.dev/docs/next/cli) has moved directly to Playwright.**
+Playwright [Command Line Interface](https://playwright.dev/docs/cli) has moved directly to Playwright.
 
 ```sh
 $ npx playwright --help
@@ -10,4 +10,4 @@ $ npx playwright --help
 
 ### Issues/features?
 
-Please file any issues and feature requests in the [playwright repository](https://github.com/microsoft/playwright/issues) and mention "cli" in the title.
+Please submit any issues or feature requests to the [playwright repository](https://github.com/microsoft/playwright/issues) and mention "cli" in the title.
