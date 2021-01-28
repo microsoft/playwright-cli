@@ -1,7 +1,13 @@
-# 🎭 Playwright CLI  [![npm version](https://img.shields.io/npm/v/playwright-cli.svg?style=flat)](https://www.npmjs.com/package/playwright-cli) [![Join Slack](https://img.shields.io/badge/join-slack-infomational)](https://join.slack.com/t/playwright/shared_invite/enQtOTEyMTUxMzgxMjIwLThjMDUxZmIyNTRiMTJjNjIyMzdmZDA3MTQxZWUwZTFjZjQwNGYxZGM5MzRmNzZlMWI5ZWUyOTkzMjE5Njg1NDg)
+# 🎭 Playwright CLI
 
-Playwright [Command Line Interface](https://playwright.dev/docs/next/cli) has moved directly to Playwright. Use `npx playwright` instead.
+## Use `npx playwright`
+
+**Playwright [Command Line Interface](https://playwright.dev/docs/next/cli) has moved directly to Playwright.**
 
 ```sh
 $ npx playwright --help
 ```
+
+### Issues/features?
+
+Please file any issues and feature requests in the [playwright repository](https://github.com/microsoft/playwright/issues) and mention "cli" in the title.
