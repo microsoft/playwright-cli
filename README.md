@@ -7,7 +7,11 @@ Headless browser automation CLI for AI agents.
 Install globally via npm:
 
 ```bash
-npm install -g playwright-cli
+npm install -g @playwright/mcp
+```
+
+```bash
+playwright-cli --help
 ```
 
 Then point your agent to the CLI and let it explore:
@@ -20,13 +24,22 @@ Test the "add todo" flow on https://demo.playwright.dev/todomvc/#/ using playwri
 
 AI coding agents like GitHub Copilot and Claude Code can learn new capabilities through [skills](https://agentskills.io). To add playwright-cli as a skill:
 
+**Plugin (recommended):**
+
+```bash
+/plugin marketplace add vercel-labs/agent-browser
+/plugin install agent-browser
+```
+
+**Manual install:*
+
 ```bash
 mkdir -p .claude/skills/playwright-cli
 curl -o .claude/skills/playwright-cli/SKILL.md \
   https://raw.githubusercontent.com/microsoft/playwright-cli/main/SKILL.md
 ```
 
-Or use the Skills CLI:
+**Using Skills CLI:**
 
 ```bash
 npx skills add microsoft/playwright-cli
@@ -37,7 +50,7 @@ npx skills add microsoft/playwright-cli
 Besides a global install, you can also add playwright-cli as a local dependency to your project:
 
 ```bash
-npm install -D playwright-cli
+npm install -D @playwright/mcp
 ```
 
 And then run via npx:

@@ -1,0 +1,8 @@
+{
+    "name": "playwright-cli",
+    "description": "Control browsers from the command line. Navigate pages, click elements, fill forms, take screenshots, and inspect network traffic using Playwright.",
+    "version": "0.0.1",
+    "author": {
+        "name": "Microsoft Corporation"
+    }
+}
