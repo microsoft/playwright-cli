@@ -1,35 +1,36 @@
 # playwright-cli
 
-Headless browser automation CLI for AI agents.
+Playwright CLI for **SKILLS**
 
 ## Getting Started
 
-Install globally via npm:
+## Installation
 
 ```bash
 npm install -g @playwright/mcp@latest
 playwright-cli --help
 ```
 
-Then point your agent to the CLI and let it explore:
+### Skills-less operation
+
+Point your agent at the CLI and let it cook. It'll read the skill off `playwright-cli --help` on its own:
 
 ```
 Test the "add todo" flow on https://demo.playwright.dev/todomvc using playwright-cli.
 Check playwright-cli --help for available commands.
 ```
 
-### Installing the Skill
+### Installing skills
 
-AI coding agents like GitHub Copilot and Claude Code can learn new capabilities through [skills](https://agentskills.io). To add playwright-cli as a skill:
+Claude Code, GitHub copilot and others will let you install the Playwright skills into the agentic loop.
 
-**Plugin (recommended):**
-
+#### plugin (recommended)
 ```bash
 /plugin marketplace add microsoft/playwright-cli
 /plugin install playwright-cli
 ```
 
-**Manual install:**
+#### manual
 
 ```bash
 mkdir -p .claude/skills/playwright-cli
@@ -37,75 +38,118 @@ curl -o .claude/skills/playwright-cli/SKILL.md \
   https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/SKILL.md
 ```
 
-**Using Skills CLI:**
+## Headed operation
+
+Playwright CLI is headless by default. If you'd like to see the browser, pass `--headed` to `open`:
 
 ```bash
-npx skills add microsoft/playwright-cli
+playwright-cli open https://playwright.dev --headed
 ```
+
+## Sessions
+
+Playwright CLI will use a dedicated persistent profile by default. It means that
+your cookies and other storage state will be preserved between the calls. You can use different
+instances of the browser for different projects with sessions.
+
+Following will result in two browsers with separate profiles being available. Pass `--session` to
+the invocation to talk to a specific browser.
+
+```bash
+playwright-cli open https://playwright.dev
+playwright-cli --session=example open https://example.com
+playwright-cli session-list
+```
+
+You can run your coding agent with the `PLAYWRIGHT_CLI_SESSION` environment variable:
+
+```bash
+PLAYWRIGHT_CLI_SESSION=todo-app claude .
+```
+
+Or instruct it to prepend `--session` to the calls.
+
+Manage your sessions as follows:
+
+```bash
+playwright-cli session-list             # list all sessions
+playwright-cli session-stop [name]      # stop session
+playwright-cli session-stop-all         # stop all sessions
+playwright-cli session-delete [name]    # delete session data along with the profiles
+```
+
 
 ## Commands
 
+### Core
+
 ```bash
-$ playwright-cli --help
-
-Usage: playwright-cli <command> [args] [options]
-
-Core:
-  open <url>                  open url
-  close                       close the page
-  type <text>                 type text into editable element
-  click <ref> [button]        perform click on a web page
-  dblclick <ref> [button]     perform double click on a web page
-  fill <ref> <text>           fill text into editable element
-  drag <startRef> <endRef>    perform drag and drop between two elements
-  hover <ref>                 hover over element on page
-  select <ref> <val>          select an option in a dropdown
-  upload <file>               upload one or multiple files
-  check <ref>                 check a checkbox or radio button
-  uncheck <ref>               uncheck a checkbox or radio button
-  snapshot                    capture page snapshot to obtain element ref
-  eval <func> [ref]           evaluate javascript expression on page or element
-  dialog-accept [prompt]      accept a dialog
-  dialog-dismiss              dismiss a dialog
-  resize <w> <h>              resize the browser window
-
-Navigation:
-  go-back                     go back to the previous page
-  go-forward                  go forward to the next page
-  reload                      reload the current page
-
-Keyboard:
-  press <key>                 press a key on the keyboard, `a`, `arrowleft`
-  keydown <key>               press a key down on the keyboard
-  keyup <key>                 press a key up on the keyboard
-
-Mouse:
-  mousemove <x> <y>           move mouse to a given position
-  mousedown [button]          press mouse down
-  mouseup [button]            press mouse up
-  mousewheel <dx> <dy>        scroll mouse wheel
-
-Save as:
-  screenshot [ref]            screenshot of the current page or element
-  pdf                         save page as pdf
-
-Tabs:
-  tab-list                    list all tabs
-  tab-new [url]               create a new tab
-  tab-close [index]           close a browser tab
-  tab-select <index>          select a browser tab
-
-DevTools:
-  console [min-level]         list console messages
-  network                     list all network requests since loading the page
-  run-code <code>             run playwright code snippet
-  tracing-start               start trace recording
-  tracing-stop                stop trace recording
-
-Sessions:
-  session-list                list all sessions
-  session-stop [name]         stop session
-  session-stop-all            stop all sessions
-  session-delete [name]       delete session data
+playwright-cli open <url>               # open url
+playwright-cli close                    # close the page
+playwright-cli type <text>              # type text into editable element
+playwright-cli click <ref> [button]     # perform click on a web page
+playwright-cli dblclick <ref> [button]  # perform double click on a web page
+playwright-cli fill <ref> <text>        # fill text into editable element
+playwright-cli drag <startRef> <endRef> # perform drag and drop between two elements
+playwright-cli hover <ref>              # hover over element on page
+playwright-cli select <ref> <val>       # select an option in a dropdown
+playwright-cli upload <file>            # upload one or multiple files
+playwright-cli check <ref>              # check a checkbox or radio button
+playwright-cli uncheck <ref>            # uncheck a checkbox or radio button
+playwright-cli snapshot                 # capture page snapshot to obtain element ref
+playwright-cli eval <func> [ref]        # evaluate javascript expression on page or element
+playwright-cli dialog-accept [prompt]   # accept a dialog
+playwright-cli dialog-dismiss           # dismiss a dialog
+playwright-cli resize <w> <h>           # resize the browser window
 ```
 
+### Navigation
+
+```bash
+playwright-cli go-back                  # go back to the previous page
+playwright-cli go-forward               # go forward to the next page
+playwright-cli reload                   # reload the current page
+```
+
+### Keyboard
+
+```bash
+playwright-cli press <key>              # press a key on the keyboard, `a`, `arrowleft`
+playwright-cli keydown <key>            # press a key down on the keyboard
+playwright-cli keyup <key>              # press a key up on the keyboard
+```
+
+### Mouse
+
+```bash
+playwright-cli mousemove <x> <y>        # move mouse to a given position
+playwright-cli mousedown [button]       # press mouse down
+playwright-cli mouseup [button]         # press mouse up
+playwright-cli mousewheel <dx> <dy>     # scroll mouse wheel
+```
+
+### Save as
+
+```bash
+playwright-cli screenshot [ref]         # screenshot of the current page or element
+playwright-cli pdf                      # save page as pdf
+```
+
+### Tabs
+
+```bash
+playwright-cli tab-list                 # list all tabs
+playwright-cli tab-new [url]            # create a new tab
+playwright-cli tab-close [index]        # close a browser tab
+playwright-cli tab-select <index>       # select a browser tab
+```
+
+### DevTools
+
+```bash
+playwright-cli console [min-level]      # list console messages
+playwright-cli network                  # list all network requests since loading the page
+playwright-cli run-code <code>          # run playwright code snippet
+playwright-cli tracing-start            # start trace recording
+playwright-cli tracing-stop             # stop trace recording
+```
