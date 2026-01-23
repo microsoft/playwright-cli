@@ -27,8 +27,8 @@ AI coding agents like GitHub Copilot and Claude Code can learn new capabilities 
 **Plugin (recommended):**
 
 ```bash
-/plugin marketplace add vercel-labs/agent-browser
-/plugin install agent-browser
+/plugin marketplace add microsoft/playwright-cli
+/plugin install playwright-cli
 ```
 
 **Manual install:**
