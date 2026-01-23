@@ -14,7 +14,7 @@ playwright-cli --help
 Then point your agent to the CLI and let it explore:
 
 ```
-Test the "add todo" flow on https://demo.playwright.dev/todomvc/#/ using playwright-cli.
+Test the "add todo" flow on https://demo.playwright.dev/todomvc using playwright-cli.
 Check playwright-cli --help for available commands.
 ```
 
