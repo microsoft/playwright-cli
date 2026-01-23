@@ -7,7 +7,7 @@ Headless browser automation CLI for AI agents.
 Install globally via npm:
 
 ```bash
-npm install -g @playwright/mcp
+npm install -g @playwright/mcp@latest
 playwright-cli --help
 ```
 
