@@ -31,7 +31,7 @@ AI coding agents like GitHub Copilot and Claude Code can learn new capabilities 
 /plugin install agent-browser
 ```
 
-**Manual install:*
+**Manual install:**
 
 ```bash
 mkdir -p .claude/skills/playwright-cli
