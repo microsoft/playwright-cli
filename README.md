@@ -75,15 +75,15 @@ Navigation:
   reload                      reload the current page
 
 Keyboard:
-  key-press <key>             press a key on the keyboard, `a`, `arrowleft`
-  key-down <key>              press a key down on the keyboard
-  key-up <key>                press a key up on the keyboard
+  press <key>                 press a key on the keyboard, `a`, `arrowleft`
+  keydown <key>               press a key down on the keyboard
+  keyup <key>                 press a key up on the keyboard
 
 Mouse:
-  mouse-move <x> <y>          move mouse to a given position
-  mouse-down [button]         press mouse down
-  mouse-up [button]           press mouse up
-  mouse-wheel <dx> <dy>       scroll mouse wheel
+  mousemove <x> <y>           move mouse to a given position
+  mousedown [button]          press mouse down
+  mouseup [button]            press mouse up
+  mousewheel <dx> <dy>        scroll mouse wheel
 
 Save as:
   screenshot [ref]            screenshot of the current page or element
