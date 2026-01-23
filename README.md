@@ -8,16 +8,14 @@ Install globally via npm:
 
 ```bash
 npm install -g @playwright/mcp
-```
-
-```bash
 playwright-cli --help
 ```
 
 Then point your agent to the CLI and let it explore:
 
 ```
-Test the "add todo" flow on https://demo.playwright.dev/todomvc/#/ using playwright-cli. Check playwright-cli --help for available commands.
+Test the "add todo" flow on https://demo.playwright.dev/todomvc/#/ using playwright-cli.
+Check playwright-cli --help for available commands.
 ```
 
 ### Installing the Skill
