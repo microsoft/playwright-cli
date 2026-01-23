@@ -36,7 +36,7 @@ AI coding agents like GitHub Copilot and Claude Code can learn new capabilities 
 ```bash
 mkdir -p .claude/skills/playwright-cli
 curl -o .claude/skills/playwright-cli/SKILL.md \
-  https://raw.githubusercontent.com/microsoft/playwright-cli/main/SKILL.md
+  https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/SKILL.md
 ```
 
 **Using Skills CLI:**
