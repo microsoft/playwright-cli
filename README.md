@@ -7,46 +7,41 @@ Headless browser automation CLI for AI agents.
 Install globally via npm:
 
 ```bash
-npm install -g playwright-cli
+npm install -g @playwright/mcp
+playwright-cli --help
 ```
 
 Then point your agent to the CLI and let it explore:
 
 ```
-Test the "add todo" flow on https://demo.playwright.dev/todomvc/#/ using playwright-cli. Check playwright-cli --help for available commands.
+Test the "add todo" flow on https://demo.playwright.dev/todomvc using playwright-cli.
+Check playwright-cli --help for available commands.
 ```
 
 ### Installing the Skill
 
 AI coding agents like GitHub Copilot and Claude Code can learn new capabilities through [skills](https://agentskills.io). To add playwright-cli as a skill:
 
+**Plugin (recommended):**
+
+```bash
+/plugin marketplace add microsoft/playwright-cli
+/plugin install playwright-cli
+```
+
+**Manual install:**
+
 ```bash
 mkdir -p .claude/skills/playwright-cli
 curl -o .claude/skills/playwright-cli/SKILL.md \
-  https://raw.githubusercontent.com/microsoft/playwright-cli/main/SKILL.md
+  https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/SKILL.md
 ```
 
-Or use the Skills CLI:
+**Using Skills CLI:**
 
 ```bash
 npx skills add microsoft/playwright-cli
 ```
-
-## Local Installs
-
-Besides a global install, you can also add playwright-cli as a local dependency to your project:
-
-```bash
-npm install -D playwright-cli
-```
-
-And then run via npx:
-
-```bash
-npx playwright-cli
-```
-
-By default, each installations gets its own browser, so that agents on different worktrees don't conflict.
 
 ## Commands
 

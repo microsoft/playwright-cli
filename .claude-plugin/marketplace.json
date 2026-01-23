@@ -1,0 +1,13 @@
+{
+  "name": "playwright-cli",
+  "owner": {
+    "name": "Microsoft Corporation"
+  },
+  "plugins": [
+    {
+      "name": "playwright-cli",
+      "source": "./",
+      "description": "Control browsers from the command line. Navigate pages, click elements, fill forms, take screenshots, and inspect network traffic using Playwright."
+    }
+  ]
+}
