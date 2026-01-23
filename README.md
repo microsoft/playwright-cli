@@ -11,6 +11,21 @@ npm install -g @playwright/mcp@latest
 playwright-cli --help
 ```
 
+## Demo
+
+Your agent will be running those, but it does not mean you can't play with it:
+
+```
+playwright-cli open https://demo.playwright.dev/todomvc/ --headed
+playwright-cli type "Buy groceries"
+playwright-cli press Enter
+playwright-cli type "Water flowers"
+playwright-cli press Enter
+playwright-cli check e21
+playwright-cli check e35
+playwright-cli press screenshot
+```
+
 ### Skills-less operation
 
 Point your agent at the CLI and let it cook. It'll read the skill off `playwright-cli --help` on its own:
