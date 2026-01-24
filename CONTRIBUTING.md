@@ -1,26 +1,28 @@
 # Contributing
 
-Playwright CLI sources are located in the [Playwright monorepo](https://github.com/microsoft/playwright/tree/main/packages/playwright/src/mcp/terminal).
+[Playwright CLI sources](https://github.com/microsoft/playwright/tree/main/packages/playwright/src/mcp/terminal) are located in the [Playwright monorepo](https://github.com/microsoft/playwright).
 
-### Check out sources
+### Clone
 
 ```bash
 git clone https://github.com/microsoft/playwright
+cd playwright
+npm i
 ```
 
-### Start watch
+### Build
 
 ```bash
 npm run watch
 ```
 
-### Run cli
+### Run
 
 ```bash
-npm run playwright-cli
+npm run playwright-cli open example.com -- --headed
 ```
 
-### Run tests
+### Test
 
 ```bash
 npm run test-playwright-cli
