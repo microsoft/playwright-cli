@@ -23,7 +23,7 @@ playwright-cli type "Water flowers"
 playwright-cli press Enter
 playwright-cli check e21
 playwright-cli check e35
-playwright-cli press screenshot
+playwright-cli screenshot
 ```
 
 ### Skills-less operation
