@@ -27,6 +27,11 @@ npm install -g @playwright/cli@latest
 playwright-cli --help
 ```
 
+> Note that you might need to force it to reclaim `playwright-cli` binary from our older MCP package.
+> ```bash
+> npm install -g @playwright/cli@latest --force
+> ```
+
 ## Demo
 
 ```
