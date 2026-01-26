@@ -114,6 +114,7 @@ playwright-cli session-stop-all         # stop all sessions
 playwright-cli session-delete [name]    # delete session data along with the profiles
 ```
 
+<!-- BEGIN GENERATED CLI HELP -->
 
 ## Commands
 
@@ -189,6 +190,7 @@ playwright-cli run-code <code>          # run playwright code snippet
 playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
 ```
+<!-- END GENERATED CLI HELP -->
 
 ## Configuration file
 
