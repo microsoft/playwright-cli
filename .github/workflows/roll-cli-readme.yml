@@ -19,21 +19,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: microsoft/playwright
-          path: ../playwright
+          path: playwright
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Install dependencies
         run: npm ci
-        working-directory: ../playwright
+        working-directory: playwright
       - name: Build
         run: npm run build
-        working-directory: ../playwright
+        working-directory: playwright
       - name: Update files
         run: |
-          cp ../playwright/packages/playwright/src/mcp/terminal/SKILL.md SKILL.md
+          cp playwright/packages/playwright/src/mcp/terminal/SKILL.md SKILL.md
 
-          node ../playwright/utils/generate_cli_help.js --readme > /tmp/cli_help.md
+          node playwright/utils/generate_cli_help.js --readme > /tmp/cli_help.md
           sed -i -e '/<!-- BEGIN GENERATED CLI HELP -->/,/<!-- END GENERATED CLI HELP -->/{//!d}' \
                  -e '/<!-- BEGIN GENERATED CLI HELP -->/r /tmp/cli_help.md' README.md
 
