@@ -1,0 +1,100 @@
+name: "Roll CLI README"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * *"
+
+jobs:
+  roll:
+    name: Roll CLI README
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    if: github.repository == 'microsoft/playwright-cli'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout playwright
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/playwright
+          path: ../playwright
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ../playwright
+      - name: Build
+        run: npm run build
+        working-directory: ../playwright
+      - name: Update files
+        run: |
+          cp ../playwright/packages/playwright/src/mcp/terminal/SKILL.md SKILL.md
+
+          node ../playwright/utils/generate_cli_help.js --readme > /tmp/cli_help.md
+          sed -i -e '/<!-- BEGIN GENERATED CLI HELP -->/,/<!-- END GENERATED CLI HELP -->/{//!d}' \
+                 -e '/<!-- BEGIN GENERATED CLI HELP -->/r /tmp/cli_help.md' README.md
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare branch
+        id: prepare-branch
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          BRANCH_NAME="roll-cli-readme"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+          git config --global user.name microsoft-playwright-automation[bot]
+          git config --global user.email 203992400+microsoft-playwright-automation[bot]@users.noreply.github.com
+
+          git checkout -b "$BRANCH_NAME"
+          git add -A
+          git commit -m "chore: roll CLI documentation"
+          git push origin "$BRANCH_NAME" --force
+
+      - uses: actions/create-github-app-token@v2
+        if: steps.check-changes.outputs.has_changes == 'true'
+        id: app-token
+        with:
+          app-id: ${{ vars.PLAYWRIGHT_APP_ID }}
+          private-key: ${{ secrets.PLAYWRIGHT_PRIVATE_KEY }}
+
+      - name: Check for existing Pull Request
+        id: check-pr
+        if: steps.check-changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: 'microsoft',
+              repo: 'playwright-cli',
+              head: 'microsoft:${{ steps.prepare-branch.outputs.BRANCH_NAME }}',
+              state: 'open'
+            });
+            return pullRequests.length > 0 ? 'true' : 'false';
+          result-encoding: string
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.has_changes == 'true' && steps.check-pr.outputs.result == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            await github.rest.pulls.create({
+              owner: 'microsoft',
+              repo: 'playwright-cli',
+              head: 'microsoft:${{ steps.prepare-branch.outputs.BRANCH_NAME }}',
+              base: 'main',
+              title: 'chore: roll CLI documentation',
+              body: 'Automated roll from microsoft/playwright',
+            });
