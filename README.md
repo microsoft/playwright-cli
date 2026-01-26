@@ -190,6 +190,15 @@ playwright-cli run-code <code>          # run playwright code snippet
 playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
 ```
+
+### Sessions
+
+```bash
+playwright-cli session-list             # list all sessions
+playwright-cli session-stop [name]      # stop session
+playwright-cli session-stop-all         # stop all sessions
+playwright-cli session-delete [name]    # delete session data
+```
 <!-- END GENERATED CLI HELP -->
 
 ## Configuration file
