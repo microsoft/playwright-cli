@@ -31,7 +31,7 @@ jobs:
         working-directory: playwright
       - name: Update files
         run: |
-          cp playwright/packages/playwright/src/mcp/terminal/SKILL.md SKILL.md
+          cp playwright/packages/playwright/src/mcp/terminal/SKILL.md skills/playwright-cli/SKILL.md
 
           node playwright/utils/generate_cli_help.js --readme > /tmp/cli_help.md
           sed -i -e '/<!-- BEGIN GENERATED CLI HELP -->/,/<!-- END GENERATED CLI HELP -->/{//!d}' \
@@ -57,7 +57,7 @@ jobs:
           git config --global user.email 203992400+microsoft-playwright-automation[bot]@users.noreply.github.com
 
           git checkout -b "$BRANCH_NAME"
-          git add SKILL.md README.md
+          git add skills/playwright-cli/SKILL.md README.md
           git commit -m "chore: roll CLI documentation"
           git push origin "$BRANCH_NAME" --force
 
