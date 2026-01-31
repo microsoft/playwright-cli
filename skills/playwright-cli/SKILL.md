@@ -169,3 +169,13 @@ playwright-cli click e4
 playwright-cli fill e7 "test"
 playwright-cli tracing-stop
 ```
+
+## Specific tasks
+
+* **Request mocking**: Reference `references/request-mocking.md`
+* **Running Playwright code**: Reference `references/running-code.md`
+* **Session management**: Reference `references/session-management.md`
+* **Storage state (cookies, localStorage)**: Reference `references/storage-state.md`
+* **Test generation**: Reference `references/test-generation.md`
+* **Tracing**: Reference `references/tracing.md`
+* **Video recording**: Reference `references/video-recording.md`
