@@ -103,6 +103,8 @@ playwright-cli network
 playwright-cli run-code "async page => await page.context().grantPermissions(['geolocation'])"
 playwright-cli tracing-start
 playwright-cli tracing-stop
+playwright-cli video-start
+playwright-cli video-stop video.webm
 ```
 
 ### Configuration
@@ -120,6 +122,7 @@ playwright-cli open --config=my-config.json
 ```bash
 playwright-cli --session=mysession open example.com
 playwright-cli --session=mysession click e6
+playwright-cli config --headed --isolated --browser=firefox
 playwright-cli session-list
 playwright-cli session-stop mysession
 playwright-cli session-stop-all
