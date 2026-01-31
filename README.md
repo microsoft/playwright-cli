@@ -126,7 +126,7 @@ playwright-cli session-delete [name]    # delete session data along with the pro
 ### Core
 
 ```bash
-playwright-cli open <url>               # open url
+playwright-cli open [url]               # open url
 playwright-cli close                    # close the page
 playwright-cli type <text>              # type text into editable element
 playwright-cli click <ref> [button]     # perform click on a web page
@@ -190,10 +190,34 @@ playwright-cli tab-select <index>       # select a browser tab
 
 ```bash
 playwright-cli console [min-level]      # list console messages
-playwright-cli network                  # list all network requests since loading the page
 playwright-cli run-code <code>          # run playwright code snippet
+playwright-cli network                  # list all network requests since loading the page
 playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
+playwright-cli video-start              # start video recording
+playwright-cli video-stop               # stop video recording
+```
+
+### Install
+
+```bash
+playwright-cli install                  # install browser
+```
+
+### Configuration
+
+```bash
+playwright-cli config                   # restart session with new config, defaults to `playwright-cli.json`
+```
+
+### Sessions
+
+```bash
+playwright-cli session-list             # list all sessions
+playwright-cli session-stop [name]      # stop session
+playwright-cli session-restart [name]   # restart session
+playwright-cli session-stop-all         # stop all sessions
+playwright-cli session-delete [name]    # delete session data
 ```
 <!-- END GENERATED CLI HELP -->
 

@@ -109,7 +109,7 @@ playwright-cli video-stop video.webm
 
 ### Configuration
 ```bash
-# Configure the session
+# configure the session
 playwright-cli config my-config.json
 # Configure named session
 playwright-cli --session=mysession config my-config.json
@@ -122,7 +122,6 @@ playwright-cli open --config=my-config.json
 ```bash
 playwright-cli --session=mysession open example.com
 playwright-cli --session=mysession click e6
-playwright-cli config --headed --isolated --browser=firefox
 playwright-cli session-list
 playwright-cli session-stop mysession
 playwright-cli session-stop-all
