@@ -27,10 +27,22 @@ npm install -g @playwright/cli@latest
 playwright-cli --help
 ```
 
-> Note that you might need to force it to reclaim `playwright-cli` binary from our older MCP package.
-> ```bash
-> npm install -g @playwright/cli@latest --force
-> ```
+### Installing skills
+
+Claude Code, GitHub Copilot and others will use the locally installed skills.
+
+```bash
+playwright-cli install-skills
+```
+
+### Skills-less operation
+
+Point your agent at the CLI and let it cook. It'll read the skill off `playwright-cli --help` on its own:
+
+```
+Test the "add todo" flow on https://demo.playwright.dev/todomvc using playwright-cli.
+Check playwright-cli --help for available commands.
+```
 
 ## Demo
 
@@ -115,6 +127,7 @@ Manage your sessions as follows:
 ```bash
 playwright-cli session-list             # list all sessions
 playwright-cli session-stop [name]      # stop session
+playwright-cli session-restart [name]   # restart session
 playwright-cli session-stop-all         # stop all sessions
 playwright-cli session-delete [name]    # delete session data along with the profiles
 ```
@@ -126,7 +139,7 @@ playwright-cli session-delete [name]    # delete session data along with the pro
 ### Core
 
 ```bash
-playwright-cli open [url]               # open url
+playwright-cli open <url>               # open url
 playwright-cli close                    # close the page
 playwright-cli type <text>              # type text into editable element
 playwright-cli click <ref> [button]     # perform click on a web page
@@ -186,38 +199,80 @@ playwright-cli tab-close [index]        # close a browser tab
 playwright-cli tab-select <index>       # select a browser tab
 ```
 
+### Storage
+
+```bash
+playwright-cli state-save [filename]    # save storage state
+playwright-cli state-load <filename>    # load storage state
+
+# Cookies
+playwright-cli cookie-list [--domain]   # list cookies
+playwright-cli cookie-get <name>        # get a cookie
+playwright-cli cookie-set <name> <val>  # set a cookie
+playwright-cli cookie-delete <name>     # delete a cookie
+playwright-cli cookie-clear             # clear all cookies
+
+# LocalStorage
+playwright-cli localstorage-list        # list localStorage entries
+playwright-cli localstorage-get <key>   # get localStorage value
+playwright-cli localstorage-set <k> <v> # set localStorage value
+playwright-cli localstorage-delete <k>  # delete localStorage entry
+playwright-cli localstorage-clear       # clear all localStorage
+
+# SessionStorage
+playwright-cli sessionstorage-list      # list sessionStorage entries
+playwright-cli sessionstorage-get <k>   # get sessionStorage value
+playwright-cli sessionstorage-set <k> <v> # set sessionStorage value
+playwright-cli sessionstorage-delete <k>  # delete sessionStorage entry
+playwright-cli sessionstorage-clear     # clear all sessionStorage
+```
+
+### Network
+
+```bash
+playwright-cli route <pattern> [opts]   # mock network requests
+playwright-cli route-list               # list active routes
+playwright-cli unroute [pattern]        # remove route(s)
+```
+
 ### DevTools
 
 ```bash
 playwright-cli console [min-level]      # list console messages
-playwright-cli run-code <code>          # run playwright code snippet
 playwright-cli network                  # list all network requests since loading the page
+playwright-cli run-code <code>          # run playwright code snippet
 playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
 playwright-cli video-start              # start video recording
-playwright-cli video-stop               # stop video recording
+playwright-cli video-stop [filename]    # stop video recording
 ```
 
 ### Install
 
 ```bash
-playwright-cli install                  # install browser
+playwright-cli install-browser          # install browser
+playwright-cli install-skills           # install skills
 ```
 
 ### Configuration
 
 ```bash
-playwright-cli config                   # restart session with new config, defaults to `playwright-cli.json`
+playwright-cli config [options]         # configure session settings
+playwright-cli open --browser=chrome    # use specific browser
+playwright-cli open --extension         # connect via browser extension
+playwright-cli open --config=file.json  # use config file
 ```
 
 ### Sessions
 
 ```bash
+playwright-cli --session=name <cmd>     # run command in named session
 playwright-cli session-list             # list all sessions
 playwright-cli session-stop [name]      # stop session
 playwright-cli session-restart [name]   # restart session
 playwright-cli session-stop-all         # stop all sessions
-playwright-cli session-delete [name]    # delete session data
+playwright-cli session-delete [name]    # delete session data and profiles
+```
 <!-- END GENERATED CLI HELP -->
 
 ## Configuration file
@@ -371,8 +426,7 @@ Playwright CLI will load config from `playwright-cli.json` by default so that yo
 
 </details>
 
-<details>
-<summary>Configuration via environment</summary>
+## Environment
 
 | Environment |
 |-------------|
@@ -418,4 +472,3 @@ Playwright CLI will load config from `playwright-cli.json` by default so that yo
 | `PLAYWRIGHT_MCP_USER_AGENT` specify user agent string |
 | `PLAYWRIGHT_MCP_USER_DATA_DIR` path to the user data directory. If not specified, a temporary directory will be created. |
 | `PLAYWRIGHT_MCP_VIEWPORT_SIZE` specify browser viewport size in pixels, for example "1280x720" |
-</details>

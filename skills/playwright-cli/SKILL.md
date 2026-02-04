@@ -39,6 +39,7 @@ playwright-cli upload ./document.pdf
 playwright-cli check e12
 playwright-cli uncheck e12
 playwright-cli snapshot
+playwright-cli snapshot --filename=after-click.yaml
 playwright-cli eval "document.title"
 playwright-cli eval "el => el.textContent" e5
 playwright-cli dialog-accept
@@ -80,7 +81,8 @@ playwright-cli mousewheel 0 100
 ```bash
 playwright-cli screenshot
 playwright-cli screenshot e5
-playwright-cli pdf
+playwright-cli screenshot --filename=page.png
+playwright-cli pdf --filename=page.pdf
 ```
 
 ### Tabs
@@ -92,6 +94,47 @@ playwright-cli tab-new https://example.com/page
 playwright-cli tab-close
 playwright-cli tab-close 2
 playwright-cli tab-select 0
+```
+
+### Storage
+
+```bash
+playwright-cli state-save
+playwright-cli state-save auth.json
+playwright-cli state-load auth.json
+
+# Cookies
+playwright-cli cookie-list
+playwright-cli cookie-list --domain=example.com
+playwright-cli cookie-get session_id
+playwright-cli cookie-set session_id abc123
+playwright-cli cookie-set session_id abc123 --domain=example.com --httpOnly --secure
+playwright-cli cookie-delete session_id
+playwright-cli cookie-clear
+
+# LocalStorage
+playwright-cli localstorage-list
+playwright-cli localstorage-get theme
+playwright-cli localstorage-set theme dark
+playwright-cli localstorage-delete theme
+playwright-cli localstorage-clear
+
+# SessionStorage
+playwright-cli sessionstorage-list
+playwright-cli sessionstorage-get step
+playwright-cli sessionstorage-set step 3
+playwright-cli sessionstorage-delete step
+playwright-cli sessionstorage-clear
+```
+
+### Network
+
+```bash
+playwright-cli route "**/*.jpg" --status=404
+playwright-cli route "https://api.example.com/**" --body='{"mock": true}'
+playwright-cli route-list
+playwright-cli unroute "**/*.jpg"
+playwright-cli unroute
 ```
 
 ### DevTools
@@ -107,11 +150,26 @@ playwright-cli video-start
 playwright-cli video-stop video.webm
 ```
 
+### Install
+
+```bash
+playwright-cli install-browser
+playwright-cli install-skills
+```
+
 ### Configuration
 ```bash
+# Use specific browser when creating session
+playwright-cli open --browser=chrome
+playwright-cli open --browser=firefox
+playwright-cli open --browser=webkit
+playwright-cli open --browser=msedge
+# Connect to browser via extension
+playwright-cli open --extension
+
 # Configure the session
 playwright-cli config --config my-config.json
-playwright-cli config --headed --isolated --browser=firefox
+playwright-cli config --headed --in-memory --browser=firefox
 # Configure named session
 playwright-cli --session=mysession config my-config.json
 # Start with configured session
@@ -125,6 +183,7 @@ playwright-cli --session=mysession open example.com
 playwright-cli --session=mysession click e6
 playwright-cli session-list
 playwright-cli session-stop mysession
+playwright-cli session-restart mysession
 playwright-cli session-stop-all
 playwright-cli session-delete
 playwright-cli session-delete mysession

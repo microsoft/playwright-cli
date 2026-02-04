@@ -95,11 +95,11 @@ playwright-cli --session=variant-b screenshot
 
 ### Testing without persistent profile
 
-Use `--isolated` flag to keep the browser profile in memory only:
+Use `--in-memory` flag to keep the browser profile in memory only:
 
 ```bash
 # Session data won't persist to disk
-playwright-cli --isolated open https://example.com
+playwright-cli --in-memory open https://example.com
 ```
 
 ## Default Session

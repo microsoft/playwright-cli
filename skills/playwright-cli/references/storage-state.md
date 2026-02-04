@@ -9,17 +9,21 @@ Save and restore complete browser state including cookies and storage.
 ### Save Storage State
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.context().storageState({ path: 'auth-state.json' });
-}"
+# Save to auto-generated filename (storage-state-{timestamp}.json)
+playwright-cli state-save
+
+# Save to specific filename
+playwright-cli state-save my-auth-state.json
 ```
 
 ### Restore Storage State
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.context().setStorageState('auth-state.json');
-}"
+# Load storage state from file
+playwright-cli state-load my-auth-state.json
+
+# Reload page to apply cookies
+playwright-cli open https://example.com
 ```
 
 ### Storage State File Format
@@ -54,182 +58,109 @@ The saved file contains:
 
 ## Cookies
 
-### Get All Cookies
+### List All Cookies
 
 ```bash
-playwright-cli run-code "async page => {
-  const cookies = await page.context().cookies();
-  return cookies;
-}"
+playwright-cli cookie-list
 ```
 
-### Get Cookies for Specific URL
+### Filter Cookies by Domain
 
 ```bash
-playwright-cli run-code "async page => {
-  const cookies = await page.context().cookies('https://example.com');
-  return cookies;
-}"
+playwright-cli cookie-list --domain=example.com
 ```
 
-### Add a Single Cookie
+### Filter Cookies by Path
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.context().addCookies([{
-    name: 'session',
-    value: 'abc123',
-    domain: 'example.com',
-    path: '/'
-  }]);
-}"
+playwright-cli cookie-list --path=/api
 ```
 
-### Add Multiple Cookies
+### Get Specific Cookie
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.context().addCookies([
-    {
-      name: 'session_id',
-      value: 'sess_abc123',
-      domain: 'example.com',
-      path: '/',
-      httpOnly: true,
-      secure: true
-    },
-    {
-      name: 'preferences',
-      value: JSON.stringify({ theme: 'dark', lang: 'en' }),
-      domain: 'example.com',
-      path: '/'
-    },
-    {
-      name: 'tracking_opt_out',
-      value: 'true',
-      domain: '.example.com',
-      path: '/'
-    }
-  ]);
-}"
+playwright-cli cookie-get session_id
 ```
 
-### Add Cookie with Expiration
+### Set a Cookie
 
 ```bash
-playwright-cli run-code "async page => {
-  const oneWeekFromNow = Date.now() / 1000 + 7 * 24 * 60 * 60;
-  await page.context().addCookies([{
-    name: 'remember_me',
-    value: 'token123',
-    domain: 'example.com',
-    path: '/',
-    expires: oneWeekFromNow
-  }]);
-}"
+# Basic cookie
+playwright-cli cookie-set session abc123
+
+# Cookie with options
+playwright-cli cookie-set session abc123 --domain=example.com --path=/ --httpOnly --secure --sameSite=Lax
+
+# Cookie with expiration (Unix timestamp)
+playwright-cli cookie-set remember_me token123 --expires=1735689600
+```
+
+### Delete a Cookie
+
+```bash
+playwright-cli cookie-delete session_id
 ```
 
 ### Clear All Cookies
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.context().clearCookies();
-}"
+playwright-cli cookie-clear
 ```
 
-### Clear Cookies by Name
+### Advanced: Multiple Cookies or Custom Options
+
+For complex scenarios like adding multiple cookies at once, use `run-code`:
 
 ```bash
 playwright-cli run-code "async page => {
-  await page.context().clearCookies({ name: 'session_id' });
-}"
-```
-
-### Clear Cookies by Domain
-
-```bash
-playwright-cli run-code "async page => {
-  await page.context().clearCookies({ domain: 'example.com' });
-}"
-```
-
-### Clear Cookies by Path
-
-```bash
-playwright-cli run-code "async page => {
-  await page.context().clearCookies({ path: '/api' });
-}"
-```
-
-### Find Specific Cookie
-
-```bash
-playwright-cli run-code "async page => {
-  const cookies = await page.context().cookies();
-  const session = cookies.find(c => c.name === 'session_id');
-  return session ? session.value : null;
+  await page.context().addCookies([
+    { name: 'session_id', value: 'sess_abc123', domain: 'example.com', path: '/', httpOnly: true },
+    { name: 'preferences', value: JSON.stringify({ theme: 'dark' }), domain: 'example.com', path: '/' }
+  ]);
 }"
 ```
 
 ## Local Storage
 
-### Get All localStorage
+### List All localStorage Items
 
 ```bash
-playwright-cli run-code "async page => {
-  return await page.evaluate(() => {
-    const items = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      items[key] = localStorage.getItem(key);
-    }
-    return items;
-  });
-}"
+playwright-cli localstorage-list
 ```
 
 ### Get Single Value
 
 ```bash
-playwright-cli run-code "async page => {
-  return await page.evaluate(() => localStorage.getItem('token'));
-}"
-```
-
-### Get and Parse JSON Value
-
-```bash
-playwright-cli run-code "async page => {
-  return await page.evaluate(() => {
-    const data = localStorage.getItem('user_settings');
-    return data ? JSON.parse(data) : null;
-  });
-}"
+playwright-cli localstorage-get token
 ```
 
 ### Set Value
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.evaluate(() => localStorage.setItem('theme', 'dark'));
-}"
+playwright-cli localstorage-set theme dark
 ```
 
 ### Set JSON Value
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.evaluate(() => {
-    localStorage.setItem('user_settings', JSON.stringify({
-      theme: 'dark',
-      language: 'en',
-      notifications: true
-    }));
-  });
-}"
+playwright-cli localstorage-set user_settings '{"theme":"dark","language":"en"}'
 ```
 
-### Set Multiple Values
+### Delete Single Item
+
+```bash
+playwright-cli localstorage-delete token
+```
+
+### Clear All localStorage
+
+```bash
+playwright-cli localstorage-clear
+```
+
+### Advanced: Multiple Operations
+
+For complex scenarios like setting multiple values at once, use `run-code`:
 
 ```bash
 playwright-cli run-code "async page => {
@@ -241,61 +172,36 @@ playwright-cli run-code "async page => {
 }"
 ```
 
-### Remove Single Item
-
-```bash
-playwright-cli run-code "async page => {
-  await page.evaluate(() => localStorage.removeItem('token'));
-}"
-```
-
-### Clear All localStorage
-
-```bash
-playwright-cli run-code "async page => {
-  await page.evaluate(() => localStorage.clear());
-}"
-```
-
 ## Session Storage
 
-### Get All sessionStorage
+### List All sessionStorage Items
 
 ```bash
-playwright-cli run-code "async page => {
-  return await page.evaluate(() => {
-    const items = {};
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      items[key] = sessionStorage.getItem(key);
-    }
-    return items;
-  });
-}"
+playwright-cli sessionstorage-list
 ```
 
 ### Get Single Value
 
 ```bash
-playwright-cli run-code "async page => {
-  return await page.evaluate(() => sessionStorage.getItem('form_data'));
-}"
+playwright-cli sessionstorage-get form_data
 ```
 
 ### Set Value
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.evaluate(() => sessionStorage.setItem('step', '3'));
-}"
+playwright-cli sessionstorage-set step 3
+```
+
+### Delete Single Item
+
+```bash
+playwright-cli sessionstorage-delete step
 ```
 
 ### Clear sessionStorage
 
 ```bash
-playwright-cli run-code "async page => {
-  await page.evaluate(() => sessionStorage.clear());
-}"
+playwright-cli sessionstorage-clear
 ```
 
 ## IndexedDB
@@ -334,16 +240,30 @@ playwright-cli fill e2 "password123"
 playwright-cli click e3
 
 # Save the authenticated state
-playwright-cli run-code "async page => {
-  await page.context().storageState({ path: 'auth.json' });
-}"
+playwright-cli state-save auth.json
 
 # Step 2: Later, restore state and skip login
-playwright-cli run-code "async page => {
-  await page.context().setStorageState('auth.json');
-}"
+playwright-cli state-load auth.json
 playwright-cli open https://app.example.com/dashboard
 # Already logged in!
+```
+
+### Save and Restore Roundtrip
+
+```bash
+# Set up authentication state
+playwright-cli open https://example.com
+playwright-cli eval "() => { document.cookie = 'session=abc123'; localStorage.setItem('user', 'john'); }"
+
+# Save state to file
+playwright-cli state-save my-session.json
+
+# ... later, in a new session ...
+
+# Restore state
+playwright-cli state-load my-session.json
+playwright-cli open https://example.com
+# Cookies and localStorage are restored!
 ```
 
 ## Security Notes
@@ -352,4 +272,4 @@ playwright-cli open https://app.example.com/dashboard
 - Add `*.auth-state.json` to `.gitignore`
 - Delete state files after automation completes
 - Use environment variables for sensitive data
-- Consider using `--isolated` mode for sensitive operations
+- Consider using `--in-memory` mode for sensitive operations
