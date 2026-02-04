@@ -78,9 +78,10 @@ Check playwright-cli --help for available commands.
 Claude Code, GitHub copilot and others will let you install the Playwright skills into the agentic loop.
 
 #### plugin (recommended)
+
 ```bash
 /plugin marketplace add microsoft/playwright-cli
-/plugin install playwright-cli
+/plugin install playwright-cli@playwright-cli
 ```
 
 #### manual
