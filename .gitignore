@@ -1,5 +1,4 @@
 node_modules/
-.claude/
 .vscode/
 /test-results/
 /.playwright-cli/
