@@ -73,24 +73,6 @@ Test the "add todo" flow on https://demo.playwright.dev/todomvc using playwright
 Check playwright-cli --help for available commands.
 ```
 
-### Installing skills
-
-Claude Code, GitHub copilot and others will let you install the Playwright skills into the agentic loop.
-
-#### plugin (recommended)
-```bash
-/plugin marketplace add microsoft/playwright-cli
-/plugin install playwright-cli
-```
-
-#### manual
-
-```bash
-mkdir -p .claude/skills/playwright-cli
-curl -o .claude/skills/playwright-cli/SKILL.md \
-  https://raw.githubusercontent.com/microsoft/playwright-cli/main/skills/playwright-cli/SKILL.md
-```
-
 ## Headed operation
 
 Playwright CLI is headless by default. If you'd like to see the browser, pass `--headed` to `open`:
