@@ -64,15 +64,6 @@ playwright-cli check e35
 playwright-cli screenshot
 ```
 
-### Skills-less operation
-
-Point your agent at the CLI and let it cook. It'll read the skill off `playwright-cli --help` on its own:
-
-```
-Test the "add todo" flow on https://demo.playwright.dev/todomvc using playwright-cli.
-Check playwright-cli --help for available commands.
-```
-
 ## Headed operation
 
 Playwright CLI is headless by default. If you'd like to see the browser, pass `--headed` to `open`:
@@ -119,7 +110,8 @@ playwright-cli kill-all                 # forcefully kill all browser processes
 ### Core
 
 ```bash
-playwright-cli open <url>               # open url
+playwright-cli open [url]               # open browser, optionally navigate to url
+playwright-cli goto <url>               # navigate to a url
 playwright-cli close                    # close the page
 playwright-cli type <text>              # type text into editable element
 playwright-cli click <ref> [button]     # perform click on a web page
@@ -461,3 +453,15 @@ Playwright CLI will load config from `playwright-cli.json` by default so that yo
 | `PLAYWRIGHT_MCP_USER_DATA_DIR` path to the user data directory. If not specified, a temporary directory will be created. |
 | `PLAYWRIGHT_MCP_VIEWPORT_SIZE` specify browser viewport size in pixels, for example "1280x720" |
 </details>
+
+## Specific tasks
+
+The installed skill includes detailed reference guides for common tasks:
+
+* **Request mocking** — intercept and mock network requests
+* **Running Playwright code** — execute arbitrary Playwright scripts
+* **Browser session management** — manage multiple browser sessions
+* **Storage state (cookies, localStorage)** — persist and restore browser state
+* **Test generation** — generate Playwright tests from interactions
+* **Tracing** — record and inspect execution traces
+* **Video recording** — capture browser session videos
