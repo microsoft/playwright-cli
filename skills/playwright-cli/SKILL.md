@@ -153,8 +153,8 @@ playwright-cli video-stop video.webm
 ### Install
 
 ```bash
+playwright-cli install --skills
 playwright-cli install-browser
-playwright-cli install-skills
 ```
 
 ### Configuration
