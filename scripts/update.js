@@ -23,7 +23,7 @@ async function main() {
 
   // 3. Move generated skills into the existing skills folder
   console.log('\n=== Updating skills folder ===\n');
-  const generatedSkillsDir = path.join(rootDir, '.claude', 'skills', 'playwright');
+  const generatedSkillsDir = path.join(rootDir, '.claude', 'skills', 'playwright-cli');
   const targetSkillsDir = path.join(skillsDir, 'playwright-cli');
 
   try {
