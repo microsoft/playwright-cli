@@ -23,7 +23,8 @@ This package provides CLI interface into Playwright. If you are using **coding a
 ## Installation
 
 ```bash
-npm install -g @playwright/cli@latest
+npm install -g @playwright/cli@latest # all platforms
+brew install playwright-cli # macOS
 playwright-cli --help
 ```
 
