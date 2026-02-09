@@ -15,9 +15,22 @@
  * limitations under the License.
  */
 
-const { program } = require('playwright/lib/mcp/terminal/program');
-const packageLocation = require.resolve('./package.json');
-program(packageLocation).catch(e => {
-  console.error(e.message);
-  process.exit(1);
-});
+const { handleInstallSkills } = require('./scripts/install-skills');
+
+// Check if this is an "install --skills" command
+const args = process.argv.slice(2);
+const isInstallSkills = args.includes('install') && args.includes('--skills');
+
+if (isInstallSkills) {
+  handleInstallSkills().catch(e => {
+    console.error(e.message);
+    process.exit(1);
+  });
+} else {
+  const { program } = require('playwright/lib/mcp/terminal/program');
+  const packageLocation = require.resolve('./package.json');
+  program(packageLocation).catch(e => {
+    console.error(e.message);
+    process.exit(1);
+  });
+}

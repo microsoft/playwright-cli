@@ -29,10 +29,27 @@ playwright-cli --help
 
 ### Installing skills
 
-Claude Code, GitHub Copilot and others will use the locally installed skills.
+When you run the install command, you'll be prompted to choose where to install the skills:
 
 ```bash
 playwright-cli install --skills
+```
+
+You can select:
+- **Claude Code** (`~/.claude/skills`) - for Claude Code editor
+- **GitHub Copilot** (`~/.copilot/skills`) - for GitHub Copilot CLI
+- **Both** - install to both locations simultaneously
+
+The installer will guide you through an interactive prompt:
+
+```
+🎯 Select installation targets for Playwright CLI skills:
+
+  1) Claude Code (~/.claude/skills)
+  2) GitHub Copilot (~/.copilot/skills)
+  3) Both
+
+Enter your choice (1, 2, or 3):
 ```
 
 ### Skills-less operation

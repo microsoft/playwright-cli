@@ -17,9 +17,10 @@ async function main() {
   const { version } = require(path.join(rootDir, 'node_modules', '@playwright', 'cli', 'package.json'));
   console.log(`Installed @playwright/cli version: ${version}`);
 
-  // 2. Run playwright-cli install-skills
-  console.log('\n=== Running playwright-cli install --skills ===\n');
-  run('npx playwright-cli install --skills');
+  // 2. Install skills to both Claude Code and GitHub Copilot
+  console.log('\n=== Installing skills to Claude Code and GitHub Copilot ===\n');
+  const { handleInstallSkills } = require(path.join(rootDir, 'scripts', 'install-skills'));
+  await handleInstallSkills({ targets: ['claude', 'copilot'] });
 
   // 3. Move generated skills into the existing skills folder
   console.log('\n=== Updating skills folder ===\n');
