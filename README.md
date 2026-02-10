@@ -31,6 +31,8 @@ playwright-cli --help
 
 Claude Code, GitHub Copilot and others will use the locally installed skills.
 
+Run this command in your project's root directory:
+
 ```bash
 playwright-cli install --skills
 ```
