@@ -28,7 +28,7 @@ async function main() {
     console.log(`Copied skills from ${generatedSkillsDir} to ${targetSkillsDir}`);
 
     // Clean up generated skills directory
-    await fs.rm(path.join(rootDir, '.claude', 'skills'), { recursive: true });
+    await fs.rm(generatedSkillsDir, { recursive: true });
     console.log('Cleaned up generated skills directory');
   } catch {
     console.warn('Warning: Generated skills directory not found at', generatedSkillsDir);
