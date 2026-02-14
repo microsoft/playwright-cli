@@ -103,7 +103,27 @@ playwright-cli close-all                # close all browsers
 playwright-cli kill-all                 # forcefully kill all browser processes
 ```
 
-<!-- BEGIN GENERATED CLI HELP -->
+## Monitoring
+
+Use `playwright-cli show` to open a visual dashboard that lets you see and control all running
+browser sessions. This is useful when your coding agents are running browser automation in the
+background and you want to observe their progress or step in to help.
+
+```bash
+playwright-cli show
+```
+
+<img width="1107" height="729" alt="Image" src="https://github.com/user-attachments/assets/99df739d-106a-4520-b004-bb315db41da7" />
+
+The dashboard opens a window with two views:
+
+- **Session grid** — shows all active sessions grouped by workspace, each with a live screencast
+  preview, session name, current URL, and page title. Click any session to zoom in.
+- **Session detail** — shows a live view of the selected session with a tab bar, navigation
+  controls (back, forward, reload, address bar), and full remote control. Click into the viewport
+  to take over mouse and keyboard input; press Escape to release.
+
+From the grid you can also close running sessions or delete data for inactive ones.
 
 ## Commands
 
@@ -270,7 +290,6 @@ In some cases you might want to install playwright-cli locally. If running the g
 npx playwright-cli open https://example.com
 npx playwright-cli click e1
 ```
-<!-- END GENERATED CLI HELP -->
 
 ## Configuration file
 
