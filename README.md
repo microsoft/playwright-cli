@@ -31,8 +31,6 @@ playwright-cli --help
 
 Claude Code, GitHub Copilot and others will use the locally installed skills.
 
-Run this command in your project's root directory:
-
 ```bash
 playwright-cli install --skills
 ```
@@ -76,16 +74,16 @@ playwright-cli open https://playwright.dev --headed
 
 ## Sessions
 
-Playwright CLI will use a dedicated persistent profile by default. It means that
-your cookies and other storage state will be preserved between the calls. You can use different
-instances of the browser for different projects with sessions.
+Playwright CLI keeps the browser profile in memory by default. Your cookies and storage state
+are preserved between CLI calls within the session, but lost when the browser closes. Use
+`--persistent` to save the profile to disk for persistence across browser restarts.
 
-Following will result in two browsers with separate profiles being available. Pass `-s=` to
+You can use different instances of the browser for different projects with sessions. Pass `-s=` to
 the invocation to talk to a specific browser.
 
 ```bash
 playwright-cli open https://playwright.dev
-playwright-cli -s=example open https://example.com
+playwright-cli -s=example open https://example.com --persistent
 playwright-cli list
 ```
 

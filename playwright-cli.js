@@ -15,9 +15,4 @@
  * limitations under the License.
  */
 
-const { program } = require('playwright/lib/mcp/terminal/program');
-const packageLocation = require.resolve('./package.json');
-program(packageLocation).catch(e => {
-  console.error(e.message);
-  process.exit(1);
-});
+require('playwright/lib/cli/client/program');
