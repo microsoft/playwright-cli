@@ -11,15 +11,9 @@ function run(command, options = {}) {
 }
 
 async function main() {
-  // 1. Install latest @playwright/cli as dev dependency
-  console.log('\n=== Installing @playwright/cli ===\n');
-  run('npm install --save-dev @playwright/cli@latest');
-  const { version } = require(path.join(rootDir, 'node_modules', '@playwright', 'cli', 'package.json'));
-  console.log(`Installed @playwright/cli version: ${version}`);
-
   // 2. Run playwright-cli install-skills
   console.log('\n=== Running playwright-cli install --skills ===\n');
-  run('npx playwright-cli install --skills');
+  run('node playwright-cli.js install --skills');
 
   // 3. Move generated skills into the existing skills folder
   console.log('\n=== Updating skills folder ===\n');
@@ -39,19 +33,6 @@ async function main() {
   } catch {
     console.warn('Warning: Generated skills directory not found at', generatedSkillsDir);
   }
-
-  // 4. Copy README from @playwright/cli to root folder
-  console.log('\n=== Copying README ===\n');
-  const packageReadme = path.join(rootDir, 'node_modules', '@playwright', 'cli', 'README.md');
-  const rootReadme = path.join(rootDir, 'README.md');
-
-  try {
-    await fs.copyFile(packageReadme, rootReadme);
-    console.log(`Copied README from ${packageReadme} to ${rootReadme}`);
-  } catch {
-    console.warn('Warning: README not found at', packageReadme);
-  }
-
   console.log('\n=== Update complete! ===\n');
 }
 
