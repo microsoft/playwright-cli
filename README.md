@@ -222,17 +222,9 @@ playwright-cli video-start              # start video recording
 playwright-cli video-stop [filename]    # stop video recording
 ```
 
-### Install
+### Open parameters
 
 ```bash
-playwright-cli install --skills         # install skills
-playwright-cli install-browser          # install browser
-```
-
-### Configuration
-
-```bash
-playwright-cli config [options]         # configure session settings
 playwright-cli open --browser=chrome    # use specific browser
 playwright-cli open --extension         # connect via browser extension
 playwright-cli open --persistent        # use persistent profile
@@ -241,6 +233,23 @@ playwright-cli open --config=file.json  # use config file
 playwright-cli close                    # close the browser
 playwright-cli delete-data              # delete user data for default session
 ```
+
+### Snapshots
+
+After each command, playwright-cli provides a snapshot of the current browser state.
+
+```bash
+> playwright-cli goto https://example.com
+### Page
+- Page URL: https://example.com/
+- Page Title: Example Domain
+### Snapshot
+[Snapshot](.playwright-cli/page-2026-02-14T19-22-42-679Z.yml)
+```
+
+You can also take a snapshot on demand using `playwright-cli snapshot` command.
+
+If `--filename` is not provided, a new snapshot file is created with a timestamp. Default to automatic file naming, use `--filename=` when artifact is a part of the workflow result.
 
 ### Sessions
 
@@ -251,6 +260,15 @@ playwright-cli -s=name delete-data      # delete user data for named browser
 playwright-cli list                     # list all sessions
 playwright-cli close-all                # close all browsers
 playwright-cli kill-all                 # forcefully kill all browser processes
+```
+
+### Local installation
+
+In some cases you might want to install playwright-cli locally. If running the globally available `playwright-cli` binary fails, use `npx playwright-cli` to run the commands. For example:
+
+```bash
+npx playwright-cli open https://example.com
+npx playwright-cli click e1
 ```
 <!-- END GENERATED CLI HELP -->
 
