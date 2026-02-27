@@ -15,4 +15,9 @@
  * limitations under the License.
  */
 
+const { normalizeProfileArgumentForCli } = require('./profile-arg-normalization');
+
+const args = normalizeProfileArgumentForCli(process.argv.slice(2));
+process.argv = [process.argv[0], process.argv[1], ...args];
+
 require('playwright/lib/cli/client/program');
