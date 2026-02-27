@@ -59,7 +59,7 @@ async function runCli(...args: string[]): Promise<CliResult> {
   });
 }
 
-test('open data URL', async ({}) => {
+test('open data URL', async () => {
   expect(await runCli('open', 'data:text/html,hello', '--persistent')).toEqual(expect.objectContaining({
     output: expect.stringContaining('hello'),
     exitCode: 0,
