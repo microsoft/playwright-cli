@@ -170,6 +170,9 @@ playwright-cli open --persistent
 # Use persistent profile with custom directory
 playwright-cli open --profile=/path/to/profile
 
+# Open with visible browser window (headless by default)
+playwright-cli open --headed
+
 # Start with config file
 playwright-cli open --config=my-config.json
 
