@@ -48,7 +48,7 @@ Check playwright-cli --help for available commands.
 
 ```
 > Use playwright skills to test https://demo.playwright.dev/todomvc/.
-  Take screenshots for all successful and failing scenarios. 
+  Take screenshots for all successful and failing scenarios.
 ```
 
 Your agent will be running commands, but it does not mean you can't play with it manually:
@@ -455,33 +455,26 @@ Playwright CLI will load config from `.playwright/cli.config.json` by default so
 | `PLAYWRIGHT_MCP_BROWSER` browser or chrome channel to use, possible values: chrome, firefox, webkit, msedge. |
 | `PLAYWRIGHT_MCP_CAPS` comma-separated list of additional capabilities to enable, possible values: vision, pdf. |
 | `PLAYWRIGHT_MCP_CDP_ENDPOINT` CDP endpoint to connect to. |
-| `PLAYWRIGHT_MCP_CDP_HEADER` CDP headers to send with the connect request, multiple can be specified. |
-| `PLAYWRIGHT_MCP_CODEGEN` specify the language to use for code generation, possible values: "typescript", "none". Default is "typescript". |
+| `PLAYWRIGHT_MCP_CDP_HEADERS` CDP headers to send with the connect request, multiple can be specified. |
+| `PLAYWRIGHT_MCP_CDP_TIMEOUT` timeout for the CDP connection. |
 | `PLAYWRIGHT_MCP_CONFIG` path to the configuration file. |
 | `PLAYWRIGHT_MCP_CONSOLE_LEVEL` level of console messages to return: "error", "warning", "info", "debug". Each level includes the messages of more severe levels. |
 | `PLAYWRIGHT_MCP_DEVICE` device to emulate, for example: "iPhone 15" |
 | `PLAYWRIGHT_MCP_EXECUTABLE_PATH` path to the browser executable. |
 | `PLAYWRIGHT_MCP_EXTENSION` Connect to a running browser instance (Edge/Chrome only). Requires the "Playwright MCP Bridge" browser extension to be installed. |
 | `PLAYWRIGHT_MCP_GRANT_PERMISSIONS` List of permissions to grant to the browser context, for example "geolocation", "clipboard-read", "clipboard-write". |
-| `PLAYWRIGHT_MCP_HEADLESS` run browser in headless mode, headed by default |
-| `PLAYWRIGHT_MCP_HOST` host to bind server to. Default is localhost. Use 0.0.0.0 to bind to all interfaces. |
+| `PLAYWRIGHT_MCP_HEADLESS` whether to run browser in headless mode, headless by default. |
 | `PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS` ignore https errors |
 | `PLAYWRIGHT_MCP_INIT_PAGE` path to TypeScript file to evaluate on Playwright page object |
 | `PLAYWRIGHT_MCP_INIT_SCRIPT` path to JavaScript file to add as an initialization script. The script will be evaluated in every page before any of the page's scripts. Can be specified multiple times. |
 | `PLAYWRIGHT_MCP_ISOLATED` keep the browser profile in memory, do not save it to disk. |
-| `PLAYWRIGHT_MCP_IMAGE_RESPONSES` whether to send image responses to the client. Can be "allow" or "omit", Defaults to "allow". |
-| `PLAYWRIGHT_MCP_NO_SANDBOX` disable the sandbox for all process types that are normally sandboxed. |
+| `PLAYWRIGHT_MCP_SANDBOX` whether to enable the browser sandbox. |
 | `PLAYWRIGHT_MCP_OUTPUT_DIR` path to the directory for output files. |
-| `PLAYWRIGHT_MCP_OUTPUT_MODE` whether to save snapshots, console messages, network logs to a file or to the standard output. Can be "file" or "stdout". Default is "stdout". |
-| `PLAYWRIGHT_MCP_PORT` port to listen on for SSE transport. |
 | `PLAYWRIGHT_MCP_PROXY_BYPASS` comma-separated domains to bypass proxy, for example ".com,chromium.org,.domain.com" |
 | `PLAYWRIGHT_MCP_PROXY_SERVER` specify proxy server, for example "http://myproxy:3128" or "socks5://myproxy:8080" |
-| `PLAYWRIGHT_MCP_SAVE_SESSION` Whether to save the Playwright MCP session into the output directory. |
 | `PLAYWRIGHT_MCP_SAVE_TRACE` Whether to save the Playwright Trace of the session into the output directory. |
 | `PLAYWRIGHT_MCP_SAVE_VIDEO` Whether to save the video of the session into the output directory. For example "--save-video=800x600" |
-| `PLAYWRIGHT_MCP_SECRETS` path to a file containing secrets in the dotenv format |
-| `PLAYWRIGHT_MCP_SHARED_BROWSER_CONTEXT` reuse the same browser context between all connected HTTP clients. |
-| `PLAYWRIGHT_MCP_SNAPSHOT_MODE` when taking snapshots for responses, specifies the mode to use. Can be "incremental", "full", or "none". Default is incremental. |
+| `PLAYWRIGHT_MCP_SECRETS_FILE` path to a file containing secrets in the dotenv format |
 | `PLAYWRIGHT_MCP_STORAGE_STATE` path to the storage state file for isolated sessions. |
 | `PLAYWRIGHT_MCP_TEST_ID_ATTRIBUTE` specify the attribute to use for test ids, defaults to "data-testid" |
 | `PLAYWRIGHT_MCP_TIMEOUT_ACTION` specify action timeout in milliseconds, defaults to 5000ms |
