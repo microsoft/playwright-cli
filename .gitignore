@@ -2,3 +2,5 @@ node_modules/
 .vscode/
 /test-results/
 /.playwright-cli/
+# Ignore self-skill which is a build artifact
+.claude/skills/playwright-cli/

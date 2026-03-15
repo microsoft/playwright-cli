@@ -15,4 +15,7 @@
  * limitations under the License.
  */
 
-require('playwright/lib/cli/client/program');
+const { program } = require('playwright-core/lib/tools/cli-client/program');
+const packageJson = require('./package.json');
+
+program({ embedderVersion: packageJson.version });

@@ -2,11 +2,14 @@
 
 ## Steps
 
-1. **Update Playwright packages** in `package.json`:
+1. **Obtain latest Playwright version**
+  `npm info playwright@next version`
+
+2. **Update Playwright packages** in `package.json`:
    - Update `playwright` (dependency) and `@playwright/test` (devDependency) to the target version.
    - Run `npm install` to update `package-lock.json`.
 
-2. **Run the update script** to sync skills and README:
+3. **Run the update script** to sync skills and README:
    ```bash
    node scripts/update.js
    ```
