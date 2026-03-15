@@ -1,7 +1,7 @@
 ---
 name: playwright-cli
-description: Automates browser interactions for web testing, form filling, screenshots, and data extraction. Use when the user needs to navigate websites, interact with web pages, fill forms, take screenshots, test web applications, or extract information from web pages.
-allowed-tools: Bash(playwright-cli:*)
+description: Automate browser interactions, test web pages and work with Playwright tests.
+allowed-tools: Bash(playwright-cli:*) Bash(npx:*) Bash(npm:*)
 ---
 
 # Browser Automation with playwright-cli
@@ -196,6 +196,31 @@ You can also take a snapshot on demand using `playwright-cli snapshot` command.
 
 If `--filename` is not provided, a new snapshot file is created with a timestamp. Default to automatic file naming, use `--filename=` when artifact is a part of the workflow result.
 
+## Targeting elements
+
+By default, use refs from the snapshot to interact with page elements.
+
+```bash
+# get snapshot with refs
+playwright-cli snapshot
+
+# interact using a ref
+playwright-cli click e15
+```
+
+You can also use css or role selectors, for example when explicitly asked for it.
+
+```bash
+# css selector
+playwright-cli click "#main > button.submit"
+
+# role selector
+playwright-cli click "role=button[name=Submit]"
+
+# chaining css and role selectors
+playwright-cli click "#footer >> role=button[name=Submit]"
+```
+
 ## Browser Sessions
 
 ```bash
@@ -214,13 +239,18 @@ playwright-cli close-all
 playwright-cli kill-all
 ```
 
-## Local installation
+## Installation
 
-In some cases user might want to install playwright-cli locally. If running globally available `playwright-cli` binary fails, use `npx playwright-cli` to run the commands. For example:
+If global `playwright-cli` command is not available, try a local version via `npx playwright-cli`:
 
 ```bash
-npx playwright-cli open https://example.com
-npx playwright-cli click e1
+npx --no-install playwright-cli --version
+```
+
+When local version is available, use `npx playwright-cli` in all commands. Otherwise, install `playwright-cli` as a global command:
+
+```bash
+npm install -g @playwright/cli@latest
 ```
 
 ## Example: Form submission
@@ -269,6 +299,7 @@ playwright-cli close
 
 ## Specific tasks
 
+* **Running and Debugging Playwright tests** [references/playwright-tests.md](references/playwright-tests.md)
 * **Request mocking** [references/request-mocking.md](references/request-mocking.md)
 * **Running Playwright code** [references/running-code.md](references/running-code.md)
 * **Browser session management** [references/session-management.md](references/session-management.md)
