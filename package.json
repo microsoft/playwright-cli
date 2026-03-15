@@ -27,5 +27,8 @@
   },
   "bin": {
     "playwright-cli": "playwright-cli.js"
+  },
+  "pi": {
+    "skills": ["./skills/"]
   }
 }
