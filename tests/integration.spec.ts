@@ -59,6 +59,22 @@ async function runCli(...args: string[]): Promise<CliResult> {
   });
 }
 
+test('--help prints usage information', async ({}) => {
+  const result = await runCli('--help');
+  expect(result.exitCode).toBe(0);
+  expect(result.output).toContain('playwright-cli');
+  expect(result.output).toContain('Usage:');
+  expect(result.output).toContain('open');
+  expect(result.output).toContain('snapshot');
+  expect(result.output).toContain('close');
+});
+
+test('--version prints version', async ({}) => {
+  const result = await runCli('--version');
+  expect(result.exitCode).toBe(0);
+  expect(result.output).toMatch(/\d+\.\d+/);
+});
+
 test('open data URL', async ({}) => {
   expect(await runCli('open', 'data:text/html,hello', '--persistent')).toEqual(expect.objectContaining({
     output: expect.stringContaining('hello'),
