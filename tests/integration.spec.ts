@@ -59,6 +59,30 @@ async function runCli(...args: string[]): Promise<CliResult> {
   });
 }
 
+test('install-browser installs successfully', async ({}) => {
+  const result = await runCli('install-browser', 'chromium');
+  expect(result.exitCode).toBe(0);
+  expect(result.output).toContain('installed successfully');
+});
+
+test('install-browser with --browser flag', async ({}) => {
+  const result = await runCli('install-browser', '--browser=chromium');
+  expect(result.exitCode).toBe(0);
+  expect(result.output).toContain('installed successfully');
+});
+
+test('install-browser fails for unknown browser', async ({}) => {
+  const result = await runCli('install-browser', 'bogus');
+  expect(result.exitCode).toBe(1);
+  expect(result.error).toContain('Unknown browser');
+});
+
+test('install-browser fails without browser name', async ({}) => {
+  const result = await runCli('install-browser');
+  expect(result.exitCode).toBe(1);
+  expect(result.error).toContain('Browser name is required');
+});
+
 test('open data URL', async ({}) => {
   expect(await runCli('open', 'data:text/html,hello', '--persistent')).toEqual(expect.objectContaining({
     output: expect.stringContaining('hello'),

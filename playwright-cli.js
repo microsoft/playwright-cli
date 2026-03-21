@@ -15,4 +15,44 @@
  * limitations under the License.
  */
 
-require('playwright/lib/cli/client/program');
+const args = process.argv.slice(2);
+const command = args.find(a => !a.startsWith('-'));
+
+if (command === 'install-browser') {
+  const minimist = require('minimist');
+  const parsed = minimist(args, { string: ['_', 'browser'], boolean: ['help', 'h'] });
+
+  if (parsed.help || parsed.h) {
+    console.log(
+      'playwright-cli install-browser [browser]\n\n' +
+      'Install browser\n\n' +
+      'Arguments:\n' +
+      '  [browser]                   browser to install: chromium, firefox, webkit, chrome, msedge\n' +
+      'Options:\n' +
+      '  --browser                   browser to install (alternative to positional argument)'
+    );
+    process.exit(0);
+  }
+
+  const browserName = parsed._[1] || parsed.browser;
+  if (!browserName) {
+    console.error('Browser name is required. Usage: playwright-cli install-browser <browser>\nPossible values: chromium, firefox, webkit, chrome, msedge');
+    process.exit(1);
+  }
+
+  import('playwright-core/lib/server/registry/index').then(({ registry }) => {
+    const executable = registry.findExecutable(browserName);
+    if (!executable) {
+      console.error(`Unknown browser: "${browserName}". Possible values: chromium, firefox, webkit, chrome, msedge`);
+      process.exit(1);
+    }
+    registry.install([executable]).then(() => {
+      console.log(`Browser "${browserName}" installed successfully.`);
+    }).catch(e => {
+      console.error(e.message);
+      process.exit(1);
+    });
+  });
+} else {
+  require('playwright/lib/cli/client/program');
+}
