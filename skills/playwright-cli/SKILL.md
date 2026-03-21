@@ -153,6 +153,7 @@ playwright-cli tracing-start
 playwright-cli tracing-stop
 playwright-cli video-start
 playwright-cli video-stop video.webm
+playwright-cli show
 ```
 
 ## Open parameters
