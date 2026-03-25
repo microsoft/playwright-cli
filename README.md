@@ -495,3 +495,28 @@ The installed skill includes detailed reference guides for common tasks:
 * **Test generation** — generate Playwright tests from interactions
 * **Tracing** — record and inspect execution traces
 * **Video recording** — capture browser session videos
+* **Docker browser** — run the browser in a container, observe via noVNC
+
+## Docker browser
+
+Run the browser inside a Docker container while keeping `playwright-cli` on the host. Useful when you need a clean isolated environment, custom CA certificates, or a headful browser that does not appear on your desktop.
+
+```bash
+# Start the container (Playwright server + noVNC viewer)
+cd docker
+./playwright-browser.sh start
+
+# Configure playwright-cli to use it
+mkdir -p .playwright
+cp docker/cli.config.json .playwright/cli.config.json
+
+# Use playwright-cli as normal — browser runs inside the container
+playwright-cli open https://example.com
+playwright-cli snapshot
+playwright-cli close
+
+# Watch the browser live
+./playwright-browser.sh vnc
+```
+
+See [`docker/`](docker/) for the full setup and [`skills/playwright-cli/references/docker-browser.md`](skills/playwright-cli/references/docker-browser.md) for configuration options.

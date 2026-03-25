@@ -1,0 +1,9 @@
+{
+  "browser": {
+    "remoteEndpoint": "ws://localhost:3000",
+    "launchOptions": {
+      "chromiumSandbox": false,
+      "args": ["--disable-dev-shm-usage"]
+    }
+  }
+}
