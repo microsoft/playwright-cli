@@ -137,6 +137,7 @@ playwright-cli type <text>              # type text into editable element
 playwright-cli click <ref> [button]     # perform click on a web page
 playwright-cli dblclick <ref> [button]  # perform double click on a web page
 playwright-cli fill <ref> <text>        # fill text into editable element
+playwright-cli fill <ref> <text> --submit # fill and press Enter
 playwright-cli drag <startRef> <endRef> # perform drag and drop between two elements
 playwright-cli hover <ref>              # hover over element on page
 playwright-cli select <ref> <val>       # select an option in a dropdown
@@ -145,6 +146,8 @@ playwright-cli check <ref>              # check a checkbox or radio button
 playwright-cli uncheck <ref>            # uncheck a checkbox or radio button
 playwright-cli snapshot                 # capture page snapshot to obtain element ref
 playwright-cli snapshot --filename=f    # save snapshot to specific file
+playwright-cli snapshot <ref>           # snapshot a specific element
+playwright-cli snapshot --depth=N       # limit snapshot depth for efficiency
 playwright-cli eval <func> [ref]        # evaluate javascript expression on page or element
 playwright-cli dialog-accept [prompt]   # accept a dialog
 playwright-cli dialog-dismiss           # dismiss a dialog
@@ -236,10 +239,12 @@ playwright-cli unroute [pattern]        # remove route(s)
 playwright-cli console [min-level]      # list console messages
 playwright-cli network                  # list all network requests since loading the page
 playwright-cli run-code <code>          # run playwright code snippet
+playwright-cli run-code --filename=f    # run playwright code from a file
 playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
-playwright-cli video-start              # start video recording
-playwright-cli video-stop [filename]    # stop video recording
+playwright-cli video-start [filename]   # start video recording
+playwright-cli video-chapter <title>    # add a chapter marker to the video
+playwright-cli video-stop               # stop video recording
 ```
 
 ### Open parameters
@@ -267,9 +272,22 @@ After each command, playwright-cli provides a snapshot of the current browser st
 [Snapshot](.playwright-cli/page-2026-02-14T19-22-42-679Z.yml)
 ```
 
-You can also take a snapshot on demand using `playwright-cli snapshot` command.
+You can also take a snapshot on demand using `playwright-cli snapshot` command. All the options below can be combined as needed.
 
-If `--filename` is not provided, a new snapshot file is created with a timestamp. Default to automatic file naming, use `--filename=` when artifact is a part of the workflow result.
+```bash
+# default - save to a file with timestamp-based name
+playwright-cli snapshot
+
+# save to file, use when snapshot is a part of the workflow result
+playwright-cli snapshot --filename=after-click.yaml
+
+# snapshot an element instead of the whole page
+playwright-cli snapshot "#main"
+
+# limit snapshot depth for efficiency, take a partial snapshot afterwards
+playwright-cli snapshot --depth=4
+playwright-cli snapshot e34
+```
 
 ### Targeting elements
 
@@ -283,17 +301,17 @@ playwright-cli snapshot
 playwright-cli click e15
 ```
 
-You can also use css or role selectors, for example when explicitly asked for it.
+You can also use css selectors or Playwright locators.
 
 ```bash
 # css selector
 playwright-cli click "#main > button.submit"
 
-# role selector
-playwright-cli click "role=button[name=Submit]"
+# role locator
+playwright-cli click "getByRole('button', { name: 'Submit' })"
 
-# chaining css and role selectors
-playwright-cli click "#footer >> role=button[name=Submit]"
+# test id
+playwright-cli click "getByTestId('submit-button')"
 ```
 
 ### Sessions
@@ -526,3 +544,4 @@ The installed skill includes detailed reference guides for common tasks:
 * **Test generation** — generate Playwright tests from interactions
 * **Tracing** — record and inspect execution traces
 * **Video recording** — capture browser session videos
+* **Inspecting element attributes** — get element id, class, or any attribute not visible in the snapshot
