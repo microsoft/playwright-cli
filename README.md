@@ -349,6 +349,19 @@ playwright-cli --config path/to/config.json open example.com
 
 Playwright CLI will load config from `.playwright/cli.config.json` by default so that you did not need to specify it every time.
 
+Add `$schema` to your config file for IDE autocompletion and validation:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/playwright/main/packages/playwright-core/src/tools/mcp/mcp-config.schema.json",
+  "browser": {
+    "browserName": "chromium"
+  }
+}
+```
+
+Once registered with [SchemaStore](https://www.schemastore.org/), the `.playwright/cli.config.json` file will be automatically associated with the schema in supported editors.
+
 <details>
 <summary>Configuration file schema</summary>
 
