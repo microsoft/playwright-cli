@@ -251,7 +251,7 @@ playwright-cli video-stop               # stop video recording
 
 ```bash
 playwright-cli open --browser=chrome    # use specific browser
-playwright-cli open --extension         # connect via browser extension
+playwright-cli attach --extension       # connect via browser extension
 playwright-cli open --persistent        # use persistent profile
 playwright-cli open --profile=<path>    # use custom profile directory
 playwright-cli open --config=file.json  # use config file
