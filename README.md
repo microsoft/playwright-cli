@@ -436,8 +436,17 @@ Playwright CLI will load config from `.playwright/cli.config.json` by default so
 
   /**
    * Whether to save snapshots, console messages, network logs and other session logs to a file or to the standard output. Defaults to "stdout".
+   * - "stdout": Output to console immediately
+   * - "file": Save all output to files in outputDir
+   * - "fileOnLargeOutput": Output to stdout if small, otherwise save to file (controlled by maxStdOutputSize)
    */
-  outputMode?: 'file' | 'stdout';
+  outputMode?: 'file' | 'stdout' | 'fileOnLargeOutput';
+
+  /**
+   * When outputMode is "fileOnLargeOutput", defines the maximum size in bytes before switching to file output.
+   * Defaults to 1048576 (1MB).
+   */
+  maxStdOutputSize?: number;
 
   console?: {
     /**
