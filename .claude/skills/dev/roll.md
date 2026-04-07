@@ -33,6 +33,7 @@
 5. **Create a branch and commit**:
    - Branch name: `roll_<version>` (e.g. `roll_214`)
    - Commit message: `chore: roll Playwright to <version>`
+   - do not add Co-Authored-By
 
 ## Key files
 
