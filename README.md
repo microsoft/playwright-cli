@@ -252,6 +252,8 @@ playwright-cli video-stop               # stop video recording
 ```bash
 playwright-cli open --browser=chrome    # use specific browser
 playwright-cli attach --extension       # connect via browser extension
+playwright-cli attach --cdp=chrome      # attach to running Chrome/Edge by channel
+playwright-cli attach --cdp=<url>       # attach via CDP endpoint
 playwright-cli open --persistent        # use persistent profile
 playwright-cli open --profile=<path>    # use custom profile directory
 playwright-cli open --config=file.json  # use config file
