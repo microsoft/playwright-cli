@@ -139,6 +139,8 @@ playwright-cli dblclick <ref> [button]  # perform double click on a web page
 playwright-cli fill <ref> <text>        # fill text into editable element
 playwright-cli fill <ref> <text> --submit # fill and press Enter
 playwright-cli drag <startRef> <endRef> # perform drag and drop between two elements
+playwright-cli drop <ref> --path=<file> # drop files onto an element (from outside the page)
+playwright-cli drop <ref> --data="k=v"  # drop data onto an element
 playwright-cli hover <ref>              # hover over element on page
 playwright-cli select <ref> <val>       # select an option in a dropdown
 playwright-cli upload <file>            # upload one or multiple files
@@ -245,6 +247,13 @@ playwright-cli tracing-stop             # stop trace recording
 playwright-cli video-start [filename]   # start video recording
 playwright-cli video-chapter <title>    # add a chapter marker to the video
 playwright-cli video-stop               # stop video recording
+playwright-cli show                     # open the visual dashboard
+playwright-cli show --annotate          # open dashboard and prompt user for input
+playwright-cli generate-locator <ref>   # generate a playwright locator for an element
+playwright-cli highlight <ref>          # show a persistent highlight overlay
+playwright-cli highlight <ref> --style= # highlight with a custom CSS style
+playwright-cli highlight <ref> --hide   # hide highlight on a specific element
+playwright-cli highlight --hide         # hide all page highlights
 ```
 
 ### Open parameters
@@ -289,6 +298,9 @@ playwright-cli snapshot "#main"
 # limit snapshot depth for efficiency, take a partial snapshot afterwards
 playwright-cli snapshot --depth=4
 playwright-cli snapshot e34
+
+# include each element's bounding box as [box=x,y,width,height]
+playwright-cli snapshot --boxes
 ```
 
 ### Targeting elements
