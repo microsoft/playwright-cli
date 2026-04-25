@@ -72,6 +72,25 @@ Playwright CLI is headless by default. If you'd like to see the browser, pass `-
 playwright-cli open https://playwright.dev --headed
 ```
 
+## Avoiding workspace artifacts
+
+By default, Playwright CLI writes generated artifacts relative to the workspace. Set
+`PLAYWRIGHT_MCP_OUTPUT_DIR` to keep automatically named files in a dedicated directory:
+
+```bash
+export PLAYWRIGHT_MCP_OUTPUT_DIR=.playwright-cli
+playwright-cli open http://localhost:3000
+playwright-cli snapshot
+playwright-cli screenshot
+playwright-cli pdf
+playwright-cli state-save
+```
+
+This affects default output paths for automatic snapshots after commands, `snapshot`, `screenshot`,
+`pdf`, and `state-save` when those commands use their default filenames. If you explicitly pass a
+relative path, such as `--filename=page.png`, Playwright CLI currently saves exactly to that path in
+the current directory.
+
 ## Sessions
 
 Playwright CLI keeps the browser profile in memory by default. Your cookies and storage state

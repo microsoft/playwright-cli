@@ -23,6 +23,24 @@ playwright-cli screenshot
 playwright-cli close
 ```
 
+## Avoiding workspace artifacts
+
+Before running browser automation in a workspace, prefer setting
+`PLAYWRIGHT_MCP_OUTPUT_DIR=.playwright-cli` so default snapshots, screenshots, PDFs, and storage
+state files stay in one artifact directory.
+
+```bash
+export PLAYWRIGHT_MCP_OUTPUT_DIR=.playwright-cli
+playwright-cli open http://localhost:3000
+playwright-cli snapshot
+playwright-cli screenshot
+playwright-cli pdf
+playwright-cli state-save
+```
+
+This affects automatically named output files, including snapshots captured after commands. Explicit
+relative paths, such as `--filename=page.png`, are currently saved relative to the current directory.
+
 ## Commands
 
 ### Core
