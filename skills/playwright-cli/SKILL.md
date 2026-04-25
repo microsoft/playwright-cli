@@ -209,8 +209,8 @@ playwright-cli open --persistent
 # Use persistent profile with custom directory
 playwright-cli open --profile=/path/to/profile
 
-# Connect to browser via extension
-playwright-cli attach --extension
+# Connect to browser via Playwright Extension
+playwright-cli attach --extension=chrome
 
 # Connect to a running Chrome or Edge by channel name
 playwright-cli attach --cdp=chrome
@@ -224,6 +224,8 @@ playwright-cli open --config=my-config.json
 
 # Close the browser
 playwright-cli close
+# Detach from an attached browser (leaves the external browser running)
+playwright-cli -s=msedge detach
 # Delete user data for the default session
 playwright-cli delete-data
 ```
