@@ -15,7 +15,12 @@
  * limitations under the License.
  */
 
-const { program } = require('playwright-core/lib/tools/cli-client/program');
-const packageJson = require('./package.json');
-
-program({ embedderVersion: packageJson.version });
+try {
+  require('playwright-core/cli');
+} catch (error) {
+  if (error && error.code === 'MODULE_NOT_FOUND' && error.message.includes('playwright-core/cli')) {
+    console.error('Failed to load Playwright CLI from playwright-core. Please ensure a compatible playwright-core version is installed.');
+    process.exit(1);
+  }
+  throw error;
+}
