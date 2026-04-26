@@ -11,9 +11,9 @@ function run(command, options = {}) {
 }
 
 async function main() {
-  // 2. Run playwright-cli install-skills
-  console.log('\n=== Running playwright-cli install --skills ===\n');
-  run('node playwright-cli.js install --skills');
+  // 2. Run playwright-core CLI install-skills
+  console.log('\n=== Running playwright-core install --skills ===\n');
+  run('npx playwright-core install --skills');
 
   // 3. Move generated skills into the existing skills folder
   console.log('\n=== Updating skills folder ===\n');
