@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/microsoft-playwright-cli-badge.png)](https://mseep.ai/app/microsoft-playwright-cli)
+
 # playwright-cli
 
 Playwright CLI with SKILLS
