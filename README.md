@@ -239,7 +239,8 @@ playwright-cli unroute [pattern]        # remove route(s)
 
 ```bash
 playwright-cli console [min-level]      # list console messages
-playwright-cli network                  # list all network requests since loading the page
+playwright-cli requests                 # list all network requests since loading the page
+playwright-cli request <index>          # show details for a specific request
 playwright-cli run-code <code>          # run playwright code snippet
 playwright-cli run-code --filename=f    # run playwright code from a file
 playwright-cli tracing-start            # start trace recording
@@ -248,7 +249,7 @@ playwright-cli video-start [filename]   # start video recording
 playwright-cli video-chapter <title>    # add a chapter marker to the video
 playwright-cli video-stop               # stop video recording
 playwright-cli show                     # open the visual dashboard
-playwright-cli show --annotate          # open dashboard and prompt user for input
+playwright-cli annotate                 # launch dashboard for UI review / design feedback
 playwright-cli generate-locator <ref>   # generate a playwright locator for an element
 playwright-cli highlight <ref>          # show a persistent highlight overlay
 playwright-cli highlight <ref> --style= # highlight with a custom CSS style
@@ -555,6 +556,7 @@ The installed skill includes detailed reference guides for common tasks:
 * **Request mocking** — intercept and mock network requests
 * **Running Playwright code** — execute arbitrary Playwright scripts
 * **Browser session management** — manage multiple browser sessions
+* **Spec-driven testing (plan / generate / heal)** — drive tests from a written spec
 * **Storage state (cookies, localStorage)** — persist and restore browser state
 * **Test generation** — generate Playwright tests from interactions
 * **Tracing** — record and inspect execution traces

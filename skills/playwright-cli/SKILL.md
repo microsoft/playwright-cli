@@ -153,7 +153,8 @@ playwright-cli unroute
 ```bash
 playwright-cli console
 playwright-cli console warning
-playwright-cli network
+playwright-cli requests
+playwright-cli request 5
 playwright-cli run-code "async page => await page.context().grantPermissions(['geolocation'])"
 playwright-cli run-code --filename=script.js
 playwright-cli tracing-start
@@ -162,8 +163,8 @@ playwright-cli video-start video.webm
 playwright-cli video-chapter "Chapter Title" --description="Details" --duration=2000
 playwright-cli video-stop
 
-# launch the dashboard with annotation prompt to ask the user for input
-playwright-cli show --annotate
+# launch the dashboard for UI review / design feedback — user annotates the page, you receive the annotated screenshot, snapshot, and notes
+playwright-cli annotate
 
 # generate a Playwright locator for an element from its ref or selector
 playwright-cli generate-locator e5 --raw
@@ -351,7 +352,7 @@ playwright-cli open https://example.com
 playwright-cli click e4
 playwright-cli fill e7 "test"
 playwright-cli console
-playwright-cli network
+playwright-cli requests
 playwright-cli close
 ```
 
@@ -366,11 +367,11 @@ playwright-cli close
 
 ## Example: Interactive session
 
-Ask the user to annotate the UI. User can provide contextual tasks or ask contextual questions using annotations:
+Ask the user for UI review or design feedback. The user draws boxes on the live page and types comments; you receive the annotated screenshot, the snapshot of the marked region, and the user's notes. Use this whenever the user asks for "UI review", "design feedback", or to "ask the user what they think / want / mean":
 
 ```bash
 playwright-cli open https://example.com
-playwright-cli show --annotate
+playwright-cli annotate
 ```
 
 ## Specific tasks
@@ -379,6 +380,7 @@ playwright-cli show --annotate
 * **Request mocking** [references/request-mocking.md](references/request-mocking.md)
 * **Running Playwright code** [references/running-code.md](references/running-code.md)
 * **Browser session management** [references/session-management.md](references/session-management.md)
+* **Spec-driven testing (plan / generate / heal)** [references/spec-driven-testing.md](references/spec-driven-testing.md)
 * **Storage state (cookies, localStorage)** [references/storage-state.md](references/storage-state.md)
 * **Test generation** [references/test-generation.md](references/test-generation.md)
 * **Tracing** [references/tracing.md](references/tracing.md)
