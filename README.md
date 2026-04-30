@@ -249,7 +249,7 @@ playwright-cli video-start [filename]   # start video recording
 playwright-cli video-chapter <title>    # add a chapter marker to the video
 playwright-cli video-stop               # stop video recording
 playwright-cli show                     # open the visual dashboard
-playwright-cli annotate                 # launch dashboard for UI review / design feedback
+playwright-cli show --annotate          # launch dashboard with annotation prompt
 playwright-cli generate-locator <ref>   # generate a playwright locator for an element
 playwright-cli highlight <ref>          # show a persistent highlight overlay
 playwright-cli highlight <ref> --style= # highlight with a custom CSS style
