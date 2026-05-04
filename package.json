@@ -22,7 +22,8 @@
     "@types/node": "^25.2.1"
   },
   "dependencies": {
-    "playwright": "1.60.0-alpha-1777669338000"
+    "playwright": "1.60.0-alpha-1777669338000",
+    "playwright-core": "1.60.0-alpha-1777669338000"
   },
   "bin": {
     "playwright-cli": "playwright-cli.js"
