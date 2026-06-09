@@ -247,6 +247,8 @@ playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
 playwright-cli video-start [filename]   # start video recording
 playwright-cli video-chapter <title>    # add a chapter marker to the video
+playwright-cli video-show-actions       # annotate each action with a callout in the video
+playwright-cli video-hide-actions       # stop annotating actions in the video
 playwright-cli video-stop               # stop video recording
 playwright-cli show                     # open the visual dashboard
 playwright-cli show --annotate          # launch dashboard for UI review / design feedback

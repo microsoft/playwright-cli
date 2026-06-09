@@ -191,7 +191,7 @@ Collect the generated code and write the test file at the path given in the spec
 // seed: tests/seed.spec.ts
 import { test, expect } from './fixtures';   // or '@playwright/test' if no fixtures file
 
-test.describe('Singing in and out', () => {
+test.describe('Signing in and out', () => {
   test('should sign in', async ({ page }) => {
     // 1. Navigate to the application
     // (handled by the seed fixture)
@@ -261,7 +261,7 @@ The test is paused at the start. Step forward or run to until just before the fa
 ```bash
 playwright-cli snapshot                # did the element change / move / rename?
 playwright-cli console                 # app-side errors?
-playwright-cli network                 # failed request? wrong payload?
+playwright-cli requests                # failed request? wrong payload?
 playwright-cli show --annotate         # ask the user to point somewhere
 ```
 
