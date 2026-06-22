@@ -23,6 +23,7 @@ const path = require('path');
 const { program } = require('playwright-core/lib/tools/cli-client/program');
 const coreBundle = require('playwright-core/lib/coreBundle');
 const { tools, registry } = coreBundle;
+const { checkInstalledSkills, frame } = require('./skillCheck');
 
 const packageJson = require('./package.json');
 
@@ -31,6 +32,9 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 main();
 
 async function main() {
+  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+  if (command !== 'install')
+    checkInstalledSkills();
   await notifyAboutUpdate().catch(() => {});
   program({ embedderVersion: packageJson.version });
 }
@@ -72,23 +76,16 @@ async function fetchLatestVersion() {
 }
 
 /**
- * 
- * @param {string} current 
- * @param {string} latest 
+ *
+ * @param {string} current
+ * @param {string} latest
  */
 function printNotice(current, latest) {
-  const lines = [
+  process.stderr.write('\n' + frame([
     `Update available for ${packageJson.name}: ${current} → ${latest}`,
     `Run \`npm install -g ${packageJson.name}@latest\` (global) or`,
-    `\`npm install ${packageJson.name}@latest\` (local) to update.`,
-  ];
-  const width = Math.max(...lines.map(line => line.length));
-  const top = `╭${'─'.repeat(width + 2)}╮`;
-  const bottom = `╰${'─'.repeat(width + 2)}╯`;
-  process.stderr.write('\n' + top + '\n');
-  for (const line of lines)
-    process.stderr.write(`│ ${line.padEnd(width)} │\n`);
-  process.stderr.write(bottom + '\n\n');
+    `\`npm install --save-dev ${packageJson.name}@latest\` (local) to update.`,
+  ]) + '\n');
 }
 
 function cacheFile() {
@@ -106,7 +103,7 @@ function readCache() {
 }
 
 /**
- * @param {*} data 
+ * @param {*} data
  */
 function writeCache(data) {
   try {
