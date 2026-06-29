@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { test, expect } from '@playwright/test';
@@ -68,5 +69,18 @@ test('open data URL', async ({}) => {
   expect(await runCli('delete-data')).toEqual(expect.objectContaining({
     output: expect.stringContaining('Deleted user data for'),
     exitCode: 0,
+  }));
+});
+
+test('warns when installed skill is out of date', async ({}) => {
+  expect(await runCli('install', '--skills')).toEqual(expect.objectContaining({
+    exitCode: 0,
+  }));
+
+  const skillFile = path.join(test.info().outputPath(), '.claude', 'skills', 'playwright-cli', 'SKILL.md');
+  fs.appendFileSync(skillFile, 'x');
+
+  expect(await runCli('--help')).toEqual(expect.objectContaining({
+    error: expect.stringContaining('does not match the tool version'),
   }));
 });
