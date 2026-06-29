@@ -186,6 +186,7 @@ playwright-cli mousewheel <dx> <dy>     # scroll mouse wheel
 ```bash
 playwright-cli screenshot [ref]         # screenshot of the current page or element
 playwright-cli screenshot --filename=f  # save screenshot with specific filename
+playwright-cli screenshot --hires       # capture at full device pixel ratio
 playwright-cli pdf                      # save page as pdf
 playwright-cli pdf --filename=page.pdf  # save pdf with specific filename
 ```
