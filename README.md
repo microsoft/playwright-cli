@@ -150,6 +150,8 @@ playwright-cli snapshot                 # capture page snapshot to obtain elemen
 playwright-cli snapshot --filename=f    # save snapshot to specific file
 playwright-cli snapshot <ref>           # snapshot a specific element
 playwright-cli snapshot --depth=N       # limit snapshot depth for efficiency
+playwright-cli find <text>              # search the snapshot for text, returns matching nodes
+playwright-cli find --regex <pattern>   # search the snapshot with a regexp
 playwright-cli eval <func> [ref]        # evaluate javascript expression on page or element
 playwright-cli dialog-accept [prompt]   # accept a dialog
 playwright-cli dialog-dismiss           # dismiss a dialog
@@ -264,6 +266,8 @@ playwright-cli highlight --hide         # hide all page highlights
 
 ```bash
 playwright-cli open --browser=chrome    # use specific browser
+playwright-cli open --mobile            # emulate a generic mobile device
+playwright-cli open --device="iPhone 15" # emulate a specific device
 playwright-cli attach --extension=chrome # connect via Playwright Extension
 playwright-cli attach --cdp=chrome      # attach to running Chrome/Edge by channel
 playwright-cli attach --cdp=<url>       # attach via CDP endpoint
@@ -306,6 +310,13 @@ playwright-cli snapshot e34
 
 # include each element's bounding box as [box=x,y,width,height]
 playwright-cli snapshot --boxes
+
+# search a large snapshot instead of capturing it all — returns matching nodes
+# with 3 lines of context around each match (like grep -C)
+playwright-cli find "Add to cart"
+playwright-cli find --regex "\\$[0-9]+\\.[0-9]{2}"
+# wrap the regexp in slashes to add flags, e.g. /i for case-insensitive
+playwright-cli find --regex "/sign (in|up)/i"
 ```
 
 ### Targeting elements
@@ -346,13 +357,13 @@ playwright-cli kill-all                 # forcefully kill all browser processes
 
 ### Local installation
 
-If global `playwright-cli` command is not available, try a local version via `npx playwright-cli`:
+If global `playwright-cli` command is not available, try a local version via `npx playwright cli`:
 
 ```bash
-npx --no-install playwright-cli --version
+npx --no-install playwright --version
 ```
 
-When local version is available, use `npx playwright-cli` in all commands. Otherwise, install `playwright-cli` as a global command:
+When local version is available, use `npx playwright cli` in all commands. Otherwise, install `playwright-cli` as a global command:
 
 ```bash
 npm install -g @playwright/cli@latest
@@ -559,9 +570,8 @@ The installed skill includes detailed reference guides for common tasks:
 * **Request mocking** — intercept and mock network requests
 * **Running Playwright code** — execute arbitrary Playwright scripts
 * **Browser session management** — manage multiple browser sessions
-* **Spec-driven testing (plan / generate / heal)** — drive tests from a written spec
 * **Storage state (cookies, localStorage)** — persist and restore browser state
-* **Test generation** — generate Playwright tests from interactions
+* **Test generation (plan / generate / heal)** — generate Playwright tests from a spec or interactions
 * **Tracing** — record and inspect execution traces
 * **Video recording** — capture browser session videos
 * **Inspecting element attributes** — get element id, class, or any attribute not visible in the snapshot

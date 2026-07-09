@@ -18,12 +18,12 @@
     "test": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.0-alpha-2026-06-29",
+    "@playwright/test": "1.62.0-alpha-2026-07-08",
     "@types/node": "^25.2.1"
   },
   "dependencies": {
-    "playwright": "1.62.0-alpha-2026-06-29",
-    "playwright-core": "1.62.0-alpha-2026-06-29"
+    "playwright": "1.62.0-alpha-2026-07-08",
+    "playwright-core": "1.62.0-alpha-2026-07-08"
   },
   "bin": {
     "playwright-cli": "playwright-cli.js"
