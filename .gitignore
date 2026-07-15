@@ -4,3 +4,4 @@ node_modules/
 /.playwright-cli/
 # Ignore self-skill which is a build artifact
 .claude/skills/playwright-cli/
+.npmrc

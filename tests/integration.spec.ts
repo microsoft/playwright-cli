@@ -84,3 +84,16 @@ test('warns when installed skill is out of date', async ({}) => {
     error: expect.stringContaining('does not match the tool version'),
   }));
 });
+
+test('does not warn when installed skill only differs in line endings', async ({}) => {
+  expect(await runCli('install', '--skills')).toEqual(expect.objectContaining({
+    exitCode: 0,
+  }));
+
+  const skillFile = path.join(test.info().outputPath(), '.claude', 'skills', 'playwright-cli', 'SKILL.md');
+  fs.writeFileSync(skillFile, fs.readFileSync(skillFile, 'utf8').replace(/\n/g, '\r\n'));
+
+  expect(await runCli('--help')).toEqual(expect.objectContaining({
+    error: expect.not.stringContaining('does not match the tool version'),
+  }));
+});
