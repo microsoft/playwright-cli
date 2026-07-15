@@ -37,7 +37,8 @@ function installedSkillTargets() {
  * @returns
  */
 function readSkill(file) {
-  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  // Normalize line endings, they could be affected by git or editor settings.
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n') : null;
 }
 
 /**
