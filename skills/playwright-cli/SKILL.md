@@ -165,7 +165,7 @@ playwright-cli run-code "async page => await page.context().grantPermissions(['g
 playwright-cli run-code --filename=script.js
 playwright-cli tracing-start
 playwright-cli tracing-stop
-# default size fits within 800x800 — pass --size to match the page viewport
+# default size fits within 800x800 — pass --size for full resolution
 playwright-cli video-start video.webm --size=1280x720
 playwright-cli video-chapter "Chapter Title" --description="Details" --duration=2000
 playwright-cli video-stop

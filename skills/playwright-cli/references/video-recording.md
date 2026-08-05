@@ -9,7 +9,7 @@ Capture browser automation sessions as video for debugging, documentation, or ve
 playwright-cli open
 
 # Start recording
-# Default size fits within 800x800 — pass --size to match the page viewport or desired resolution
+# Default size fits within 800x800 — pass --size for full resolution
 playwright-cli video-start demo.webm --size=1280x720
 
 # Add a chapter marker for section transitions
@@ -32,13 +32,13 @@ playwright-cli video-stop
 
 ### 1. Set an explicit video size
 
-By default, `video-start` records at a size that fits within **800x800**, which is often smaller than the page viewport and can look cropped or low-res. Pass `--size=WIDTHxHEIGHT` to control the output resolution:
+By default, `video-start` scales the recording so it fits within **800x800** (longer side ≤ 800). That is usually smaller than the page viewport and looks low-res. Pass `--size=WIDTHxHEIGHT` for the output resolution you want:
 
 ```bash
-# Match a common desktop viewport
+# Common desktop resolution
 playwright-cli video-start demo.webm --size=1280x720
 
-# Match a resized browser window
+# Same dimensions as the browser viewport after resize
 playwright-cli resize 1440 900
 playwright-cli video-start demo.webm --size=1440x900
 ```
@@ -64,8 +64,8 @@ It allows inserting appropriate pauses between the actions and annotating the vi
 
 ```js
 async page => {
-  // Always pass size — default recording fits within 800x800 and will not match the page viewport
-  await page.screencast.start({ path: 'video.webm', size: { width: 1280, height: 720 } });
+  // Always pass size — without it, recording is scaled to fit within 800x800
+  await page.screencast.start({ path: 'video.webm', size: { width: 1280, height: 800 } });
   await page.goto('https://demo.playwright.dev/todomvc');
 
   // Show a chapter card — blurs the page and shows a dialog.
