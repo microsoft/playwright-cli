@@ -248,7 +248,7 @@ playwright-cli run-code <code>          # run playwright code snippet
 playwright-cli run-code --filename=f    # run playwright code from a file
 playwright-cli tracing-start            # start trace recording
 playwright-cli tracing-stop             # stop trace recording
-playwright-cli video-start [filename]   # start video recording
+playwright-cli video-start [filename]   # start video recording (default fits 800x800; use --size=WxH)
 playwright-cli video-chapter <title>    # add a chapter marker to the video
 playwright-cli video-show-actions       # annotate each action with a callout in the video
 playwright-cli video-hide-actions       # stop annotating actions in the video
