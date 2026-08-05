@@ -6,8 +6,9 @@
   `npm info playwright@next version`
 
 2. **Update Playwright packages** in `package.json`:
-   - Update `playwright` (dependency) and `@playwright/test` (devDependency) to the target version.
+   - Update `playwright` and `playwright-core` (dependencies) and `@playwright/test` (devDependency) to the target version.
    - Run `npm install` to update `package-lock.json`.
+   - Verify with `npm ls playwright-core` that the root `playwright-core` actually rolled — it is pinned directly in `package.json` and is what `playwright-cli.js` runs; forgetting it leaves the CLI on the old version while tests pass against the new `@playwright/test`.
 
 3. **Run the update script** to sync skills and README:
    ```bash

@@ -20,8 +20,8 @@ const fs = require('fs');
 const path = require('path');
 
 function bundledSkillFile() {
-  const programPath = require.resolve('playwright-core/lib/tools/cli-client/program');
-  return path.join(path.dirname(programPath), 'skill', 'SKILL.md');
+  const corePath = require.resolve('playwright-core/package.json');
+  return path.join(path.dirname(corePath), 'lib', 'tools', 'skills', 'playwright-cli', 'SKILL.md');
 }
 
 function installedSkillTargets() {
