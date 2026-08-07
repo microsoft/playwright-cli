@@ -69,13 +69,13 @@ extends:
           displayName: "npm ci"
 
         - task: Bash@3
-          displayName: "Set alpha version with commit timestamp"
+          displayName: "Set alpha version with current timestamp"
           inputs:
             targetType: "inline"
             script: |
               set -e
               BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
-              TIMESTAMP=$(git show -s --format=%ct HEAD)
+              TIMESTAMP=$(date +%s)
               npm version "${BASE_VERSION}-alpha-${TIMESTAMP}000" --no-git-tag-version
 
         - task: Bash@3
