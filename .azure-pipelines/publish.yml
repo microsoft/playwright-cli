@@ -1,4 +1,4 @@
-# Publishes @next (alpha) version of @playwright/cli via ESRP. Manual trigger only.
+# Publishes @test (alpha) version of @playwright/cli via ESRP. Manual trigger only.
 trigger: none
 
 pr: none
@@ -110,7 +110,7 @@ extends:
               intent: 'PackageDistribution'
               contenttype: 'npm'
               # npm dist-tag to publish with.
-              productstate: 'next'
+              productstate: 'test'
               folderlocation: '$(Build.ArtifactStagingDirectory)/esrp-build'
               waitforreleasecompletion: true
               owners: 'yurys@microsoft.com'
