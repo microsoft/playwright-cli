@@ -32,14 +32,11 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 main();
 
 async function main() {
-  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
-  if (command !== 'install')
-    checkInstalledSkills();
-  await notifyAboutUpdate().catch(() => {});
+  await checkForUpdates().catch(() => {});
   program({ embedderVersion: packageJson.version });
 }
 
-async function notifyAboutUpdate() {
+async function checkForUpdates() {
   if (process.env.NO_UPDATE_NOTIFIER || process.env.CI)
     return;
 
@@ -47,13 +44,14 @@ async function notifyAboutUpdate() {
   const stale = !cache || (Date.now() - cache.lastCheck) > ONE_DAY_MS;
   if (!stale)
     return;
+  writeCache({ lastCheck: Date.now() });
+
+  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+  if (command !== 'install')
+    checkInstalledSkills();
 
   const latest = await fetchLatestVersion();
-  if (!latest)
-    return;
-  writeCache({ lastCheck: Date.now(), latestVersion: latest });
-
-  if (tools.compareSemver(latest, packageJson.version) > 0)
+  if (latest && tools.compareSemver(latest, packageJson.version) > 0)
     printNotice(packageJson.version, latest);
 }
 
@@ -89,13 +87,14 @@ function printNotice(current, latest) {
 }
 
 function cacheFile() {
-  return path.join(registry.defaultRegistryDirectory, 'cli-update-check.json');
+  const dir = process.env.PLAYWRIGHT_CLI_INSTALLATION_FOR_TEST || registry.defaultRegistryDirectory;
+  return path.join(dir, 'cli-update-check.json');
 }
 
 function readCache() {
   try {
     const data = JSON.parse(fs.readFileSync(cacheFile(), 'utf8'));
-    if (typeof data.lastCheck === 'number' && typeof data.latestVersion === 'string')
+    if (typeof data.lastCheck === 'number')
       return data;
   } catch {
   }
