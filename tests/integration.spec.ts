@@ -25,7 +25,7 @@ type CliResult = {
   exitCode: number | null;
 };
 
-async function runCli(...args: string[]): Promise<CliResult> {
+async function runCli(args: string[], env: Record<string, string> = {}): Promise<CliResult> {
   const cliPath = path.join(__dirname, '../playwright-cli.js');
 
   return new Promise<CliResult>((resolve, reject) => {
@@ -36,6 +36,7 @@ async function runCli(...args: string[]): Promise<CliResult> {
       env: {
         ...process.env,
         PLAYWRIGHT_CLI_INSTALLATION_FOR_TEST: test.info().outputPath(),
+        ...env,
       },
       cwd: test.info().outputPath(),
     });
@@ -61,39 +62,44 @@ async function runCli(...args: string[]): Promise<CliResult> {
 }
 
 test('open data URL', async ({}) => {
-  expect(await runCli('open', 'data:text/html,hello', '--persistent')).toEqual(expect.objectContaining({
+  expect(await runCli(['open', 'data:text/html,hello', '--persistent'])).toEqual(expect.objectContaining({
     output: expect.stringContaining('hello'),
     exitCode: 0,
   }));
 
-  expect(await runCli('delete-data')).toEqual(expect.objectContaining({
+  expect(await runCli(['delete-data'])).toEqual(expect.objectContaining({
     output: expect.stringContaining('Deleted user data for'),
     exitCode: 0,
   }));
 });
 
 test('warns when installed skill is out of date', async ({}) => {
-  expect(await runCli('install', '--skills')).toEqual(expect.objectContaining({
+  expect(await runCli(['install', '--skills'], { NO_UPDATE_NOTIFIER: '1' })).toEqual(expect.objectContaining({
     exitCode: 0,
   }));
 
   const skillFile = path.join(test.info().outputPath(), '.claude', 'skills', 'playwright-cli', 'SKILL.md');
   fs.appendFileSync(skillFile, 'x');
 
-  expect(await runCli('--help')).toEqual(expect.objectContaining({
+  const env = { CI: '', NO_UPDATE_NOTIFIER: '' };
+  expect(await runCli(['--help'], env)).toEqual(expect.objectContaining({
     error: expect.stringContaining('does not match the tool version'),
+  }));
+
+  expect(await runCli(['--help'], env)).toEqual(expect.objectContaining({
+    error: expect.not.stringContaining('does not match the tool version'),
   }));
 });
 
 test('does not warn when installed skill only differs in line endings', async ({}) => {
-  expect(await runCli('install', '--skills')).toEqual(expect.objectContaining({
+  expect(await runCli(['install', '--skills'], { NO_UPDATE_NOTIFIER: '1' })).toEqual(expect.objectContaining({
     exitCode: 0,
   }));
 
   const skillFile = path.join(test.info().outputPath(), '.claude', 'skills', 'playwright-cli', 'SKILL.md');
   fs.writeFileSync(skillFile, fs.readFileSync(skillFile, 'utf8').replace(/\n/g, '\r\n'));
 
-  expect(await runCli('--help')).toEqual(expect.objectContaining({
+  expect(await runCli(['--help'], { CI: '', NO_UPDATE_NOTIFIER: '' })).toEqual(expect.objectContaining({
     error: expect.not.stringContaining('does not match the tool version'),
   }));
 });
