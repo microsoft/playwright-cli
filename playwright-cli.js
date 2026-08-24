@@ -87,13 +87,14 @@ function printNotice(current, latest) {
 }
 
 function cacheFile() {
-  const dir = process.env.PLAYWRIGHT_CLI_INSTALLATION_FOR_TEST || registry.defaultRegistryDirectory;
+  const dir = process.env.PLAYWRIGHT_CLI_INSTALLATION_FOR_TEST || registry.defaultRegistryDirectory();
   return path.join(dir, 'cli-update-check.json');
 }
 
 function readCache() {
+  const file = cacheFile();
   try {
-    const data = JSON.parse(fs.readFileSync(cacheFile(), 'utf8'));
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (typeof data.lastCheck === 'number')
       return data;
   } catch {
@@ -105,8 +106,8 @@ function readCache() {
  * @param {*} data
  */
 function writeCache(data) {
+  const file = cacheFile();
   try {
-    const file = cacheFile();
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(data));
   } catch {

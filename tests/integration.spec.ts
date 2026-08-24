@@ -103,3 +103,36 @@ test('does not warn when installed skill only differs in line endings', async ({
     error: expect.not.stringContaining('does not match the tool version'),
   }));
 });
+
+test('caches the update check in the default registry directory', async ({}) => {
+  // Redirect the home/cache directories so the real user cache is untouched, and
+  // leave PLAYWRIGHT_CLI_INSTALLATION_FOR_TEST empty so the default path is used.
+  const home = test.info().outputPath('home');
+  fs.mkdirSync(home, { recursive: true });
+  const env = {
+    CI: '',
+    NO_UPDATE_NOTIFIER: '',
+    PLAYWRIGHT_CLI_INSTALLATION_FOR_TEST: '',
+    HOME: home,
+    USERPROFILE: home,
+    XDG_CACHE_HOME: path.join(home, '.cache'),
+    LOCALAPPDATA: path.join(home, 'AppData', 'Local'),
+  };
+
+  expect(await runCli(['--version'], env)).toEqual(expect.objectContaining({ exitCode: 0 }));
+
+  const found: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory())
+        walk(full);
+      else if (entry.name === 'cli-update-check.json')
+        found.push(full);
+    }
+  };
+  walk(home);
+
+  expect(found).toHaveLength(1);
+  expect(JSON.parse(fs.readFileSync(found[0], 'utf8')).lastCheck).toEqual(expect.any(Number));
+});
