@@ -1,5 +1,10 @@
-# Publishes @test (alpha) version of @playwright/cli via ESRP. Manual trigger only.
-trigger: none
+# Publishes @playwright/cli via ESRP:
+# - @next (alpha with current timestamp) from main, on manual trigger
+# - @latest from v* release tags (pushed when a GitHub release is published)
+trigger:
+  tags:
+    include:
+    - v*
 
 pr: none
 
@@ -36,12 +41,12 @@ extends:
           displayName: "Checkout code"
 
         - task: Bash@3
-          displayName: "Check the branch is main"
+          displayName: "Check the branch is main or a v* tag"
           inputs:
             targetType: "inline"
             script: |
-              if [[ "$BUILD_SOURCE_BRANCH" != "refs/heads/main" ]]; then
-                echo "Alpha versions can only be published from main."
+              if [[ "$BUILD_SOURCE_BRANCH" != "refs/heads/main" && "$BUILD_SOURCE_BRANCH" != refs/tags/v* ]]; then
+                echo "Can only publish from main or v* tags."
                 echo "Unexpected branch: $BUILD_SOURCE_BRANCH"
                 exit 1
               fi
@@ -69,14 +74,28 @@ extends:
           displayName: "npm ci"
 
         - task: Bash@3
-          displayName: "Set alpha version with current timestamp"
+          name: setVersion
+          displayName: "Set version and dist-tag"
           inputs:
             targetType: "inline"
             script: |
               set -e
               BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
-              TIMESTAMP=$(date +%s)
-              npm version "${BASE_VERSION}-alpha-${TIMESTAMP}000" --no-git-tag-version
+              if [[ "$BUILD_SOURCE_BRANCH" == refs/tags/v* ]]; then
+                # Release version is already checked in, only publish what the tag points at.
+                NPM_DIST_TAG="latest"
+                if [[ "$BUILD_SOURCE_BRANCH" != "refs/tags/v$BASE_VERSION" ]]; then
+                  echo "ERROR: version '$BASE_VERSION' does not match tag '$BUILD_SOURCE_BRANCH'"
+                  exit 1
+                fi
+              else
+                NPM_DIST_TAG="next"
+                npm version "${BASE_VERSION}-alpha-$(date +%s)000" --no-git-tag-version
+              fi
+              echo "Publishing version $(node -p "require('./package.json').version") with dist-tag $NPM_DIST_TAG"
+              echo "##vso[task.setvariable variable=npmDistTag;isOutput=true]$NPM_DIST_TAG"
+          env:
+            BUILD_SOURCE_BRANCH: $(Build.SourceBranch)
 
         - task: Bash@3
           displayName: "Pack the package"
@@ -91,6 +110,8 @@ extends:
       - job: Publish
         displayName: "ESRP Release to npm"
         dependsOn: Build
+        variables:
+          npmDistTag: $[ dependencies.Build.outputs['setVersion.npmDistTag'] ]
         templateContext:
           type: releaseJob
           isProduction: true
@@ -110,7 +131,7 @@ extends:
               intent: 'PackageDistribution'
               contenttype: 'npm'
               # npm dist-tag to publish with.
-              productstate: 'test'
+              productstate: '$(npmDistTag)'
               folderlocation: '$(Build.ArtifactStagingDirectory)/esrp-build'
               waitforreleasecompletion: true
               owners: 'yurys@microsoft.com'
