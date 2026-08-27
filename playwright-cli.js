@@ -18,6 +18,7 @@
 // @ts-check
 
 const fs = require('fs');
+const https = require('https');
 const path = require('path');
 
 const { program } = require('playwright-core/lib/tools/cli-client/program');
@@ -56,20 +57,32 @@ async function checkForUpdates() {
 }
 
 async function fetchLatestVersion() {
+  const agent = new https.Agent({ keepAlive: false });
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1500);
-    try {
-      const res = await fetch(`https://registry.npmjs.org/${packageJson.name}/latest`, { signal: controller.signal });
-      if (!res.ok)
-        return undefined;
-      const json = await res.json();
-      return typeof json.version === 'string' ? json.version : undefined;
-    } finally {
-      clearTimeout(timeout);
-    }
+    const body = await new Promise((resolve, reject) => {
+      const request = https.get(`https://registry.npmjs.org/${packageJson.name}/latest`, { agent }, response => {
+        const statusCode = response.statusCode || 0;
+        if (statusCode < 200 || statusCode >= 300) {
+          response.resume();
+          reject(new Error(`Unexpected status code ${statusCode}`));
+          return;
+        }
+        let body = '';
+        response.setEncoding('utf8');
+        response.on('data', chunk => body += chunk);
+        response.on('error', reject);
+        response.on('end', () => resolve(body));
+      });
+      const timeout = setTimeout(() => request.destroy(new Error('Request timed out')), 1500);
+      request.on('error', reject);
+      request.on('close', () => clearTimeout(timeout));
+    });
+    const json = JSON.parse(body);
+    return typeof json.version === 'string' ? json.version : undefined;
   } catch {
     return undefined;
+  } finally {
+    agent.destroy();
   }
 }
 
