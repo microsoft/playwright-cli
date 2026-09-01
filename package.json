@@ -1,6 +1,6 @@
 {
   "name": "@playwright/cli",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Playwright CLI",
   "repository": {
     "type": "git",
