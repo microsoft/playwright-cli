@@ -1,10 +1,9 @@
-# Publishes @playwright/cli via ESRP:
-# - @next (alpha with current timestamp) from main, on manual trigger
-# - @latest from v* release tags (pushed when a GitHub release is published)
-trigger:
-  tags:
-    include:
-    - v*
+# Publishes @playwright/cli via ESRP. Manual trigger only, regular publishing
+# is done from GitHub Actions, see .github/workflows/publish.yml.
+# Depending on the selected ref, a manual run publishes:
+# - @next (alpha with current timestamp) from main
+# - @latest from v* release tags
+trigger: none
 
 pr: none
 
