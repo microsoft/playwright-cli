@@ -6,21 +6,36 @@ allowed-tools: Bash(playwright-cli:*) Bash(npx:*) Bash(npm:*)
 
 # Browser Automation with playwright-cli
 
+## Session lifecycle
+
+Browser sessions run in a background daemon and stay alive until they are
+closed. Treat every `open` or `attach` as acquiring a resource that must be
+released before the agent task finishes.
+
+- Use a unique, semantic named session for each agent task and reuse that name
+  for every command in the task.
+- Close sessions created with `open` by running
+  `playwright-cli -s=<session> close`, including after failures or early exits.
+  Use `detach` instead for sessions created with `attach`.
+- Do not use `close-all` or `kill-all` for routine cleanup because other agents
+  may have active sessions. Reserve them for cases where every session is in
+  scope, or for explicit stale-process recovery.
+
 ## Quick start
 
 ```bash
-# open new browser
-playwright-cli open
+# choose a unique session name and reuse it for every command
+playwright-cli -s=docs-check open
 # navigate to a page
-playwright-cli goto https://playwright.dev
+playwright-cli -s=docs-check goto https://playwright.dev
 # interact with the page using refs from the snapshot
-playwright-cli click e15
-playwright-cli type "page.click"
-playwright-cli press Enter
+playwright-cli -s=docs-check click e15
+playwright-cli -s=docs-check type "page.click"
+playwright-cli -s=docs-check press Enter
 # take a screenshot (rarely used, as snapshot is more common)
-playwright-cli screenshot
+playwright-cli -s=docs-check screenshot
 # close the browser
-playwright-cli close
+playwright-cli -s=docs-check close
 ```
 
 ## Commands

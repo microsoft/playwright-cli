@@ -203,16 +203,26 @@ playwright-cli -s=docs-scrape open https://docs.example.com
 playwright-cli -s=s1 open https://github.com
 ```
 
-### 2. Always Clean Up
+### 2. Always Clean Up Agent Sessions
+
+Cleanup is required for agent tasks. A browser session runs in a detached
+daemon and remains alive after the agent finishes unless it is closed. Put the
+close command in a `finally` block or shell `trap` when possible so failures
+and early exits do not leak the daemon and its browser processes.
 
 ```bash
-# Stop browsers when done
-playwright-cli -s=auth close
-playwright-cli -s=scrape close
+session=auth
+trap 'playwright-cli -s="$session" close >/dev/null 2>&1 || true' EXIT INT TERM
 
-# Or stop all at once
-playwright-cli close-all
+# Work with the named session here.
+playwright-cli -s="$session" open https://example.com
+```
 
+Close only the sessions owned by the current task. `close-all` and `kill-all`
+can terminate another agent's active browser, so use them only when every
+session is in scope or when explicitly recovering stale processes.
+
+```bash
 # If browsers become unresponsive or zombie processes remain
 playwright-cli kill-all
 ```
