@@ -95,6 +95,10 @@ PLAYWRIGHT_CLI_SESSION=todo-app claude .
 
 Or instruct it to prepend `-s=` to the calls.
 
+A headless session shuts down on its own after an hour without commands; run `open` again to
+start a new one. Headed browsers stay open. Use `open --idle-timeout=<ms>` to change the timeout,
+or `0` to disable it.
+
 Manage your sessions as follows:
 
 ```bash
@@ -264,12 +268,24 @@ playwright-cli highlight <ref> --hide   # hide highlight on a specific element
 playwright-cli highlight --hide         # hide all page highlights
 ```
 
+### WebMCP
+
+Some pages register their own tools for agents through the experimental WebMCP API. WebMCP is only
+available in Chromium (`--enable-features=WebMCP` launch arg) and Firefox (`dom.modelcontext.enabled` pref).
+
+```bash
+playwright-cli webmcp-list              # list webmcp tools registered by the page
+playwright-cli webmcp-call <name> --params='{"query":"cats"}' # call a webmcp tool
+playwright-cli webmcp-call <name> --frame=<frame> # call a tool registered in a specific frame
+```
+
 ### Open parameters
 
 ```bash
 playwright-cli open --browser=chrome    # use specific browser
 playwright-cli open --mobile            # emulate a generic mobile device
 playwright-cli open --device="iPhone 15" # emulate a specific device
+playwright-cli open --idle-timeout=<ms> # shut down after idle time (0 to disable)
 playwright-cli attach --extension=chrome # connect via Playwright Extension
 playwright-cli attach --cdp=chrome      # attach to running Chrome/Edge by channel
 playwright-cli attach --cdp=<url>       # attach via CDP endpoint
@@ -576,4 +592,5 @@ The installed skill includes detailed reference guides for common tasks:
 * **Test generation (plan / generate / heal)** — generate Playwright tests from a spec or interactions
 * **Tracing** — record and inspect execution traces
 * **Video recording** — capture browser session videos
+* **Attaching screenshots and videos to pull requests** — upload visual evidence with `gh --attach`
 * **Inspecting element attributes** — get element id, class, or any attribute not visible in the snapshot
