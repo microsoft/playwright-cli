@@ -36,25 +36,31 @@ A release is a `chore: mark v<next-patch>` commit whose PR body is the release n
 7. **Write the release notes** to `RELEASE_NOTES_v<version>.md`. Use this exact shape — **no top-level `#` header**, the PR title is the heading:
 
    ```markdown
-   ## Highlights
+   ## ✨ Highlights
 
-   - **<issue wording, not commit wording>** ([#<issue>](https://github.com/microsoft/playwright-cli/issues/<issue>)) — one sentence on the user-facing effect. ([microsoft/playwright#<pr>](https://github.com/microsoft/playwright/pull/<pr>))
+   - **<emoji> <issue wording, not commit wording>** ([microsoft/playwright#<issue>](https://github.com/microsoft/playwright/issues/<issue>)) — the user-facing effect, naming the new commands / flags / config options. ([microsoft/playwright#<pr>](https://github.com/microsoft/playwright/pull/<pr>))
 
-   ## Fixes
+   ## 🐛 Fixes
 
    - `<commit subject>` — what changed and why it matters. ([#<pr>](https://github.com/microsoft/playwright/pull/<pr>))
 
-   ## Upgrading
+   ## 📦 Upgrading
 
    ```bash
    npm install -g @playwright/cli@<version>
    ```
    ```
 
+   Example highlight titles: `**🎬 Smooth 60 fps, styleable videos**`, `**🧰 WebMCP tools show up in the snapshot**`, `**🌗 Switch between light and dark color scheme**`, `**📁 Absolute paths in results**`.
+
    Wording rules:
+   - **Section headings carry their emoji** (`✨ Highlights`, `🐛 Fixes`, `📦 Upgrading`), and **every highlight title starts with one unicode emoji** that fits the feature. No emojis in the Fixes bullets.
+   - **Order highlights by how exciting they are to a user, not chronologically.** Showy features (video, new commands, new agent capabilities) go first; config knobs go last.
+   - **Advertise the benefit, not the mechanism**: `video-start --fps=60` records smooth 60 fps videos, not "`--fps <n>` sets a custom frame rate". Use a concrete, copy-pasteable invocation.
+   - **Don't carry caveats over from the upstream PR description** (browser limitations, "still capped at…"). They are often stale by the time the PR merges — leave them out unless verified.
    - **Highlights lead with the user-reported problem from the linked issue**, not the commit subject. Drop internal terms (`cdpPort`, `tombstones`) from highlight bullets.
-   - Only list things that change user-visible behavior. Skip internal cleanups unless they have a user-facing effect.
-   - Reference both the playwright-cli issue (if any) and the microsoft/playwright PR.
+   - Only list things that change user-visible behavior. Skip internal cleanups unless they have a user-facing effect — check that the CLI actually exercises the fixed path (e.g. `state-save` does not pass `indexedDB`, so an IndexedDB snapshot fix is not a CLI fix).
+   - Reference both the issue (if any — it may live in `microsoft/playwright-cli` or `microsoft/playwright`, link whichever) and the microsoft/playwright PR. A highlight without an issue just omits the issue link.
 
 8. **Commit, push, open PR.** The PR body is the contents of the release notes file (no `#` header, no filename).
    ```bash
