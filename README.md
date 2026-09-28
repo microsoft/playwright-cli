@@ -156,6 +156,7 @@ playwright-cli snapshot <ref>           # snapshot a specific element
 playwright-cli snapshot --depth=N       # limit snapshot depth for efficiency
 playwright-cli find <text>              # search the snapshot for text, returns matching nodes
 playwright-cli find --regex <pattern>   # search the snapshot with a regexp
+playwright-cli find <text> --filename=f # save matches to a file
 playwright-cli eval <func> [ref]        # evaluate javascript expression on page or element
 playwright-cli dialog-accept [prompt]   # accept a dialog
 playwright-cli dialog-dismiss           # dismiss a dialog
