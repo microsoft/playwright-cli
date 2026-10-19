@@ -18,8 +18,8 @@
 // @ts-check
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const { program } = require('playwright-core/lib/tools/cli-client/program');
 const coreBundle = require('playwright-core/lib/coreBundle');
@@ -29,6 +29,7 @@ const { checkInstalledSkills, frame } = require('./skillCheck');
 const packageJson = require('./package.json');
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const UPDATE_CHECK_COMMANDS = new Set(['open', 'attach', 'list', 'install', 'install-browser']);
 
 main();
 
@@ -41,13 +42,17 @@ async function checkForUpdates() {
   if (process.env.NO_UPDATE_NOTIFIER || process.env.CI)
     return;
 
+  // The check spawns npm, so keep its cost to the commands that start a workflow.
+  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+  if (!command || !UPDATE_CHECK_COMMANDS.has(command))
+    return;
+
   const cache = readCache();
   const stale = !cache || (Date.now() - cache.lastCheck) > ONE_DAY_MS;
   if (!stale)
     return;
   writeCache({ lastCheck: Date.now() });
 
-  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
   if (command !== 'install')
     checkInstalledSkills();
 
@@ -56,87 +61,38 @@ async function checkForUpdates() {
     printNotice(packageJson.version, latest);
 }
 
-async function fetchLatestVersion() {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1500);
-    try {
-      const url = npmRegistry().replace(/\/?$/, '/') + packageJson.name.replace('/', '%2f') + '/latest';
-      const res = await fetch(url, { signal: controller.signal });
-      if (!res.ok)
-        return undefined;
-      const json = await res.json();
-      return typeof json.version === 'string' ? json.version : undefined;
-    } finally {
+// Asks npm, so that the user's registry, proxy and auth configuration is respected.
+/** @returns {Promise<string | undefined>} */
+function fetchLatestVersion() {
+  return new Promise(resolve => {
+    const child = spawn(`npm view ${packageJson.name} version --json --no-update-notifier`, {
+      shell: true,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    let stdout = '';
+    child.stdout.on('data', data => stdout += data);
+    // On Windows, killing the shell leaves npm running: stop listening to it
+    // so that the CLI does not wait for npm before exiting.
+    const timeout = setTimeout(() => {
+      child.kill();
+      child.unref();
+      child.stdout.destroy();
+      resolve(undefined);
+    }, 1500);
+    child.on('error', () => {
       clearTimeout(timeout);
-    }
-  } catch {
-    return undefined;
-  }
-}
-
-// Resolves the registry npm would use for this package: the scoped registry wins
-// over the default one, each looked up in env, project, user and global npmrc.
-function npmRegistry() {
-  const env = npmEnvConfig();
-  const configs = [env, ...npmrcFiles(env).map(readNpmrc)];
-  const scope = packageJson.name.split('/')[0];
-  for (const key of [`${scope}:registry`, 'registry']) {
-    for (const config of configs) {
-      if (config[key])
-        return config[key];
-    }
-  }
-  return 'https://registry.npmjs.org/';
-}
-
-function npmEnvConfig() {
-  /** @type {Record<string, string>} */
-  const config = {};
-  for (const [name, value] of Object.entries(process.env)) {
-    if (value && /^npm_config_/i.test(name))
-      config[name.substring('npm_config_'.length).toLowerCase()] = value;
-  }
-  return config;
-}
-
-/**
- * @param {Record<string, string>} env
- */
-function npmrcFiles(env) {
-  const nodeDir = path.dirname(process.execPath);
-  const globalPrefix = env.prefix || process.env.PREFIX || (process.platform === 'win32' ? nodeDir : path.dirname(nodeDir));
-  return [
-    path.join(npmProjectDir(), '.npmrc'),
-    env.userconfig || path.join(os.homedir(), '.npmrc'),
-    env.globalconfig || path.join(globalPrefix, 'etc', 'npmrc'),
-  ];
-}
-
-function npmProjectDir() {
-  for (let dir = process.cwd(); ; dir = path.dirname(dir)) {
-    if (fs.existsSync(path.join(dir, 'package.json')) || fs.existsSync(path.join(dir, 'node_modules')))
-      return dir;
-    if (path.dirname(dir) === dir)
-      return process.cwd();
-  }
-}
-
-/**
- * @param {string} file
- */
-function readNpmrc(file) {
-  /** @type {Record<string, string>} */
-  const config = {};
-  try {
-    for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
-      const match = line.match(/^\s*([^#;=\s][^=]*?)\s*=\s*(.*?)\s*$/);
-      if (match)
-        config[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2').replace(/\$\{([^}]+)\}/g, (_, name) => process.env[name] || '');
-    }
-  } catch {
-  }
-  return config;
+      resolve(undefined);
+    });
+    child.on('close', code => {
+      clearTimeout(timeout);
+      try {
+        const version = JSON.parse(stdout);
+        resolve(code === 0 && typeof version === 'string' ? version : undefined);
+      } catch {
+        resolve(undefined);
+      }
+    });
+  });
 }
 
 /**
