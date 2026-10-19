@@ -15,15 +15,52 @@
  */
 
 import fs from 'fs';
+import http from 'http';
 import path from 'path';
 import { spawn } from 'child_process';
-import { test, expect } from '@playwright/test';
+import { test as baseTest, expect } from '@playwright/test';
+import type { AddressInfo } from 'net';
 
 type CliResult = {
   output: string;
   error: string;
   exitCode: number | null;
 };
+
+type NpmRegistry = {
+  url: string;
+  status: number;
+  requests: string[];
+};
+
+const test = baseTest.extend<{ npmRegistry: NpmRegistry }>({
+  npmRegistry: async ({}, use) => {
+    const registry: NpmRegistry = { url: '', status: 200, requests: [] };
+    const server = http.createServer((req, res) => {
+      registry.requests.push(req.url!);
+      res.statusCode = registry.status;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ version: '99.0.0' }));
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    registry.url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    await use(registry);
+    await new Promise(resolve => server.close(resolve));
+  },
+});
+
+// Enables the update check and isolates it from the npm config of the machine running the tests.
+function updateCheckEnv(env: Record<string, string> = {}): Record<string, string> {
+  return {
+    'CI': '',
+    'NO_UPDATE_NOTIFIER': '',
+    'npm_config_registry': '',
+    'npm_config_@playwright:registry': '',
+    'npm_config_userconfig': test.info().outputPath('user-npmrc'),
+    'npm_config_globalconfig': test.info().outputPath('global-npmrc'),
+    ...env,
+  };
+}
 
 async function runCli(args: string[], env: Record<string, string> = {}): Promise<CliResult> {
   const cliPath = path.join(__dirname, '../playwright-cli.js');
@@ -135,4 +172,48 @@ test('caches the update check in the default registry directory', async ({}) => 
 
   expect(found).toHaveLength(1);
   expect(JSON.parse(fs.readFileSync(found[0], 'utf8')).lastCheck).toEqual(expect.any(Number));
+});
+
+test('update check uses the registry from npm config env', async ({ npmRegistry }) => {
+  expect(await runCli(['--version'], updateCheckEnv({ npm_config_registry: npmRegistry.url }))).toEqual(expect.objectContaining({
+    error: expect.stringContaining('Update available for @playwright/cli'),
+    exitCode: 0,
+  }));
+  expect(npmRegistry.requests).toEqual(['/@playwright%2fcli/latest']);
+});
+
+test('update check prefers the scoped registry from project .npmrc', async ({ npmRegistry }) => {
+  fs.writeFileSync(test.info().outputPath('package.json'), '{}');
+  fs.writeFileSync(test.info().outputPath('.npmrc'), [
+    `registry=${npmRegistry.url}/default/`,
+    `@playwright:registry=${npmRegistry.url}/scoped/`,
+  ].join('\n'));
+  fs.writeFileSync(test.info().outputPath('user-npmrc'), `registry=${npmRegistry.url}/user/`);
+
+  expect(await runCli(['--version'], updateCheckEnv())).toEqual(expect.objectContaining({
+    error: expect.stringContaining('Update available for @playwright/cli'),
+    exitCode: 0,
+  }));
+  expect(npmRegistry.requests).toEqual(['/scoped/@playwright%2fcli/latest']);
+});
+
+test('update check uses the registry from user .npmrc', async ({ npmRegistry }) => {
+  fs.writeFileSync(test.info().outputPath('user-npmrc'), `registry=${npmRegistry.url}/user/`);
+
+  expect(await runCli(['--version'], updateCheckEnv())).toEqual(expect.objectContaining({
+    error: expect.stringContaining('Update available for @playwright/cli'),
+    exitCode: 0,
+  }));
+  expect(npmRegistry.requests).toEqual(['/user/@playwright%2fcli/latest']);
+});
+
+test('update check failure in the configured registry is silent', async ({ npmRegistry }) => {
+  npmRegistry.status = 401;
+  const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+  expect(await runCli(['--version'], updateCheckEnv({ npm_config_registry: npmRegistry.url }))).toEqual({
+    output: packageJson.version,
+    error: '',
+    exitCode: 0,
+  });
+  expect(npmRegistry.requests).toEqual(['/@playwright%2fcli/latest']);
 });

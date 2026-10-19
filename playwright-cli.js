@@ -18,6 +18,7 @@
 // @ts-check
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const { program } = require('playwright-core/lib/tools/cli-client/program');
@@ -60,7 +61,8 @@ async function fetchLatestVersion() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 1500);
     try {
-      const res = await fetch(`https://registry.npmjs.org/${packageJson.name}/latest`, { signal: controller.signal });
+      const url = npmRegistry().replace(/\/?$/, '/') + packageJson.name.replace('/', '%2f') + '/latest';
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok)
         return undefined;
       const json = await res.json();
@@ -71,6 +73,70 @@ async function fetchLatestVersion() {
   } catch {
     return undefined;
   }
+}
+
+// Resolves the registry npm would use for this package: the scoped registry wins
+// over the default one, each looked up in env, project, user and global npmrc.
+function npmRegistry() {
+  const env = npmEnvConfig();
+  const configs = [env, ...npmrcFiles(env).map(readNpmrc)];
+  const scope = packageJson.name.split('/')[0];
+  for (const key of [`${scope}:registry`, 'registry']) {
+    for (const config of configs) {
+      if (config[key])
+        return config[key];
+    }
+  }
+  return 'https://registry.npmjs.org/';
+}
+
+function npmEnvConfig() {
+  /** @type {Record<string, string>} */
+  const config = {};
+  for (const [name, value] of Object.entries(process.env)) {
+    if (value && /^npm_config_/i.test(name))
+      config[name.substring('npm_config_'.length).toLowerCase()] = value;
+  }
+  return config;
+}
+
+/**
+ * @param {Record<string, string>} env
+ */
+function npmrcFiles(env) {
+  const nodeDir = path.dirname(process.execPath);
+  const globalPrefix = env.prefix || process.env.PREFIX || (process.platform === 'win32' ? nodeDir : path.dirname(nodeDir));
+  return [
+    path.join(npmProjectDir(), '.npmrc'),
+    env.userconfig || path.join(os.homedir(), '.npmrc'),
+    env.globalconfig || path.join(globalPrefix, 'etc', 'npmrc'),
+  ];
+}
+
+function npmProjectDir() {
+  for (let dir = process.cwd(); ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'package.json')) || fs.existsSync(path.join(dir, 'node_modules')))
+      return dir;
+    if (path.dirname(dir) === dir)
+      return process.cwd();
+  }
+}
+
+/**
+ * @param {string} file
+ */
+function readNpmrc(file) {
+  /** @type {Record<string, string>} */
+  const config = {};
+  try {
+    for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+      const match = line.match(/^\s*([^#;=\s][^=]*?)\s*=\s*(.*?)\s*$/);
+      if (match)
+        config[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2').replace(/\$\{([^}]+)\}/g, (_, name) => process.env[name] || '');
+    }
+  } catch {
+  }
+  return config;
 }
 
 /**
