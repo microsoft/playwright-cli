@@ -43,7 +43,7 @@ async function checkForUpdates() {
     return;
 
   // The check spawns npm, so keep its cost to the commands that start a workflow.
-  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+  const command = currentCommand();
   if (!command || !UPDATE_CHECK_COMMANDS.has(command))
     return;
 
@@ -61,6 +61,26 @@ async function checkForUpdates() {
     printNotice(packageJson.version, latest);
 }
 
+// Parses argv the same way program() does, so that an option value cannot be
+// mistaken for the command: in `--config file.json open`, minimist consumes
+// `file.json` as the value of `--config` and the command is still `open`.
+// These files are internal to playwright-core and not in its "exports" map, so
+// resolve them by path and fall back to the first positional-looking argument.
+/** @returns {string | undefined} */
+function currentCommand() {
+  const argv = process.argv.slice(2);
+  try {
+    const coreDir = path.dirname(require.resolve('playwright-core/package.json'));
+    const cliClientDir = path.join(coreDir, 'lib', 'tools', 'cli-client');
+    const { minimist } = require(path.join(cliClientDir, 'minimist.js'));
+    const help = require(path.join(cliClientDir, 'help.json'));
+    const boolean = [...help.booleanOptions, 'all', 'g', 'help', 'json', 'raw', 'version'];
+    return minimist(argv, { boolean, string: ['_'] })._?.[0];
+  } catch {
+    return argv.find(arg => !arg.startsWith('-'));
+  }
+}
+
 // Asks npm, so that the user's registry, proxy and auth configuration is respected.
 /** @returns {Promise<string | undefined>} */
 function fetchLatestVersion() {
@@ -68,6 +88,7 @@ function fetchLatestVersion() {
     const child = spawn(`npm view ${packageJson.name} version --json --no-update-notifier`, {
       shell: true,
       stdio: ['ignore', 'pipe', 'ignore'],
+      windowsHide: true,
     });
     let stdout = '';
     child.stdout.on('data', data => stdout += data);

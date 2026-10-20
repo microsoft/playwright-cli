@@ -212,6 +212,15 @@ test('update check on install does not warn about the skills being installed', a
   expect(npmRegistry.requests).toEqual(['/@playwright%2fcli']);
 });
 
+test('update check runs when a global option precedes the command', async ({ npmRegistry }) => {
+  // `--session` takes a value, so the command is the token after it, not `work`.
+  expect(await runCli(['--session', 'work', 'list'], updateCheckEnv(npmRegistry))).toEqual(expect.objectContaining({
+    error: expect.stringContaining('Update available for @playwright/cli'),
+    exitCode: 0,
+  }));
+  expect(npmRegistry.requests).toEqual(['/@playwright%2fcli']);
+});
+
 test('update check uses the scoped registry from project .npmrc', async ({ npmRegistry }) => {
   fs.writeFileSync(test.info().outputPath('package.json'), '{}');
   fs.writeFileSync(test.info().outputPath('.npmrc'), `@playwright:registry=${npmRegistry.url}/scoped/`);
