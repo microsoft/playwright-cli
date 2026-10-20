@@ -42,10 +42,37 @@ function readSkill(file) {
 }
 
 /**
+ * Lists the markdown files of a skill directory, relative to it.
+ * @param {string} dir
+ * @returns {string[]}
+ */
+function skillFiles(dir) {
+  /** @type {string[]} */
+  const files = [];
+  /**
+   * @param {string} current
+   * @param {string} prefix
+   */
+  const walk = (current, prefix) => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const relativePath = prefix ? path.join(prefix, entry.name) : entry.name;
+      if (entry.isDirectory())
+        walk(path.join(current, entry.name), relativePath);
+      else if (entry.name.endsWith('.md'))
+        files.push(relativePath);
+    }
+  };
+  walk(dir, '');
+  return files;
+}
+
+/**
  * @param {string[]} lines
  * @returns {string}
  */
 function frame(lines) {
+  if (!lines.length)
+    return '';
   const width = Math.max(...lines.map(line => line.length));
   const top = '╔' + '═'.repeat(width + 2) + '╗';
   const bottom = '╚' + '═'.repeat(width + 2) + '╝';
@@ -55,14 +82,20 @@ function frame(lines) {
 
 function checkInstalledSkills() {
   try {
-    const bundled = readSkill(bundledSkillFile());
-    if (!bundled)
+    const bundledFile = bundledSkillFile();
+    if (!readSkill(bundledFile))
       return;
+    const bundledDir = path.dirname(bundledFile);
+    // The skill is SKILL.md plus its reference guides, so compare them all: a
+    // stale reference file misleads the agent just as much as a stale SKILL.md.
+    const files = skillFiles(bundledDir);
     for (const target of installedSkillTargets()) {
-      const installed = readSkill(path.join(target.dir, 'SKILL.md'));
-      if (installed === null)
+      if (readSkill(path.join(target.dir, 'SKILL.md')) === null)
         continue;
-      if (installed !== bundled) {
+      // A missing file reads as null and therefore counts as out of date.
+      const outOfDate = files.some(file =>
+        readSkill(path.join(target.dir, file)) !== readSkill(path.join(bundledDir, file)));
+      if (outOfDate) {
         process.stderr.write(frame([
           `The playwright-cli skill at '${path.relative(process.cwd(), target.dir)}'`,
           `does not match the tool version.`,

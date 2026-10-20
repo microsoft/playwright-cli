@@ -221,6 +221,20 @@ test('update check runs when a global option precedes the command', async ({ npm
   expect(npmRegistry.requests).toEqual(['/@playwright%2fcli']);
 });
 
+test('update check warns when an installed reference file is out of date', async ({ npmRegistry }) => {
+  expect(await runCli(['install', '--skills'], { NO_UPDATE_NOTIFIER: '1' })).toEqual(expect.objectContaining({
+    exitCode: 0,
+  }));
+
+  const referencesDir = path.join(test.info().outputPath(), '.claude', 'skills', 'playwright-cli', 'references');
+  const reference = fs.readdirSync(referencesDir).find(name => name.endsWith('.md'))!;
+  fs.appendFileSync(path.join(referencesDir, reference), 'x');
+
+  expect(await runCli(['list'], updateCheckEnv(npmRegistry))).toEqual(expect.objectContaining({
+    error: expect.stringContaining('does not match the tool version'),
+  }));
+});
+
 test('update check uses the scoped registry from project .npmrc', async ({ npmRegistry }) => {
   fs.writeFileSync(test.info().outputPath('package.json'), '{}');
   fs.writeFileSync(test.info().outputPath('.npmrc'), `@playwright:registry=${npmRegistry.url}/scoped/`);
