@@ -411,6 +411,152 @@ When local version is available, use `npx playwright cli` in all commands. Other
 npm install -g @playwright/cli@latest
 ```
 
+## Watching what the agent did (visibility)
+
+`open` is **headless by default**, so a browser another agent started is invisible unless you pass
+`--headed` (README: “Playwright CLI is headless by default. If you'd like to see the browser, pass
+`--headed` to `open`”). `open --help` lists only `--browser` and `--config`, but `--headed`,
+`--persistent` and `--profile=<dir>` are accepted too — verified on 0.1.20 and 0.1.22 by inspecting the
+launched browser process: the default launch carries `--headless` in its command line, `--headed` leaves
+zero such processes.
+
+`show` opens the monitoring dashboard over the sessions that already exist (it works for headless
+sessions as well, since the screencast is server side): live preview per session, and in the session
+detail view you can click into the viewport to take over mouse and keyboard, Escape to release. This is
+the way a human watches an agent work, and the way they step in.
+
+Recorded evidence is often easier to review than a live window. `video-start` takes
+`--cursor` (an animated cursor that travels to each action point; it paces actions by ~800 ms so the
+cursor has time to move — use it for review runs, not for speed), `--fps` (default 25) and
+`--size`; combine with `video-show-actions --duration=600`, which puts a callout naming every action on
+the page as it happens. `tracing-start` / `tracing-stop` writes a replayable trace (screencast + DOM +
+network) next to the session.
+
+## Bot walls: recognise them, then hand the browser to a human
+
+Some sites answer automation with an interstitial instead of content (Google: `…/sorry/index`, “Our
+systems have detected unusual traffic…”, with a reCAPTCHA inside an iframe). Do not retry-loop it: a
+handful of requests from one IP produced the wall on one endpoint while the same session's normal search
+stayed clean, and an automated click on the checkbox was silently refused (`aria-checked` stayed `false`,
+no challenge frame, no token). The working pattern is a **dedicated persistent profile** plus one human
+solve:
+
+```bash
+playwright-cli open --headed --persistent --profile=.agent-profile https://news.google.com/…
+# wall appears -> say so and stop; the human solves it in the window
+# (or in the dashboard: `show`, click into the viewport, Escape to release)
+```
+
+The unlock cookie lands in that profile and **survives closing and reopening the browser**, so it is one
+manual solve per profile rather than per session — measured end to end with a user-solved reCAPTCHA,
+after which search, pagination and publisher navigation all ran clean, in later sessions included. Keep
+the agent profile separate from the user's daily browser: it holds no accounts of its own and its state
+is disposable. `state-save auth.json` / `state-load auth.json` is the same idea as a file — that file
+*is* the session (live cookies): scratch directory, gitignored, deleted when the task ends.
+
+Before concluding “blocked”, check your extraction instead: an empty selector is not a wall. Google News
+renders headlines as `a.JtKRv` with **no `<article>` elements**, so an `article`-based extractor returns
+0 on a perfectly healthy page (`a[href]` count 217 vs `<article>` count 0 was the tell). Probe the real
+class names with a short `eval`, then write the selector.
+
+## Iframes — the boundary that eats clicks
+
+The most common silent failure: the command reports success and the page does not change. Consent modals,
+CAPTCHA checkboxes, embedded players and payment widgets live in separate **frames**, so a page-level
+locator misses them or clicks the overlay instead of the control. Measured case: a YouTube video stayed
+at `currentTime 0.76` through two clicks because the cookie-consent modal's button was inside a frame;
+the fix is to search the frames:
+
+```bash
+playwright-cli run-code --filename=clear-modal.js
+#   for (const f of page.frames()) {
+#     const b = f.locator('button', { hasText: /Reject all/i });
+#     if (await b.count()) { await b.click(); break; }
+#   }
+```
+
+The same shape reaches a reCAPTCHA checkbox
+(`page.frameLocator('iframe[title="reCAPTCHA"]').locator('#recaptcha-anchor')`) — reaching it is only half
+of it: verify with state (`aria-checked`, the token input's value, whether a challenge frame appeared),
+because a refusal is silent.
+
+## Verify the action, not the exit code
+
+Every interaction has a cheap state read that proves it worked; pair them:
+
+| action | prove it with |
+| --- | --- |
+| clicked a link | `Page URL` / `document.title` changed |
+| clicked a toggle/checkbox | `aria-checked`, or the control's class |
+| submitted a form | the page's own verdict text, or a URL change |
+| scrolled | `window.scrollY` non-zero |
+| searched / paginated | the URL query (`start=10` is page 2) |
+| played media | player state `1` and `currentTime` advancing |
+| set emulation (color-scheme etc.) | `matchMedia('(prefers-color-scheme: dark)').matches` |
+
+Success-with-no-state-change means one of: the control is in a **frame** (above), an **overlay** is
+absorbing the click (screenshot it), or the click opened **another tab** (`tab-list` → `tab-select`).
+
+## Scrolling that actually moves the page
+
+Page-level scroll commands are not reliable everywhere: on Reddit, `scroll-down`, `mouse-wheel` and the
+`PageDown` key all left `window.scrollY` at 0 while the page was perfectly scrollable
+(`scrollHeight` 3783 vs `innerHeight` 1277, and `window.scrollTo(0, 900)` moved it). Scroll the
+**element** you care about, and verify the move instead of assuming it:
+
+```bash
+playwright-cli run-code --filename=scroll.js
+#   await page.locator('shreddit-comment').first().scrollIntoViewIfNeeded();
+#   return await page.evaluate(() => Math.round(window.scrollY));   # non-zero is the proof
+```
+
+Element scrolling also beats fixed offsets when the goal is to read or screenshot something specific, and
+it is what makes an off-screen element clickable.
+
+## Locator misses: probe, don't guess again
+
+- `strict mode violation: … resolved to 2 elements` → the locator is ambiguous: add `.first()` or
+  `.nth(n)`, e.g. `click "getByRole('link', { name: /Page 2/i }).first()"`.
+- `“…” does not match any elements` → the text/role you assumed is not what the page carries. Pull the
+  real handles with a short `eval` and click by href: slugs are not what you'd guess (an article titled
+  “Self-Preference of AI Judges” lives at `/blog/llm-judge-self-preference`).
+
+For refs, don't dump the whole snapshot into context: `find --regex=… --filename=.scratch/find.md` keeps
+the matches out of the response (verified on 0.1.22: 391 ms, 15 KB to file) — there is no `--limit`.
+
+## One JS call instead of a command chain
+
+For multi-step work, one `run-code` block beats a chain of commands. Measured on 0.1.22 with three tasks
+(an offline fixture, a Bing News query, a BBC front page) × two repetitions, both arms graded against an
+independent read of page state: **one call instead of 4–6 (−75%), wall clock −42/−43%, identical
+correctness (12/12)**. The context effect is subtler than the call count: bulk is ~20% smaller than
+realistic per-command output but ~28% *larger* than a `--raw`-disciplined chain, so the honest claim is
+the **turn** saving, not a token saving.
+
+Put non-trivial JS in a file (`run-code --filename=…`): shell quoting mangles inline scripts — on Windows
+`cmd.exe` treats `||` as a command separator, so the argument arrives **silently truncated**
+(`SyntaxError: Unexpected end of input`), and `>` becomes a **redirect** that wrote stray files into the
+working directory while the expression ran mangled. Both symptoms are silent; quote every argument, or
+use a file.
+
+Inside `run-code` on 0.1.22 the sandbox exposes `fetch`, `setTimeout`, `URL`, `Buffer`, `crypto`,
+`AbortController`, `TextEncoder`/`TextDecoder`; `require` and `process` stay `undefined` (verified by
+printing `typeof` from inside a call). So one call can fetch an API, wait, then read the page.
+
+## Timeouts, pacing, and tabs
+
+- `timeouts.action` (config file) bounds a single action; the shipped defaults are
+  `{ action: 5e3, navigation: 6e4, expect: 5e3, settle: 500 }` (read out of the installed bundle). A slow
+  SPA needs that raised rather than the command retried — 5 s on a heavy page looks like a broken
+  selector when it is simply slow.
+- `--idle-timeout` does **not** apply to a headed session: it stays open for the human.
+- **Outbound links open a new tab** and the CLI keeps focus on the tab you were on, so a click that
+  changes no `Page URL` usually succeeded — check `tab-list`.
+- **There is no `--new-tab` flag.** On 0.1.20 `playwright-cli --new-tab <url>` did nothing and exited 0;
+  on 0.1.22 it prints the usage banner and still opens no tab. The command is `tab-new [url]`.
+  Reported as #486. (`file:` URLs are rejected with a clear message, so the two cases differ only in how
+  loud they are.)
+
 ## Example: Form submission
 
 ```bash
