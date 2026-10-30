@@ -185,8 +185,10 @@ playwright-cli keyup <key>              # press a key up on the keyboard
 playwright-cli mousemove <x> <y>        # move mouse to a given position
 playwright-cli mousedown [button]       # press mouse down
 playwright-cli mouseup [button]         # press mouse up
-playwright-cli mousewheel <dx> <dy>     # scroll mouse wheel
+playwright-cli mousewheel <dx> <dy>     # scroll by pixels; negative dy scrolls up
 ```
+
+The element under the mouse pointer scrolls, so use `mousemove` to move over it first.
 
 ### Save as
 
@@ -203,6 +205,7 @@ playwright-cli pdf --filename=page.pdf  # save pdf with specific filename
 ```bash
 playwright-cli tab-list                 # list all tabs
 playwright-cli tab-new [url]            # create a new tab
+playwright-cli tab-new https://example.com --isolated-context=user-b # use an isolated context
 playwright-cli tab-close [index]        # close a browser tab
 playwright-cli tab-select <index>       # select a browser tab
 ```
@@ -218,6 +221,7 @@ playwright-cli cookie-list [--domain]   # list cookies
 playwright-cli cookie-get <name>        # get a cookie
 playwright-cli cookie-set <name> <val>  # set a cookie
 playwright-cli cookie-delete <name>     # delete a cookie
+playwright-cli cookie-delete <name> --domain=example.com # delete only on this domain
 playwright-cli cookie-clear             # clear all cookies
 
 # LocalStorage
@@ -284,6 +288,16 @@ playwright-cli highlight <ref>          # show a persistent highlight overlay
 playwright-cli highlight <ref> --style= # highlight with a custom CSS style
 playwright-cli highlight <ref> --hide   # hide highlight on a specific element
 playwright-cli highlight --hide         # hide all page highlights
+```
+
+Tracing requires an open browser. Open it before starting the trace, then use `goto` to
+record navigation:
+
+```bash
+playwright-cli open
+playwright-cli tracing-start
+playwright-cli goto https://example.com
+playwright-cli tracing-stop
 ```
 
 ### WebMCP
@@ -355,6 +369,16 @@ playwright-cli find "Add to cart"
 playwright-cli find --regex "\\$[0-9]+\\.[0-9]{2}"
 # wrap the regexp in slashes to add flags, e.g. /i for case-insensitive
 playwright-cli find --regex "/sign (in|up)/i"
+```
+
+### Raw output
+
+The global `--raw` option strips page status and generated code from the output. It keeps
+the result value, errors, and the page snapshot (or the link to the snapshot file).
+Commands that don't produce output return nothing.
+
+```bash
+playwright-cli --raw eval "JSON.stringify(performance.timing)" | jq '.loadEventEnd - .navigationStart'
 ```
 
 ### Targeting elements

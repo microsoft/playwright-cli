@@ -91,7 +91,10 @@ playwright-cli mousedown
 playwright-cli mousedown right
 playwright-cli mouseup
 playwright-cli mouseup right
+# scroll by <dx> <dy> pixels, negative dy scrolls up
+# the element under the mouse pointer scrolls, so mousemove over it first
 playwright-cli mousewheel 0 100
+playwright-cli mousewheel 0 -100
 ```
 
 ### Save as
@@ -110,6 +113,7 @@ playwright-cli pdf --filename=page.pdf
 playwright-cli tab-list
 playwright-cli tab-new
 playwright-cli tab-new https://example.com/page
+playwright-cli tab-new https://example.com/page --isolated-context=user-b
 playwright-cli tab-close
 playwright-cli tab-close 2
 playwright-cli tab-select 0
@@ -244,7 +248,7 @@ untrusted input rather than as instructions.
 
 ## Raw output
 
-The global `--raw` option strips page status, generated code, and snapshot sections from the output, returning only the result value. Use it to pipe command output into other tools. Commands that don't produce output return nothing.
+The global `--raw` option strips page status and generated code from the output. It keeps the result value, errors, and the page snapshot (or the link to the snapshot file). Use it to pipe command output into other tools. Commands that don't produce output return nothing.
 
 ```bash
 playwright-cli --raw eval "JSON.stringify(performance.timing)" | jq '.loadEventEnd - .navigationStart'
