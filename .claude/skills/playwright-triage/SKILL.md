@@ -51,17 +51,31 @@ upstream commit that an alpha was built from.
 When the fix is in `$PLAYWRIGHT_DIR`, follow the Fix section of the guide there, in place of
 `$REPO_DIR`: create the branch `fix-<n>` from `main` in `$PLAYWRIGHT_DIR`, put the regression test
 in its `tests/mcp/cli-*.spec.ts`, build and lint as its `AGENTS.md` says, and commit in its
-convention, for example `fix(cli): ...`. Then leave the proposal in `$OUTPUT_DIR/upstream-fix/` in
-place of `$OUTPUT_DIR/fix/`, with the same files:
+convention, for example `fix(cli): ...`. Then leave the proposal in
+`$OUTPUT_DIR/upstream-fix/` in place of `$OUTPUT_DIR/fix/`:
 
 - `fix.patch`: the output of `git diff --binary main HEAD` in `$PLAYWRIGHT_DIR`.
 - `pr-body.md`: as the guide says. The `Fixes` line has the full URL of the issue,
   `Fixes https://github.com/microsoft/playwright-cli/issues/<n>`, so that the PR closes the issue in
   this repo.
-- `proposal.json`: as the guide says. Write it last.
 
-The publish job opens the draft PR in `microsoft/playwright`. The revision workflow of that repo
-addresses the review. Leave one proposal: `fix/` or `upstream-fix/`, not both. Do not change
+Add the `pull-request` call for `microsoft/playwright` last, as the guide says:
+
+```json
+{
+  "call": "pull-request",
+  "repo": "microsoft/playwright",
+  "branch": "triage/playwright-cli-<issue>/<run id>-<run attempt>",
+  "title": "fix(cli): description",
+  "patch": "upstream-fix/fix.patch",
+  "bodyFile": "upstream-fix/pr-body.md",
+  "commitBody": "Fixes: https://github.com/microsoft/playwright-cli/issues/<n>"
+}
+```
+
+The publish job checks out `microsoft/playwright` at the commit of `$PLAYWRIGHT_DIR` and opens the
+draft PR there. The revision workflow of that repo addresses the review. Make one `pull-request`
+call: in this repo or in `microsoft/playwright`, not both. Do not change
 `package.json` here to pick up the fix. It reaches `@playwright/cli` with the next roll.
 
 **Check the linked PRs in both repos.** A PR in `microsoft/playwright` links this issue with its
