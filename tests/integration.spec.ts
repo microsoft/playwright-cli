@@ -147,7 +147,7 @@ test('warns when installed skill is out of date', async ({ npmRegistry }) => {
   fs.appendFileSync(skillFile, 'x');
 
   const env = updateCheckEnv(npmRegistry);
-  expect(await runCli(['list'], env)).toEqual(expect.objectContaining({
+  expect(await runCli(['-s', 'foo', 'list'], env)).toEqual(expect.objectContaining({
     error: expect.stringContaining('does not match the tool version'),
   }));
 
@@ -201,13 +201,23 @@ test('caches the update check in the default registry directory', async ({ npmRe
   expect(JSON.parse(fs.readFileSync(found[0], 'utf8')).lastCheck).toEqual(expect.any(Number));
 });
 
-test('update check asks npm for the latest version on setup commands only', async ({ npmRegistry }) => {
+test('update check asks npm for the latest version on setup commands only', {
+  annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright-cli/issues/505' },
+}, async ({ npmRegistry }) => {
   const env = updateCheckEnv(npmRegistry);
   expect(await runCli(['--version'], env)).toEqual(expect.objectContaining({
     error: '',
     exitCode: 0,
   }));
   expect(npmRegistry.requests).toEqual([]);
+
+  // A session named after a setup command is not the command.
+  expect(await runCli(['-s', 'list', 'snapshot'], env)).toEqual(expect.objectContaining({
+    error: expect.not.stringContaining('Update available for @playwright/cli'),
+    exitCode: 1,
+  }));
+  expect(npmRegistry.requests).toEqual([]);
+  expect(fs.existsSync(test.info().outputPath('cli-update-check.json'))).toBe(false);
 
   // The command is recognized behind the global options.
   expect(await runCli(['--session', 'foo', 'list'], env)).toEqual(expect.objectContaining({
@@ -225,7 +235,7 @@ test('update check on install does not warn about the skills being installed', a
   const skillFile = path.join(test.info().outputPath(), '.claude', 'skills', 'playwright-cli', 'SKILL.md');
   fs.appendFileSync(skillFile, 'x');
 
-  const result = await runCli(['install', '--skills'], updateCheckEnv(npmRegistry));
+  const result = await runCli(['--session', 'list', 'install', '--skills'], updateCheckEnv(npmRegistry));
   expect(result.exitCode).toBe(0);
   expect(result.error).toContain('Update available for @playwright/cli');
   expect(result.error).not.toContain('does not match the tool version');
