@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const { program } = require('playwright-core/lib/tools/cli-client/program');
+const { parseArgs, program } = require('playwright-core/lib/tools/cli-client/program');
 const coreBundle = require('playwright-core/lib/coreBundle');
 const { tools, registry } = coreBundle;
 const { checkInstalledSkills, frame } = require('./skillCheck');
@@ -34,16 +34,21 @@ const UPDATE_CHECK_COMMANDS = new Set(['open', 'attach', 'list', 'install', 'ins
 main();
 
 async function main() {
-  await checkForUpdates().catch(() => {});
-  program({ embedderVersion: packageJson.version });
+  // Parse once and inspect the arguments before program() runs, as it may mutate them.
+  const args = parseArgs(process.argv.slice(2));
+  await checkForUpdates(args).catch(() => {});
+  await program({ args, embedderVersion: packageJson.version });
 }
 
-async function checkForUpdates() {
+/**
+ * @param {ReturnType<typeof parseArgs>} args
+ */
+async function checkForUpdates(args) {
   if (process.env.NO_UPDATE_NOTIFIER || process.env.CI)
     return;
 
   // The check spawns npm, so keep its cost to the commands that start a workflow.
-  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+  const command = args._[0];
   if (!command || !UPDATE_CHECK_COMMANDS.has(command))
     return;
 
