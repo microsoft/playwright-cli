@@ -34,10 +34,24 @@ const UPDATE_CHECK_COMMANDS = new Set(['open', 'attach', 'list', 'install', 'ins
 main();
 
 async function main() {
-  // Parse once and inspect the arguments before program() runs, as it may mutate them.
-  const args = parseArgs(process.argv.slice(2));
-  await checkForUpdates(args).catch(() => {});
-  await program({ args, embedderVersion: packageJson.version });
+  const argv = process.argv.slice(2);
+  // Parsing can fail before the output mode is known, so start from the flag.
+  let json = argv.includes('--json');
+  try {
+    // Parse once and inspect the arguments before program() runs, as it may mutate them.
+    const args = parseArgs(argv);
+    json = !!args.json;
+    await checkForUpdates(args).catch(() => {});
+    await program({ args, embedderVersion: packageJson.version });
+  } catch (error) {
+    // Report the failure the way program() reports its own errors.
+    const message = error instanceof Error ? error.message : String(error);
+    if (json)
+      console.log(JSON.stringify({ isError: true, error: message }, null, 2));
+    else
+      console.error(message);
+    process.exit(1);
+  }
 }
 
 /**

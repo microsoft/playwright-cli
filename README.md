@@ -27,6 +27,9 @@ npm install -g @playwright/cli@latest
 playwright-cli --help
 ```
 
+Argument parsing and startup errors exit with code 1 and print an error message. With
+`--json`, these errors are written to stdout as `{ "isError": true, "error": "..." }`.
+
 ### Installing skills
 
 Claude Code, GitHub Copilot and others will use the locally installed skills.

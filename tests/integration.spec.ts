@@ -107,11 +107,30 @@ async function runCli(args: string[], env: Record<string, string> = {}): Promise
   });
 }
 
-test('open data URL', async ({}) => {
+test('open data URL', { annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright-cli/issues/502' } }, async ({}) => {
+  const argumentError = "boolean option '--headed' should not be passed with '=value', use '--headed' or '--no-headed' instead";
+  expect(await runCli(['open', '--headed=false'])).toEqual({
+    output: '',
+    error: argumentError,
+    exitCode: 1,
+  });
+
+  expect(await runCli(['--json', 'open', '--headed=false'])).toEqual({
+    output: JSON.stringify({ isError: true, error: argumentError }, null, 2),
+    error: '',
+    exitCode: 1,
+  });
+
   expect(await runCli(['open', 'data:text/html,hello', '--persistent'])).toEqual(expect.objectContaining({
     output: expect.stringContaining('hello'),
     exitCode: 0,
   }));
+
+  expect(await runCli(['--json', 'screenshot', '--filename'])).toEqual({
+    output: JSON.stringify({ isError: true, error: "error: '--filename' option: expected string, received boolean" }, null, 2),
+    error: '',
+    exitCode: 1,
+  });
 
   expect(await runCli(['delete-data'])).toEqual(expect.objectContaining({
     output: expect.stringContaining('Deleted user data for'),
