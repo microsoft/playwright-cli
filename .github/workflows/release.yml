@@ -105,7 +105,7 @@ jobs:
         npm install -g @github/copilot
     - name: Write the notes with Copilot CLI
       id: agent
-      uses: microsoft/playwright/.github/actions/run-agent@main
+      uses: microsoft/playwright/.github/actions/run-agent@d1518e3e3fca90352c4390814943cced496fd7e4 # main
       with:
         prompt: |
           Write the release notes of @playwright/cli v${{ env.VERSION }}. Follow steps 2 to 7 of .claude/skills/dev/release.md. Read the skill in full before you start.
