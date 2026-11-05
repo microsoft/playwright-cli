@@ -190,7 +190,8 @@ test('update check asks npm for the latest version on setup commands only', asyn
   }));
   expect(npmRegistry.requests).toEqual([]);
 
-  expect(await runCli(['list'], env)).toEqual(expect.objectContaining({
+  // The command is recognized behind the global options.
+  expect(await runCli(['--session', 'foo', 'list'], env)).toEqual(expect.objectContaining({
     error: expect.stringContaining('Update available for @playwright/cli'),
     exitCode: 0,
   }));
