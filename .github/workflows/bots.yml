@@ -1,0 +1,41 @@
+# The Playwright bots run in microsoft/devops.playwright.dev. This workflow hands them the request
+# when a maintainer applies agent-fix, agent-fix-mac or agent-fix-win to an issue: it dispatches
+# bots.yml there with the repo, the issue number, the label and who applied it. The bot triages the
+# issue there and proposes the fix as a draft PR, in this repo or in microsoft/playwright, where the
+# source of the CLI is. Re-apply the label to start another run. needs-triage and needs-revision
+# still run triage.yml and revision.yml here, until the bots take those over too.
+#
+# Its source is bots/shim.yml in microsoft/devops.playwright.dev, and bots/README.md there
+# describes the system.
+name: Bots
+
+on:
+  issues:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  dispatch:
+    name: Hand the request to the bots
+    if: github.repository_owner == 'microsoft' && startsWith(github.event.label.name, 'agent-fix')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      id: app-token
+      with:
+        client-id: ${{ vars.PLAYWRIGHT_APP_CLIENT_ID }}
+        private-key: ${{ secrets.PLAYWRIGHT_PRIVATE_KEY }}
+        owner: microsoft
+        repositories: devops.playwright.dev
+        permission-actions: write
+    - name: Dispatch bots.yml in microsoft/devops.playwright.dev
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        NUMBER: ${{ github.event.issue.number }}
+        LABEL: ${{ github.event.label.name }}
+        SENDER: ${{ github.event.sender.login }}
+      run: >-
+        gh workflow run bots.yml --repo microsoft/devops.playwright.dev --ref main
+        -f repo="$GITHUB_REPOSITORY" -f number="$NUMBER" -f label="$LABEL" -f requested_by="$SENDER"
