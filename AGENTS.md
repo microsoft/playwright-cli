@@ -1,10 +1,27 @@
-## Build and test
+## How this repo depends on Playwright
 
-The CLI source lives in `microsoft/playwright`, in `packages/playwright-core/src/tools/`. This repo
-ships `@playwright/cli`: `playwright-cli.js` runs the CLI of the `playwright-core` alpha that
-`package.json` pins, and adds the update check, with `skillCheck.js`. `skills/playwright-cli/` is a
-copy of the skill that `playwright-cli install --skills` writes, and `node scripts/update.js`
-refreshes it.
+This repo ships the npm package `@playwright/cli`. The CLI itself is in `microsoft/playwright`, in
+`packages/playwright-core/src/tools/`: `cli-client/` has the commands and their options,
+`cli-daemon/` has the daemon that keeps the browser open between commands, and `backend/` has the
+tools that the commands run.
+
+- **What this repo owns:** `playwright-cli.js`, which runs the CLI of the pinned `playwright-core`
+  and adds the update check, `skillCheck.js`, the README, and the tests of the packaged CLI.
+- **What is a copy:** `skills/playwright-cli/` is a copy of
+  `packages/playwright-core/src/tools/skills/playwright-cli/`. `node scripts/update.js` refreshes
+  it on a roll. Change it upstream.
+- **The pin:** `package.json` pins an alpha of `playwright` and `playwright-core`.
+  `npm view playwright-core@<alpha> gitHead` prints the upstream commit of an alpha, and
+  `npm view @playwright/cli@<version> dependencies.playwright-core` prints the alpha of a release.
+  The pin is older than the tip of upstream `main`.
+- **Where a fix goes:** most bugs and features are upstream. Work in a checkout of
+  `microsoft/playwright` next to this repo, `../playwright`, as its `AGENTS.md` says. The tests of
+  the CLI are its `tests/mcp/cli-*.spec.ts`, with the `cli` fixture of `tests/mcp/cli-fixtures.ts`,
+  and `npm run test-playwright-cli` runs them. Fix here only what this repo owns.
+- **How a fix arrives:** with a roll, after `playwright@next` has the upstream commit. The upstream
+  PR says `Refs <issue url>` for an issue of this repo, and the roll PR here says `Fixes`.
+
+## Build and test
 
 ```bash
 npm ci
@@ -58,7 +75,7 @@ The Playwright bot does the work below. It opens pull requests as the
 `microsoft-playwright-automation` app. [triage.yml](.github/workflows/triage.yml) and
 [review.yml](.github/workflows/review.yml) hand it the labels:
 
-- `agent-triage` on an issue: finds the cause and fixes the issue if it can, with the skill in [.claude/skills/playwright-triage/](.claude/skills/playwright-triage/SKILL.md). A fix in `microsoft/playwright` opens as a draft PR there.
+- `agent-triage` on an issue: finds the cause and fixes the issue if it can. A fix in `microsoft/playwright` opens as a draft PR there.
 - `agent-implement` on an issue: implements what the issue and the maintainers' comments say.
 - `agent-task` on an issue: does what the issue asks, with the skills of this repo.
 - `agent-review` on a PR: revises the PR, as the maintainers' review comments say.
