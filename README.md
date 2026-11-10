@@ -422,7 +422,7 @@ playwright-cli kill-all                 # forcefully kill all browser processes
 
 ### Local installation
 
-If global `playwright-cli` command is not available, try a local version via `npx playwright cli`:
+If global `playwright-cli` command is not available, try a local version via `npx playwright cli`. It needs Playwright 1.59 or newer:
 
 ```bash
 npx --no-install playwright --version
