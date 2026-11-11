@@ -15,7 +15,7 @@ This package provides CLI interface into Playwright. If you are using **coding a
 - **Token-efficient**. Does not force page data into LLM.
 
 ### Requirements
-- Node.js 18 or newer
+- Node.js 20 or newer
 - Claude Code, GitHub Copilot, or any other coding agent.
 
 ## Getting Started
