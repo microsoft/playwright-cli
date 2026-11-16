@@ -334,6 +334,18 @@ playwright-cli close                    # close the browser
 playwright-cli delete-data              # delete user data for default session
 ```
 
+Extension sessions control only their own tabs and place them in a tab group. Use a session name
+and color to tell groups apart:
+
+```bash
+playwright-cli attach --extension=chrome --session=finance --session-color=blue
+playwright-cli -s=finance goto https://example.com
+playwright-cli -s=finance detach --close-tabs
+```
+
+By default, `detach` leaves the tabs open. For extension sessions, `--close-tabs` closes all tabs
+of the session, including tabs the user selected when connecting, but leaves other tabs open.
+
 ### Snapshots
 
 After each command, playwright-cli provides a snapshot of the current browser state.

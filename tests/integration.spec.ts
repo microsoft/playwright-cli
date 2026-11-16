@@ -107,7 +107,12 @@ async function runCli(args: string[], env: Record<string, string> = {}): Promise
   });
 }
 
-test('open data URL', { annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright-cli/issues/502' } }, async ({}) => {
+test('open data URL', {
+  annotation: [
+    { type: 'issue', description: 'https://github.com/microsoft/playwright-cli/issues/502' },
+    { type: 'issue', description: 'https://github.com/microsoft/playwright-cli/issues/540' },
+  ],
+}, async ({}) => {
   const argumentError = "boolean option '--headed' should not be passed with '=value', use '--headed' or '--no-headed' instead";
   expect(await runCli(['open', '--headed=false'])).toEqual({
     output: '',
@@ -121,10 +126,19 @@ test('open data URL', { annotation: { type: 'issue', description: 'https://githu
     exitCode: 1,
   });
 
-  expect(await runCli(['open', 'data:text/html,hello', '--persistent'])).toEqual(expect.objectContaining({
+  const browsersPath = test.info().outputPath('empty-browsers');
+  expect(await runCli(['open', 'data:text/html,hello', '--persistent'], {
+    PLAYWRIGHT_BROWSERS_PATH: browsersPath,
+  })).toEqual(expect.objectContaining({
     output: expect.stringContaining('hello'),
     exitCode: 0,
   }));
+
+  const missingFfmpeg = await runCli(['video-start', 'video.webm']);
+  expect(missingFfmpeg.output).toContain('FFmpeg is not installed');
+  expect(missingFfmpeg.output).toContain(`expected executable at ${browsersPath}`);
+  expect(missingFfmpeg.output).toContain('playwright-cli install-browser ffmpeg');
+  expect(missingFfmpeg.output).not.toContain('npx playwright install ffmpeg');
 
   expect(await runCli(['--json', 'screenshot', '--filename'])).toEqual({
     output: JSON.stringify({ isError: true, error: "error: '--filename' option: expected string, received boolean" }, null, 2),
