@@ -334,6 +334,24 @@ playwright-cli close                    # close the browser
 playwright-cli delete-data              # delete user data for default session
 ```
 
+When attaching via the Playwright Extension, the session controls only the tabs selected by the
+user and the tabs it opens. These tabs form a group named after the session. Use `--session-color`
+to choose its color, or `--no-tab-group` to leave the tabs ungrouped:
+
+```bash
+playwright-cli attach --extension=chrome --session=finance --session-color=blue
+playwright-cli -s=finance goto https://example.com
+playwright-cli -s=finance detach         # leave the tabs open; the group turns gray
+```
+
+Without `--session`, the session takes the browser name (`chrome`, `msedge`). To close all tabs
+of an extension session, including tabs selected by the user, use `detach --close-tabs` instead.
+Other tabs and the browser remain open:
+
+```bash
+playwright-cli -s=finance detach --close-tabs
+```
+
 ### Snapshots
 
 After each command, playwright-cli provides a snapshot of the current browser state.
@@ -634,7 +652,7 @@ The installed skill includes detailed reference guides for common tasks:
 * **Running and Debugging Playwright tests** — run, debug and manage Playwright test suites
 * **Request mocking** — intercept and mock network requests
 * **Running Playwright code** — execute arbitrary Playwright scripts
-* **Browser session management** — manage multiple browser sessions
+* **Browser session management** — manage multiple browser sessions and attach to the user's browser
 * **Storage state (cookies, localStorage)** — persist and restore browser state
 * **Test generation (plan / generate / heal)** — generate Playwright tests from a spec or interactions
 * **Tracing** — record and inspect execution traces
