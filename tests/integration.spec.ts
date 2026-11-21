@@ -271,3 +271,54 @@ test('update check does not wait for a hanging registry', async ({ npmRegistry }
   }));
   expect(Date.now() - start).toBeLessThan(10000);
 });
+
+test('documented env vars and config schema in README are supported by runtime', {
+  annotation: { type: 'issue', description: 'https://github.com/microsoft/playwright-cli/issues/550' },
+}, async () => {
+  const readme = fs.readFileSync(path.join(__dirname, '../README.md'), 'utf8');
+  const envSectionMatch = readme.match(/<summary>Configuration via env<\/summary>([\s\S]*?)<\/details>/);
+  expect(envSectionMatch).toBeTruthy();
+
+  const documentedEnvVars = [...envSectionMatch![1].matchAll(/`(PLAYWRIGHT_MCP_[A-Z0-9_]+)(?:=[^`]+)?`/g)].map(m => m[1]);
+  expect(documentedEnvVars.length).toBeGreaterThan(0);
+
+  const coreBundle = fs.readFileSync(require.resolve('playwright-core/lib/coreBundle'), 'utf8');
+  const runtimeEnvVars = new Set(coreBundle.match(/\bPLAYWRIGHT_MCP_[A-Z0-9_]+\b/g) || []);
+  expect(documentedEnvVars.filter(envVar => !runtimeEnvVars.has(envVar))).toEqual([]);
+
+  const schemaSectionMatch = readme.match(/<summary>Configuration file schema<\/summary>([\s\S]*?)<\/details>/);
+  expect(schemaSectionMatch).toBeTruthy();
+  expect(schemaSectionMatch![1]).not.toMatch(/\b(?:saveVideo|outputMode)\b/);
+
+  const { tools } = require('playwright-core/lib/coreBundle');
+  const config = await tools.resolveCLIConfigForCLI(test.info().outputPath(), 'default', {}, {
+    PLAYWRIGHT_MCP_SANDBOX: 'false',
+    PLAYWRIGHT_MCP_CODEGEN: 'python',
+    PLAYWRIGHT_MCP_WEBMCP: 'false',
+    PLAYWRIGHT_MCP_EXTENSION: 'true',
+    PLAYWRIGHT_MCP_SESSION_COLOR: 'blue',
+    PLAYWRIGHT_MCP_BACKGROUND: 'true',
+    PLAYWRIGHT_MCP_NO_TAB_GROUP: 'true',
+    PLAYWRIGHT_MCP_MOBILE: 'true',
+    PLAYWRIGHT_MCP_IMAGE_RESPONSES: 'omit',
+    PLAYWRIGHT_MCP_FILE_PATHS: 'absolute',
+    PLAYWRIGHT_MCP_OUTPUT_MAX_SIZE: '1024',
+    PLAYWRIGHT_MCP_TIMEOUT_SETTLE: '250',
+    PLAYWRIGHT_MCP_REDACT_URL_PARAMS: 'token,code',
+    PLAYWRIGHT_MCP_REMOTE_HEADERS: 'Authorization: Bearer test-token',
+  });
+  expect(config.browser.launchOptions.chromiumSandbox).toBe(false);
+  expect(config.browser.launchOptions.headless).toBe(true);
+  expect(config.codegen).toBe('python');
+  expect(config.webmcp).toBe(false);
+  expect(config.extension).toBe(true);
+  expect(config.sessionColor).toBe('blue');
+  expect(config.background).toBe(true);
+  expect(config.tabGroup).toBe(false);
+  expect(config.imageResponses).toBe('omit');
+  expect(config.filePaths).toBe('absolute');
+  expect(config.outputMaxSize).toBe(1024);
+  expect(config.timeouts.settle).toBe(250);
+  expect(config.redactUrlParams).toEqual(['token', 'code']);
+  expect(config.browser.remoteHeaders).toEqual({ Authorization: 'Bearer test-token' });
+});
