@@ -18,6 +18,7 @@
    - Runs `node playwright-cli.js install --skills` to regenerate skills from the new Playwright version.
    - Copies the generated skills from `.claude/skills/playwright-cli/` into `skills/playwright-cli/`.
    - Cleans up the generated `.claude/skills/` directory.
+   - Regenerates the configuration file schema and `PLAYWRIGHT_MCP_*` environment variables sections in `README.md`.
 
 3. **Update README.md** with relevant changes from the updated skill at `skills/playwright-cli/SKILL.md`. Compare the skill file with the README and update any sections that are out of date (commands, flags, default behaviors, examples).
 
