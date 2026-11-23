@@ -1,0 +1,73 @@
+# Keeps README.md in sync with the Playwright that main pins. Starts the Playwright bot with the
+# task below. The bot compares the README with the pinned playwright-core, and opens the pull
+# request as the app when the README is out of date.
+name: "Agent: update README"
+
+on:
+  # Mondays at 9:17 UTC: 2:17 at night Pacific time, 1:17 in winter. Not on the hour, when GitHub
+  # delays scheduled runs. A scheduled run skips while a README pull request of the bot is open.
+  schedule:
+  - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  start:
+    name: Hand the task to the bot
+    if: github.repository == 'microsoft/playwright-cli'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+    # A manual run starts the bot anyway: a maintainer asked for it. The task gives the title.
+    - name: Look for an open README pull request
+      id: open
+      if: github.event_name == 'schedule'
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        pr=$(gh pr list --state open --base main --author app/microsoft-playwright-automation --json number,title \
+          --jq '[.[] | select(.title | startswith("docs(readme): sync with Playwright")) | .number] | first // empty')
+        if [[ -n "$pr" ]]; then
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          echo "Skipped: README pull request #$pr is open." >> "$GITHUB_STEP_SUMMARY"
+        fi
+    - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      if: steps.open.outputs.pr == ''
+      id: app-token
+      with:
+        client-id: ${{ vars.PLAYWRIGHT_APP_CLIENT_ID }}
+        private-key: ${{ secrets.PLAYWRIGHT_PRIVATE_KEY }}
+        owner: microsoft
+        repositories: devops.playwright.dev
+        permission-actions: write
+    - name: Start the bot
+      if: steps.open.outputs.pr == ''
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        TASK: >-
+          Update README.md so that it matches the Playwright that main pins: the playwright-core
+          version in package.json. Change README.md only. Do not roll Playwright, and do not
+          change skills/ or the tests.
+          Check each part of the README against its source.
+          Commands, their options and the examples: `node playwright-cli.js --help`, the help of
+          each command, and skills/playwright-cli/.
+          "Configuration file schema": the Config type in
+          packages/playwright-core/src/tools/mcp/config.d.ts of microsoft/playwright, at the
+          commit of the pin, which `npm view playwright-core@<version> gitHead` prints.
+          "Configuration via env": the PLAYWRIGHT_MCP_* variables that configFromEnv reads in
+          config.ts of the same directory, with the descriptions of their options in program.ts
+          there.
+          Leave out what only the MCP server reads, and run the CLI when the source does not tell.
+          Remove what the pin no longer has, add what is missing, and fix what is wrong. Keep the
+          structure and the wording of the rest.
+          The title of the pull request is `docs(readme): sync with Playwright <version>`. Its
+          description lists what changed.
+          When the README is up to date, open no pull request, and say so in the summary.
+      run: |
+        gh workflow run task.yml --repo microsoft/devops.playwright.dev --ref main \
+          -f repo="$GITHUB_REPOSITORY" -f task="$TASK"
+        echo "Started the README update." >> "$GITHUB_STEP_SUMMARY"

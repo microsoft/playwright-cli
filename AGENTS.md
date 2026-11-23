@@ -82,6 +82,7 @@ The Playwright bot does the work below. It opens pull requests as the
 - `agent-implement` on an issue: implements what the issue and the maintainers' comments say.
 - `agent-review` on a PR: revises the PR, as the maintainers' review comments say.
 - [agent-roll.yml](.github/workflows/agent-roll.yml) and [agent-release.yml](.github/workflows/agent-release.yml), from the Actions tab: they hand a task to the bot. Roll Playwright to `playwright@next`, as the roll skill says. Or open the `chore: mark v<version>` PR with the release notes as its description, as the release skill says. Copy the notes into the release draft.
+- [agent-readme.yml](.github/workflows/agent-readme.yml), every Monday and from the Actions tab: hands a task to the bot. Compare `README.md` with the pinned Playwright, and open a `docs(readme): sync with Playwright <version>` PR when the README is out of date. A scheduled run skips while such a PR is open.
 - [agent-task.yml](.github/workflows/agent-task.yml), from the Actions tab: hands the bot the task that you type, with the skills of this repo.
 
 Apply a label again to start another run.
